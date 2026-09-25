@@ -1,0 +1,42 @@
+{
+  "id": "skill_onda_de_choque",
+  "name": "Onda de Choque",
+  "description": "Bate no chão criando uma onda que atinge todos ao redor.",
+  "battle_description": "O chão treme e o impacto derruba os inimigos!",
+  "type": "Ataque Múltiplo",
+  "target": "Área",
+  "tags": [
+    "fisico",
+    "area",
+    "impacto"
+  ],
+  "damage": {
+    "min": 25,
+    "max": 40,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 20
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 2,
+  "effects": [
+    {
+      "type": "Atordoamento",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 30
+    }
+  ],
+  "requirements": {
+    "level": 8,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

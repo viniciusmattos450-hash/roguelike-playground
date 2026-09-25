@@ -1,0 +1,34 @@
+{
+  "id": "skill_ataque_duplo",
+  "name": "Ataque Duplo",
+  "description": "Dois golpes rápidos em sequência.",
+  "battle_description": "Duas estocadas em rápida sucessão!",
+  "type": "Ataque Múltiplo",
+  "target": "Inimigo Único",
+  "tags": [
+    "fisico",
+    "multiplo",
+    "arma"
+  ],
+  "damage": {
+    "min": 5,
+    "max": 9,
+    "type": "Físico",
+    "hits": 2,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 8
+  },
+  "cooldown": 1,
+  "duration": 0,
+  "range": 1,
+  "effects": [],
+  "requirements": {
+    "level": 2,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

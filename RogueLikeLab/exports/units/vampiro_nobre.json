@@ -1,0 +1,52 @@
+{
+  "id": "unit_vampiro_nobre",
+  "name": "Vampiro Nobre",
+  "race": "Morto-Vivo",
+  "class": "Nobre Sombrio",
+  "level": 18,
+  "description": "Um aristocrata amaldiçoado que governa das sombras. Seduz e drena a vida das vítimas.",
+  "resources": {
+    "hp": 420,
+    "stamina": 140,
+    "mana": 200,
+    "hp_regen": 8,
+    "mana_regen": 10,
+    "stamina_regen": 8
+  },
+  "combat": {
+    "attack_physical": 65,
+    "attack_magical": 55,
+    "defense_physical": 30,
+    "defense_magical": 35,
+    "speed": 20,
+    "accuracy": 94,
+    "evasion": 22,
+    "crit_chance": 22,
+    "crit_damage": 230,
+    "block": 5,
+    "lifesteal": 30,
+    "initiative": 18
+  },
+  "attributes": {
+    "strength": 30,
+    "dexterity": 28,
+    "intelligence": 26,
+    "wisdom": 22,
+    "vitality": 32,
+    "luck": 15
+  },
+  "resistances": {
+    "fire": -10,
+    "ice": 15,
+    "lightning": 10,
+    "poison": 50,
+    "holy": -40,
+    "dark": 70
+  },
+  "skills": [
+    "Mordida Vampírica",
+    "Toque Vampírico",
+    "Forma de Névoa",
+    "Drenar Vida"
+  ]
+}

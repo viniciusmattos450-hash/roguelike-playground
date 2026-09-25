@@ -1,0 +1,62 @@
+{
+  "id": "item_cajado_do_lich",
+  "name": "Cajado do Lich",
+  "description": "Um cajado de osso negro pulsando energia necrótica.",
+  "long_description": "Forjado no coração de uma cripta esquecida, o cajado é alimentado pelas almas dos incautos que o tocam.",
+  "category": "Arma",
+  "subcategory": "Cajado",
+  "rarity": "Épico",
+  "level_required": 18,
+  "value": 2500,
+  "weight": 3.5,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "cajado",
+    "lich",
+    "necromancia"
+  ],
+  "icon": "C",
+  "grid_size": [
+    1,
+    4
+  ],
+  "equipment": {
+    "slot": "Arma",
+    "two_handed": true,
+    "damage": {
+      "min": 20,
+      "max": 32,
+      "type": "Sombrio"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "attack_magical": 25,
+      "intelligence": 15,
+      "mana": 150,
+      "lifesteal": 15
+    },
+    "resistances": {
+      "dark": 40,
+      "holy": -30,
+      "poison": 30
+    },
+    "special_effects": [
+      {
+        "type": "Maldição",
+        "value": 5,
+        "duration": 4,
+        "chance": 30,
+        "trigger": "Ao acertar"
+      },
+      {
+        "type": "Regeneração Mana",
+        "value": 5,
+        "duration": 5,
+        "chance": 40,
+        "trigger": "Ao equipar"
+      }
+    ]
+  },
+  "consumable": null
+}

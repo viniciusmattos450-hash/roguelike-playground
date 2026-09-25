@@ -1,0 +1,53 @@
+{
+  "id": "unit_mago_negro",
+  "name": "Mago Negro",
+  "race": "Humano",
+  "class": "Mago",
+  "level": 14,
+  "description": "Um feiticeiro que trocou a alma por poder proibido. Lança feitiços devastadores.",
+  "resources": {
+    "hp": 180,
+    "stamina": 60,
+    "mana": 300,
+    "hp_regen": 3,
+    "mana_regen": 15,
+    "stamina_regen": 3
+  },
+  "combat": {
+    "attack_physical": 15,
+    "attack_magical": 75,
+    "defense_physical": 12,
+    "defense_magical": 30,
+    "speed": 13,
+    "accuracy": 95,
+    "evasion": 10,
+    "crit_chance": 18,
+    "crit_damage": 220,
+    "block": 0,
+    "lifesteal": 10,
+    "initiative": 14
+  },
+  "attributes": {
+    "strength": 10,
+    "dexterity": 14,
+    "intelligence": 32,
+    "wisdom": 20,
+    "vitality": 16,
+    "luck": 12
+  },
+  "resistances": {
+    "fire": 20,
+    "ice": 20,
+    "lightning": 20,
+    "poison": 15,
+    "holy": -20,
+    "dark": 50
+  },
+  "skills": [
+    "Bola de Fogo",
+    "Raio",
+    "Mísseis Mágicos",
+    "Raio Arcano",
+    "Maldição Sombria"
+  ]
+}

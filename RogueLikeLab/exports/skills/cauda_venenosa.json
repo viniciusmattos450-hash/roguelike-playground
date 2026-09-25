@@ -1,0 +1,49 @@
+{
+  "id": "skill_cauda_venenosa",
+  "name": "Cauda Venenosa",
+  "description": "Um golpe de cauda que injeta veneno paralisante.",
+  "battle_description": "A cauda chicoteia e envenena o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "veneno",
+    "cauda",
+    "wyvern"
+  ],
+  "damage": {
+    "min": 30,
+    "max": 45,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 15
+  },
+  "cooldown": 3,
+  "duration": 0,
+  "range": 2,
+  "effects": [
+    {
+      "type": "Veneno",
+      "value": 10,
+      "duration": 4,
+      "condition": "",
+      "chance": 80
+    },
+    {
+      "type": "Paralisia",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 30
+    }
+  ],
+  "requirements": {
+    "level": 10,
+    "class": "",
+    "race": "Dragão",
+    "all": false
+  }
+}

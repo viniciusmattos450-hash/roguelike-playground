@@ -1,0 +1,33 @@
+{
+  "id": "suffix_do_vampiro",
+  "name": "do Vampiro",
+  "kind": "Sufixo",
+  "rarity_min": "Épico",
+  "applies_to": [
+    "Arma"
+  ],
+  "description": "Sedento por sangue.",
+  "damage_bonus": {
+    "min": 5,
+    "max": 9,
+    "type": "Físico"
+  },
+  "stat_modifiers": {
+    "lifesteal": 25,
+    "dexterity": 6,
+    "initiative": 5
+  },
+  "resistances": {
+    "dark": 25,
+    "holy": -20
+  },
+  "special_effects": [
+    {
+      "type": "Sangramento",
+      "value": 4,
+      "duration": 4,
+      "chance": 40,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

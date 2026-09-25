@@ -1,0 +1,39 @@
+{
+  "id": "skill_invocar_sombra",
+  "name": "Invocar Sombra",
+  "description": "Invoca uma sombra malevolente que drena a vida dos inimigos.",
+  "battle_description": "Uma massa de trevas surge diante de você!",
+  "type": "Invocação",
+  "target": "Si Mesmo",
+  "tags": [
+    "invocacao",
+    "sombrio",
+    "espirito"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 50,
+    "stamina": 0
+  },
+  "cooldown": 12,
+  "duration": 6,
+  "range": 2,
+  "effects": [],
+  "requirements": {
+    "level": 18,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  },
+  "summon": {
+    "unit_name": "Sombra Menor",
+    "count": 1,
+    "duration": 6
+  }
+}

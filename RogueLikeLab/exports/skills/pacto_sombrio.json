@@ -1,0 +1,42 @@
+{
+  "id": "skill_pacto_sombrio",
+  "name": "Pacto Sombrio",
+  "description": "Sacrifica HP em troca de grande poder mágico temporário.",
+  "battle_description": "A energia sombria flui com força total!",
+  "type": "Buff",
+  "target": "Si Mesmo",
+  "tags": [
+    "sombrio",
+    "buff",
+    "sacrificio"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 0
+  },
+  "cooldown": 8,
+  "duration": 3,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Bufo de Ataque",
+      "value": 50,
+      "duration": 3,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 12,
+    "class": "",
+    "race": "Demônio",
+    "all": false
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "id": "item_lanca_da_fenix",
+  "name": "Lança da Fênix",
+  "description": "Arde com a chama eterna de uma fênix.",
+  "long_description": "",
+  "category": "Arma",
+  "subcategory": "Lança",
+  "rarity": "Lendário",
+  "level_required": 28,
+  "value": 9500,
+  "weight": 4.5,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "lanca",
+    "fenix",
+    "fogo"
+  ],
+  "icon": "L",
+  "grid_size": [
+    1,
+    4
+  ],
+  "equipment": {
+    "slot": "Arma",
+    "two_handed": false,
+    "damage": {
+      "min": 35,
+      "max": 55,
+      "type": "Fogo"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "attack_physical": 15,
+      "attack_magical": 15,
+      "vitality": 10,
+      "hp": 60
+    },
+    "resistances": {
+      "fire": 60
+    },
+    "special_effects": [
+      {
+        "type": "Queimadura",
+        "value": 10,
+        "duration": 4,
+        "chance": 60,
+        "trigger": "Ao acertar"
+      },
+      {
+        "type": "Regeneração HP",
+        "value": 10,
+        "duration": 5,
+        "chance": 40,
+        "trigger": "Quando HP < 50%"
+      }
+    ]
+  },
+  "consumable": null
+}

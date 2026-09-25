@@ -1,0 +1,42 @@
+{
+  "id": "skill_voo_rasante",
+  "name": "Voo Rasante",
+  "description": "Mergulha do céu contra o inimigo em alta velocidade.",
+  "battle_description": "O usuário desce como um meteoro!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fisico",
+    "voo",
+    "dragao"
+  ],
+  "damage": {
+    "min": 45,
+    "max": 65,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 92
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 25
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 3,
+  "effects": [
+    {
+      "type": "Atordoamento",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 35
+    }
+  ],
+  "requirements": {
+    "level": 12,
+    "class": "",
+    "race": "Dragão",
+    "all": false
+  }
+}

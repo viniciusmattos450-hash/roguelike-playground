@@ -1,0 +1,42 @@
+{
+  "id": "skill_regeneracao_troll",
+  "name": "Regeneração Troll",
+  "description": "Regenera ferimentos a uma velocidade anormal.",
+  "battle_description": "As feridas se fecham diante dos olhos!",
+  "type": "Buff",
+  "target": "Si Mesmo",
+  "tags": [
+    "cura",
+    "regeneracao",
+    "troll"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 20
+  },
+  "cooldown": 6,
+  "duration": 4,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Regeneração HP",
+      "value": 25,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 8,
+    "class": "",
+    "race": "Gigante",
+    "all": false
+  }
+}

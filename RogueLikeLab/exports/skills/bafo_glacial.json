@@ -1,0 +1,49 @@
+{
+  "id": "skill_bafo_glacial",
+  "name": "Bafo Glacial",
+  "description": "Um cone de gelo que congela vários inimigos de uma só vez.",
+  "battle_description": "Uma ventania congelante atinge a todos!",
+  "type": "Ataque Múltiplo",
+  "target": "Cone",
+  "tags": [
+    "gelo",
+    "gigante",
+    "cone"
+  ],
+  "damage": {
+    "min": 50,
+    "max": 75,
+    "type": "Gelo",
+    "hits": 1,
+    "accuracy": 92
+  },
+  "cost": {
+    "mana": 35,
+    "stamina": 0
+  },
+  "cooldown": 5,
+  "duration": 0,
+  "range": 4,
+  "effects": [
+    {
+      "type": "Congelamento",
+      "value": 0,
+      "duration": 2,
+      "condition": "",
+      "chance": 50
+    },
+    {
+      "type": "Lentidão",
+      "value": 30,
+      "duration": 3,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 15,
+    "class": "",
+    "race": "Gigante",
+    "all": false
+  }
+}

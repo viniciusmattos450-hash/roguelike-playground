@@ -1,0 +1,42 @@
+{
+  "id": "skill_nuvem_venenosa",
+  "name": "Nuvem Venenosa",
+  "description": "Uma nuvem tóxica persistente que envenena inimigos.",
+  "battle_description": "Uma nuvem pútrida cobre os inimigos!",
+  "type": "Debuff",
+  "target": "Área",
+  "tags": [
+    "veneno",
+    "area",
+    "nuvem"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 20,
+    "stamina": 0
+  },
+  "cooldown": 5,
+  "duration": 5,
+  "range": 4,
+  "effects": [
+    {
+      "type": "Veneno",
+      "value": 6,
+      "duration": 5,
+      "condition": "",
+      "chance": 90
+    }
+  ],
+  "requirements": {
+    "level": 6,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

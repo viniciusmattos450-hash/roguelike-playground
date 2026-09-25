@@ -1,0 +1,52 @@
+{
+  "id": "unit_ogro",
+  "name": "Ogro",
+  "race": "Gigante",
+  "class": "Bruto",
+  "level": 9,
+  "description": "Um gigante estúpido e violento que esmaga inimigos com um porrete gigantesco.",
+  "resources": {
+    "hp": 220,
+    "stamina": 90,
+    "mana": 0,
+    "hp_regen": 5,
+    "mana_regen": 0,
+    "stamina_regen": 6
+  },
+  "combat": {
+    "attack_physical": 40,
+    "attack_magical": 0,
+    "defense_physical": 18,
+    "defense_magical": 6,
+    "speed": 7,
+    "accuracy": 75,
+    "evasion": 2,
+    "crit_chance": 10,
+    "crit_damage": 200,
+    "block": 5,
+    "lifesteal": 0,
+    "initiative": 6
+  },
+  "attributes": {
+    "strength": 30,
+    "dexterity": 7,
+    "intelligence": 3,
+    "wisdom": 3,
+    "vitality": 26,
+    "luck": 3
+  },
+  "resistances": {
+    "fire": 0,
+    "ice": -5,
+    "lightning": 0,
+    "poison": 15,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Soco Esmagador",
+    "Arremesso de Pedra",
+    "Fúria Sangrenta",
+    "Onda de Choque"
+  ]
+}

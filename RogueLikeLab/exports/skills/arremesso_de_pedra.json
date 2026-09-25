@@ -1,0 +1,42 @@
+{
+  "id": "skill_arremesso_pedra",
+  "name": "Arremesso de Pedra",
+  "description": "Arremessa uma pedra gigante contra o inimigo à distância.",
+  "battle_description": "Uma rocha voa e esmaga o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fisico",
+    "arremesso",
+    "gigante"
+  ],
+  "damage": {
+    "min": 22,
+    "max": 34,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 80
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 10
+  },
+  "cooldown": 2,
+  "duration": 0,
+  "range": 6,
+  "effects": [
+    {
+      "type": "Atordoamento",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 25
+    }
+  ],
+  "requirements": {
+    "level": 5,
+    "class": "",
+    "race": "Gigante",
+    "all": false
+  }
+}

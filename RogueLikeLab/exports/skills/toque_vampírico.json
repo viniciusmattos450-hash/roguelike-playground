@@ -1,0 +1,42 @@
+{
+  "id": "skill_toque_vampirico",
+  "name": "Toque Vampírico",
+  "description": "Rouba energia vital com um toque frio.",
+  "battle_description": "O toque gelado drena a vida do inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "sombrio",
+    "vampiro",
+    "drenar"
+  ],
+  "damage": {
+    "min": 25,
+    "max": 35,
+    "type": "Sombrio",
+    "hits": 1,
+    "accuracy": 95
+  },
+  "cost": {
+    "mana": 15,
+    "stamina": 0
+  },
+  "cooldown": 3,
+  "duration": 0,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Roubo de Vida",
+      "value": 70,
+      "duration": 0,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 10,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  }
+}

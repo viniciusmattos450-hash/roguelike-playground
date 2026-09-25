@@ -1,0 +1,26 @@
+{
+  "id": "prefix_acido",
+  "name": "Corrosivo",
+  "kind": "Prefixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Arma"
+  ],
+  "description": "Corrói armaduras ao menor toque.",
+  "damage_bonus": {
+    "min": 3,
+    "max": 5,
+    "type": "Ácido"
+  },
+  "stat_modifiers": {},
+  "resistances": {},
+  "special_effects": [
+    {
+      "type": "Debuff de Defesa",
+      "value": 20,
+      "duration": 3,
+      "chance": 40,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

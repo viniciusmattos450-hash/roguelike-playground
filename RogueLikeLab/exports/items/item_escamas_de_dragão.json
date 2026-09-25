@@ -1,0 +1,46 @@
+{
+  "id": "item_escamas_de_dragao",
+  "name": "Escamas de Dragão",
+  "description": "Armadura forjada com escamas de dragão.",
+  "long_description": "",
+  "category": "Armadura",
+  "subcategory": "Peitoral",
+  "rarity": "Épico",
+  "level_required": 20,
+  "value": 3000,
+  "weight": 12.0,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "escamas",
+    "dragao",
+    "fogo"
+  ],
+  "icon": "P",
+  "grid_size": [
+    2,
+    3
+  ],
+  "equipment": {
+    "slot": "Peito",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 22,
+    "stat_modifiers": {
+      "defense_physical": 15,
+      "defense_magical": 12,
+      "hp": 80,
+      "vitality": 8
+    },
+    "resistances": {
+      "fire": 60,
+      "ice": -10
+    },
+    "special_effects": []
+  },
+  "consumable": null
+}

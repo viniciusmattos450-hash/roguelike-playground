@@ -1,0 +1,32 @@
+{
+  "id": "prefix_trovejante",
+  "name": "Trovejante",
+  "kind": "Prefixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Arma",
+    "Acessório"
+  ],
+  "description": "Faíscas elétricas percorrem a superfície.",
+  "damage_bonus": {
+    "min": 3,
+    "max": 5,
+    "type": "Elétrico"
+  },
+  "stat_modifiers": {
+    "accuracy": 5,
+    "crit_chance": 3
+  },
+  "resistances": {
+    "lightning": 15
+  },
+  "special_effects": [
+    {
+      "type": "Paralisia",
+      "value": 0,
+      "duration": 1,
+      "chance": 15,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

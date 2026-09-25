@@ -1,0 +1,35 @@
+{
+  "id": "suffix_do_arquimago",
+  "name": "do Arquimago",
+  "kind": "Sufixo",
+  "rarity_min": "Épico",
+  "applies_to": [
+    "Arma",
+    "Acessório"
+  ],
+  "description": "Canaliza o poder arcano absoluto.",
+  "damage_bonus": {
+    "min": 5,
+    "max": 10,
+    "type": "Arcano"
+  },
+  "stat_modifiers": {
+    "intelligence": 12,
+    "attack_magical": 10,
+    "mana": 80
+  },
+  "resistances": {
+    "fire": 15,
+    "ice": 15,
+    "lightning": 15
+  },
+  "special_effects": [
+    {
+      "type": "Regeneração Mana",
+      "value": 4,
+      "duration": 5,
+      "chance": 40,
+      "trigger": "Ao equipar"
+    }
+  ]
+}

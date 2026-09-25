@@ -1,0 +1,49 @@
+{
+  "id": "skill_olhar_petrificante",
+  "name": "Olhar Petrificante",
+  "description": "Um olhar aterrorizante que paralisa o inimigo de medo.",
+  "battle_description": "O olhar terrível congela o inimigo de pavor!",
+  "type": "Debuff",
+  "target": "Inimigo Único",
+  "tags": [
+    "medo",
+    "controle",
+    "beholder"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 25,
+    "stamina": 0
+  },
+  "cooldown": 5,
+  "duration": 3,
+  "range": 6,
+  "effects": [
+    {
+      "type": "Medo",
+      "value": 0,
+      "duration": 3,
+      "condition": "",
+      "chance": 75
+    },
+    {
+      "type": "Paralisia",
+      "value": 0,
+      "duration": 2,
+      "condition": "",
+      "chance": 40
+    }
+  ],
+  "requirements": {
+    "level": 10,
+    "class": "",
+    "race": "Aberração",
+    "all": false
+  }
+}

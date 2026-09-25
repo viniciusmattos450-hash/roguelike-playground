@@ -1,0 +1,32 @@
+{
+  "id": "suffix_da_serpente",
+  "name": "da Serpente",
+  "kind": "Sufixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Arma",
+    "Acessório"
+  ],
+  "description": "Coberto por escamas peçonhentas.",
+  "damage_bonus": {
+    "min": 3,
+    "max": 6,
+    "type": "Veneno"
+  },
+  "stat_modifiers": {
+    "dexterity": 5,
+    "evasion": 4
+  },
+  "resistances": {
+    "poison": 25
+  },
+  "special_effects": [
+    {
+      "type": "Veneno",
+      "value": 5,
+      "duration": 4,
+      "chance": 40,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

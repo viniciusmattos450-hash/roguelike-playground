@@ -1,0 +1,49 @@
+{
+  "id": "skill_uivo_intimidador",
+  "name": "Uivo Intimidador",
+  "description": "Um uivo longo que abala a coragem dos inimigos.",
+  "battle_description": "O uivo ecoa e faz os inimigos hesitarem!",
+  "type": "Debuff",
+  "target": "Todos os Inimigos",
+  "tags": [
+    "debuff",
+    "medo",
+    "sonoro"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 8
+  },
+  "cooldown": 4,
+  "duration": 3,
+  "range": 5,
+  "effects": [
+    {
+      "type": "Medo",
+      "value": 0,
+      "duration": 3,
+      "condition": "",
+      "chance": 70
+    },
+    {
+      "type": "Debuff de Ataque",
+      "value": 10,
+      "duration": 3,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 3,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "skill_forma_de_nievoa",
+  "name": "Forma de Névoa",
+  "description": "Transforma-se em névoa, ficando quase impossível de acertar.",
+  "battle_description": "O corpo se dissolve em névoa!",
+  "type": "Buff",
+  "target": "Si Mesmo",
+  "tags": [
+    "buff",
+    "esquiva",
+    "vampiro"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 20,
+    "stamina": 0
+  },
+  "cooldown": 6,
+  "duration": 2,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Chance de Esquiva +",
+      "value": 70,
+      "duration": 2,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 14,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  }
+}

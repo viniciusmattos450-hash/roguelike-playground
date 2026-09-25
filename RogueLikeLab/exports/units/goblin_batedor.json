@@ -1,0 +1,52 @@
+{
+  "id": "unit_goblin_batedor",
+  "name": "Goblin Batedor",
+  "race": "Goblin",
+  "class": "Ladino",
+  "level": 2,
+  "description": "Pequeno, ágil e covarde. Prefere atacar em grupos e fugir quando está perdendo.",
+  "resources": {
+    "hp": 30,
+    "stamina": 25,
+    "mana": 0,
+    "hp_regen": 1,
+    "mana_regen": 0,
+    "stamina_regen": 3
+  },
+  "combat": {
+    "attack_physical": 8,
+    "attack_magical": 0,
+    "defense_physical": 3,
+    "defense_magical": 2,
+    "speed": 14,
+    "accuracy": 90,
+    "evasion": 15,
+    "crit_chance": 8,
+    "crit_damage": 150,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 14
+  },
+  "attributes": {
+    "strength": 6,
+    "dexterity": 14,
+    "intelligence": 6,
+    "wisdom": 4,
+    "vitality": 6,
+    "luck": 8
+  },
+  "resistances": {
+    "fire": 0,
+    "ice": 0,
+    "lightning": 0,
+    "poison": 5,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Golpe de Espada",
+    "Ataque Furtivo",
+    "Ataque Duplo",
+    "Esquiva Ágil"
+  ]
+}

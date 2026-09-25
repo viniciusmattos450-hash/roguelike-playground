@@ -1,0 +1,34 @@
+{
+  "id": "skill_golpe_espada",
+  "name": "Golpe de Espada",
+  "description": "Um corte simples e direto com a lâmina.",
+  "battle_description": "A lâmina corta o ar e acerta o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fisico",
+    "espada",
+    "arma"
+  ],
+  "damage": {
+    "min": 6,
+    "max": 10,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 92
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 4
+  },
+  "cooldown": 0,
+  "duration": 0,
+  "range": 1,
+  "effects": [],
+  "requirements": {
+    "level": 1,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

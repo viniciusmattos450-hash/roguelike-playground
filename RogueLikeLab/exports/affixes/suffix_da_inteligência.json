@@ -1,0 +1,23 @@
+{
+  "id": "suffix_da_inteligencia",
+  "name": "da Inteligência",
+  "kind": "Sufixo",
+  "rarity_min": "Comum",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Aumenta o poder arcano.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "intelligence": 5,
+    "attack_magical": 3
+  },
+  "resistances": {},
+  "special_effects": []
+}

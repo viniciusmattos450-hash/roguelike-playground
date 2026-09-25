@@ -1,0 +1,42 @@
+{
+  "id": "skill_mordida_feroz",
+  "name": "Mordida Feroz",
+  "description": "Uma mordida brutal com presas afiadas que rasga a carne.",
+  "battle_description": "O inimigo crava as presas profundamente!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fisico",
+    "mordida",
+    "animal"
+  ],
+  "damage": {
+    "min": 4,
+    "max": 8,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 5
+  },
+  "cooldown": 0,
+  "duration": 0,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Sangramento",
+      "value": 2,
+      "duration": 3,
+      "condition": "",
+      "chance": 30
+    }
+  ],
+  "requirements": {
+    "level": 1,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

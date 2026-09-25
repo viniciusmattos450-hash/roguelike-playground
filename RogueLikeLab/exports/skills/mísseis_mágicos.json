@@ -1,0 +1,34 @@
+{
+  "id": "skill_misseis_magicos",
+  "name": "Mísseis Mágicos",
+  "description": "Três dardos de energia arcana perseguem o alvo.",
+  "battle_description": "Dardos mágicos acertam o inimigo em cheio!",
+  "type": "Ataque Múltiplo",
+  "target": "Inimigo Único",
+  "tags": [
+    "arcano",
+    "magia",
+    "multiplo"
+  ],
+  "damage": {
+    "min": 8,
+    "max": 12,
+    "type": "Arcano",
+    "hits": 3,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 12,
+    "stamina": 0
+  },
+  "cooldown": 1,
+  "duration": 0,
+  "range": 7,
+  "effects": [],
+  "requirements": {
+    "level": 2,
+    "class": "Mago",
+    "race": "",
+    "all": false
+  }
+}

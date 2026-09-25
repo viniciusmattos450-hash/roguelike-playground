@@ -1,0 +1,39 @@
+{
+  "id": "item_espada_curta_de_ferro",
+  "name": "Espada Curta de Ferro",
+  "description": "Uma lâmina simples de guarnição.",
+  "long_description": "",
+  "category": "Arma",
+  "subcategory": "Espada",
+  "rarity": "Comum",
+  "level_required": 1,
+  "value": 30,
+  "weight": 1.5,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "espada",
+    "ferro"
+  ],
+  "icon": "E",
+  "grid_size": [
+    1,
+    3
+  ],
+  "equipment": {
+    "slot": "Arma",
+    "two_handed": false,
+    "damage": {
+      "min": 5,
+      "max": 8,
+      "type": "Físico"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "attack_physical": 2
+    },
+    "resistances": {},
+    "special_effects": []
+  },
+  "consumable": null
+}

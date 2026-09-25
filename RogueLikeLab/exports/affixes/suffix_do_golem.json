@@ -1,0 +1,28 @@
+{
+  "id": "suffix_do_golem",
+  "name": "do Golem",
+  "kind": "Sufixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Armadura"
+  ],
+  "description": "Endurecido como pedra viva.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "defense_physical": 15,
+    "defense_magical": 10,
+    "hp": 60,
+    "initiative": -3
+  },
+  "resistances": {
+    "fire": 20,
+    "ice": 20,
+    "lightning": -15,
+    "poison": 50
+  },
+  "special_effects": []
+}

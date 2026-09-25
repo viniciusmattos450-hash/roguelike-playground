@@ -1,0 +1,48 @@
+{
+  "id": "item_pele_de_golem",
+  "name": "Pele de Golem",
+  "description": "Uma carapaça de pedra viva que se adapta ao portador.",
+  "long_description": "",
+  "category": "Armadura",
+  "subcategory": "Peitoral",
+  "rarity": "Lendário",
+  "level_required": 25,
+  "value": 7000,
+  "weight": 20.0,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "golem",
+    "pedra"
+  ],
+  "icon": "P",
+  "grid_size": [
+    2,
+    3
+  ],
+  "equipment": {
+    "slot": "Peito",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 35,
+    "stat_modifiers": {
+      "defense_physical": 25,
+      "defense_magical": 20,
+      "hp": 120,
+      "vitality": 12,
+      "initiative": -8
+    },
+    "resistances": {
+      "fire": 30,
+      "ice": 30,
+      "lightning": -20,
+      "poison": 100
+    },
+    "special_effects": []
+  },
+  "consumable": null
+}

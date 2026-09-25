@@ -1,0 +1,23 @@
+{
+  "id": "prefix_robusto",
+  "name": "Robusto",
+  "kind": "Prefixo",
+  "rarity_min": "Comum",
+  "applies_to": [
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Aparência sólida e resistente.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "hp": 20,
+    "defense_physical": 3,
+    "vitality": 2
+  },
+  "resistances": {},
+  "special_effects": []
+}

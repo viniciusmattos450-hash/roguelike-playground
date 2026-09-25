@@ -1,0 +1,39 @@
+{
+  "id": "skill_invocar_zumbi",
+  "name": "Invocar Zumbi",
+  "description": "Invoca um zumbi faminto para atacar seus inimigos.",
+  "battle_description": "Um cadáver se levanta com fome insaciável!",
+  "type": "Invocação",
+  "target": "Si Mesmo",
+  "tags": [
+    "invocacao",
+    "morte-viva",
+    "zumbi"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 20,
+    "stamina": 0
+  },
+  "cooldown": 7,
+  "duration": 4,
+  "range": 2,
+  "effects": [],
+  "requirements": {
+    "level": 10,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  },
+  "summon": {
+    "unit_name": "Zumbi Faminto",
+    "count": 1,
+    "duration": 4
+  }
+}

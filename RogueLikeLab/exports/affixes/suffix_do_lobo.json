@@ -1,0 +1,23 @@
+{
+  "id": "suffix_do_lobo",
+  "name": "do Lobo",
+  "kind": "Sufixo",
+  "rarity_min": "Incomum",
+  "applies_to": [
+    "Arma",
+    "Armadura"
+  ],
+  "description": "Inspirado na ferocidade dos lobos.",
+  "damage_bonus": {
+    "min": 2,
+    "max": 5,
+    "type": "Físico"
+  },
+  "stat_modifiers": {
+    "strength": 4,
+    "dexterity": 4,
+    "initiative": 4
+  },
+  "resistances": {},
+  "special_effects": []
+}

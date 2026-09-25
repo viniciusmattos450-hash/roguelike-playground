@@ -1,0 +1,52 @@
+{
+  "id": "unit_cavaleiro_negro",
+  "name": "Cavaleiro Negro",
+  "race": "Humano",
+  "class": "Cavaleiro Sombrio",
+  "level": 11,
+  "description": "Um cavaleiro caído em desgraça, envolto em armadura negra e servindo as forças das trevas.",
+  "resources": {
+    "hp": 260,
+    "stamina": 120,
+    "mana": 60,
+    "hp_regen": 5,
+    "mana_regen": 3,
+    "stamina_regen": 8
+  },
+  "combat": {
+    "attack_physical": 45,
+    "attack_magical": 20,
+    "defense_physical": 28,
+    "defense_magical": 20,
+    "speed": 12,
+    "accuracy": 90,
+    "evasion": 8,
+    "crit_chance": 15,
+    "crit_damage": 200,
+    "block": 25,
+    "lifesteal": 5,
+    "initiative": 12
+  },
+  "attributes": {
+    "strength": 30,
+    "dexterity": 16,
+    "intelligence": 14,
+    "wisdom": 12,
+    "vitality": 28,
+    "luck": 8
+  },
+  "resistances": {
+    "fire": 10,
+    "ice": 10,
+    "lightning": 0,
+    "poison": 20,
+    "holy": -20,
+    "dark": 60
+  },
+  "skills": [
+    "Espada Cortante",
+    "Postura Defensiva",
+    "Maldição Sombria",
+    "Rajada Tripla"
+  ]
+}

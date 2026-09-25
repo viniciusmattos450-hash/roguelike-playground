@@ -1,0 +1,42 @@
+{
+  "id": "skill_onda_de_morte",
+  "name": "Onda de Morte",
+  "description": "Uma explosão de energia necrótica que atinge todos ao redor.",
+  "battle_description": "Uma onda de morte varre os inimigos!",
+  "type": "Ataque Múltiplo",
+  "target": "Todos os Inimigos",
+  "tags": [
+    "sombrio",
+    "necromancia",
+    "area"
+  ],
+  "damage": {
+    "min": 35,
+    "max": 55,
+    "type": "Sombrio",
+    "hits": 1,
+    "accuracy": 95
+  },
+  "cost": {
+    "mana": 40,
+    "stamina": 0
+  },
+  "cooldown": 5,
+  "duration": 0,
+  "range": 6,
+  "effects": [
+    {
+      "type": "Debuff de Defesa",
+      "value": 20,
+      "duration": 3,
+      "condition": "",
+      "chance": 80
+    }
+  ],
+  "requirements": {
+    "level": 15,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  }
+}

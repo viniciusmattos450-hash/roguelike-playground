@@ -1,0 +1,42 @@
+{
+  "id": "skill_esquiva_agil",
+  "name": "Esquiva Ágil",
+  "description": "Um movimento rápido que aumenta a chance de esquivar.",
+  "battle_description": "O corpo se move como o vento!",
+  "type": "Buff",
+  "target": "Si Mesmo",
+  "tags": [
+    "buff",
+    "esquiva",
+    "agilidade"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 8
+  },
+  "cooldown": 4,
+  "duration": 3,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Chance de Esquiva +",
+      "value": 30,
+      "duration": 3,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 3,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

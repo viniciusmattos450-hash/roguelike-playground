@@ -1,0 +1,50 @@
+{
+  "id": "item_cajado_arcano",
+  "name": "Cajado Arcano",
+  "description": "Pulsa com energia mágica pura.",
+  "long_description": "",
+  "category": "Arma",
+  "subcategory": "Cajado",
+  "rarity": "Raro",
+  "level_required": 8,
+  "value": 450,
+  "weight": 3.0,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "cajado",
+    "arcano",
+    "mago"
+  ],
+  "icon": "C",
+  "grid_size": [
+    1,
+    4
+  ],
+  "equipment": {
+    "slot": "Arma",
+    "two_handed": true,
+    "damage": {
+      "min": 8,
+      "max": 14,
+      "type": "Arcano"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "attack_magical": 14,
+      "intelligence": 8,
+      "mana": 70
+    },
+    "resistances": {},
+    "special_effects": [
+      {
+        "type": "Regeneração Mana",
+        "value": 3,
+        "duration": 5,
+        "chance": 30,
+        "trigger": "Ao equipar"
+      }
+    ]
+  },
+  "consumable": null
+}

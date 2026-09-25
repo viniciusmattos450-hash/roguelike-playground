@@ -1,0 +1,40 @@
+{
+  "id": "skill_invocar_esqueleto_arqueiro",
+  "name": "Invocar Esqueleto Arqueiro",
+  "description": "Invoca um esqueleto arqueiro que ataca à distância.",
+  "battle_description": "Um esqueleto surge empunhando um arco!",
+  "type": "Invocação",
+  "target": "Si Mesmo",
+  "tags": [
+    "invocacao",
+    "morte-viva",
+    "skeleton",
+    "ranged"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 30,
+    "stamina": 0
+  },
+  "cooldown": 8,
+  "duration": 5,
+  "range": 2,
+  "effects": [],
+  "requirements": {
+    "level": 14,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  },
+  "summon": {
+    "unit_name": "Esqueleto Arqueiro",
+    "count": 1,
+    "duration": 5
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "item_pocao_de_cura_maior",
+  "name": "Poção de Cura Maior",
+  "description": "Um frasco de líquido vermelho brilhante.",
+  "long_description": "",
+  "category": "Consumível",
+  "subcategory": "Poção",
+  "rarity": "Incomum",
+  "level_required": 5,
+  "value": 100,
+  "weight": 0.4,
+  "stackable": true,
+  "max_stack": 10,
+  "tags": [
+    "pocao",
+    "cura"
+  ],
+  "icon": "+",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": null,
+  "consumable": {
+    "consume_type": "Instantâneo",
+    "target": "Si Mesmo",
+    "effects": [
+      {
+        "type": "Regeneração HP",
+        "value": 120,
+        "duration": 0,
+        "chance": 100,
+        "trigger": "Ao usar"
+      }
+    ]
+  }
+}

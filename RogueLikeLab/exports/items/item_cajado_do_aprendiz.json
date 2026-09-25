@@ -1,0 +1,41 @@
+{
+  "id": "item_cajado_do_aprendiz",
+  "name": "Cajado do Aprendiz",
+  "description": "Um cajado simples de madeira nodosa.",
+  "long_description": "",
+  "category": "Arma",
+  "subcategory": "Cajado",
+  "rarity": "Incomum",
+  "level_required": 3,
+  "value": 90,
+  "weight": 2.5,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "cajado",
+    "mago"
+  ],
+  "icon": "C",
+  "grid_size": [
+    1,
+    4
+  ],
+  "equipment": {
+    "slot": "Arma",
+    "two_handed": true,
+    "damage": {
+      "min": 4,
+      "max": 6,
+      "type": "Arcano"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "attack_magical": 6,
+      "intelligence": 5,
+      "mana": 30
+    },
+    "resistances": {},
+    "special_effects": []
+  },
+  "consumable": null
+}

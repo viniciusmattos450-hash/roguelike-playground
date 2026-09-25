@@ -1,0 +1,51 @@
+{
+  "id": "unit_esqueleto_arqueiro",
+  "name": "Esqueleto Arqueiro",
+  "race": "Morto-Vivo",
+  "class": "Arqueiro",
+  "level": 3,
+  "description": "Esqueleto equipado com arco curto. Ataca à distância e recua quando ameaçado.",
+  "resources": {
+    "hp": 35,
+    "stamina": 30,
+    "mana": 0,
+    "hp_regen": 0,
+    "mana_regen": 0,
+    "stamina_regen": 3
+  },
+  "combat": {
+    "attack_physical": 9,
+    "attack_magical": 0,
+    "defense_physical": 5,
+    "defense_magical": 2,
+    "speed": 12,
+    "accuracy": 92,
+    "evasion": 8,
+    "crit_chance": 8,
+    "crit_damage": 140,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 11
+  },
+  "attributes": {
+    "strength": 8,
+    "dexterity": 14,
+    "intelligence": 3,
+    "wisdom": 3,
+    "vitality": 8,
+    "luck": 3
+  },
+  "resistances": {
+    "fire": -10,
+    "ice": 25,
+    "lightning": 0,
+    "poison": 100,
+    "holy": -25,
+    "dark": 50
+  },
+  "skills": [
+    "Rajada Tripla",
+    "Ataque Duplo",
+    "Esquiva Ágil"
+  ]
+}

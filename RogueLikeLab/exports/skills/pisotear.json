@@ -1,0 +1,42 @@
+{
+  "id": "skill_pisotear",
+  "name": "Pisotear",
+  "description": "Um pisão devastador que abala o solo e atordoa todos ao redor.",
+  "battle_description": "O chão racha com o impacto!",
+  "type": "Ataque Múltiplo",
+  "target": "Área",
+  "tags": [
+    "fisico",
+    "area",
+    "gigante"
+  ],
+  "damage": {
+    "min": 55,
+    "max": 80,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 85
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 30
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 2,
+  "effects": [
+    {
+      "type": "Atordoamento",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 50
+    }
+  ],
+  "requirements": {
+    "level": 14,
+    "class": "",
+    "race": "Gigante",
+    "all": false
+  }
+}

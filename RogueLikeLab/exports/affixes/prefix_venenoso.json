@@ -1,0 +1,29 @@
+{
+  "id": "prefix_venenoso",
+  "name": "Venenoso",
+  "kind": "Prefixo",
+  "rarity_min": "Incomum",
+  "applies_to": [
+    "Arma",
+    "Acessório"
+  ],
+  "description": "Goteja uma substância esverdeada.",
+  "damage_bonus": {
+    "min": 2,
+    "max": 3,
+    "type": "Veneno"
+  },
+  "stat_modifiers": {},
+  "resistances": {
+    "poison": 20
+  },
+  "special_effects": [
+    {
+      "type": "Veneno",
+      "value": 4,
+      "duration": 4,
+      "chance": 35,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

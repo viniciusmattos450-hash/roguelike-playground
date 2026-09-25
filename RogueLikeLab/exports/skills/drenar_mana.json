@@ -1,0 +1,42 @@
+{
+  "id": "skill_drenar_mana",
+  "name": "Drenar Mana",
+  "description": "Suga a energia mágica do inimigo para si.",
+  "battle_description": "A mana do inimigo é absorvida!",
+  "type": "Debuff",
+  "target": "Inimigo Único",
+  "tags": [
+    "arcano",
+    "drenar",
+    "magia"
+  ],
+  "damage": {
+    "min": 5,
+    "max": 8,
+    "type": "Arcano",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 0
+  },
+  "cooldown": 3,
+  "duration": 0,
+  "range": 6,
+  "effects": [
+    {
+      "type": "Regeneração Mana",
+      "value": 20,
+      "duration": 0,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 5,
+    "class": "Mago",
+    "race": "",
+    "all": false
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "skill_bafo_de_fogo",
+  "name": "Bafo de Fogo",
+  "description": "Um cone de chamas que incendeia vários inimigos.",
+  "battle_description": "Uma onda de fogo engole os inimigos!",
+  "type": "Ataque Múltiplo",
+  "target": "Cone",
+  "tags": [
+    "fogo",
+    "dragao",
+    "cone",
+    "elemental"
+  ],
+  "damage": {
+    "min": 30,
+    "max": 50,
+    "type": "Fogo",
+    "hits": 1,
+    "accuracy": 95
+  },
+  "cost": {
+    "mana": 30,
+    "stamina": 0
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 4,
+  "effects": [
+    {
+      "type": "Queimadura",
+      "value": 8,
+      "duration": 3,
+      "condition": "",
+      "chance": 80
+    }
+  ],
+  "requirements": {
+    "level": 10,
+    "class": "",
+    "race": "Dragão",
+    "all": false
+  }
+}

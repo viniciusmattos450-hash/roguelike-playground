@@ -1,0 +1,49 @@
+{
+  "id": "skill_nova_de_gelo",
+  "name": "Nova de Gelo",
+  "description": "Uma explosão de gelo que congela todos os inimigos próximos.",
+  "battle_description": "Uma onda congelante paralisa os inimigos!",
+  "type": "Ataque Múltiplo",
+  "target": "Área",
+  "tags": [
+    "gelo",
+    "area",
+    "magia"
+  ],
+  "damage": {
+    "min": 20,
+    "max": 30,
+    "type": "Gelo",
+    "hits": 1,
+    "accuracy": 92
+  },
+  "cost": {
+    "mana": 28,
+    "stamina": 0
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 3,
+  "effects": [
+    {
+      "type": "Congelamento",
+      "value": 0,
+      "duration": 2,
+      "condition": "",
+      "chance": 50
+    },
+    {
+      "type": "Lentidão",
+      "value": 30,
+      "duration": 3,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 7,
+    "class": "Mago",
+    "race": "",
+    "all": false
+  }
+}

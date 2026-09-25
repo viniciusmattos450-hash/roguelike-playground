@@ -1,0 +1,48 @@
+{
+  "id": "item_coroa_do_rei_esqueleto",
+  "name": "Coroa do Rei Esqueleto",
+  "description": "A coroa de um monarca morto há muito tempo.",
+  "long_description": "",
+  "category": "Acessório",
+  "subcategory": "Amuleto",
+  "rarity": "Épico",
+  "level_required": 18,
+  "value": 2800,
+  "weight": 0.5,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "coroa",
+    "morto-vivo",
+    "necromancia"
+  ],
+  "icon": "Q",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": {
+    "slot": "Amuleto",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 3,
+    "stat_modifiers": {
+      "intelligence": 10,
+      "vitality": 8,
+      "hp": 60,
+      "mana": 80
+    },
+    "resistances": {
+      "dark": 40,
+      "holy": -25,
+      "poison": 50,
+      "ice": 20
+    },
+    "special_effects": []
+  },
+  "consumable": null
+}

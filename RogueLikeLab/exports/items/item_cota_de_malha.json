@@ -1,0 +1,41 @@
+{
+  "id": "item_cota_de_malha",
+  "name": "Cota de Malha",
+  "description": "Anéis de ferro entrelaçados.",
+  "long_description": "",
+  "category": "Armadura",
+  "subcategory": "Peitoral",
+  "rarity": "Incomum",
+  "level_required": 4,
+  "value": 120,
+  "weight": 8.0,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "malha",
+    "ferro"
+  ],
+  "icon": "P",
+  "grid_size": [
+    2,
+    3
+  ],
+  "equipment": {
+    "slot": "Peito",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 8,
+    "stat_modifiers": {
+      "defense_physical": 6,
+      "hp": 15,
+      "initiative": -2
+    },
+    "resistances": {},
+    "special_effects": []
+  },
+  "consumable": null
+}

@@ -1,0 +1,52 @@
+{
+  "id": "unit_orc_bruto",
+  "name": "Orc Bruto",
+  "race": "Orc",
+  "class": "Guerreiro",
+  "level": 7,
+  "description": "Um orc musculoso que luta com um machado de duas mãos. Famoso pela brutalidade.",
+  "resources": {
+    "hp": 140,
+    "stamina": 70,
+    "mana": 0,
+    "hp_regen": 3,
+    "mana_regen": 0,
+    "stamina_regen": 6
+  },
+  "combat": {
+    "attack_physical": 28,
+    "attack_magical": 0,
+    "defense_physical": 14,
+    "defense_magical": 6,
+    "speed": 9,
+    "accuracy": 82,
+    "evasion": 5,
+    "crit_chance": 12,
+    "crit_damage": 180,
+    "block": 10,
+    "lifesteal": 0,
+    "initiative": 8
+  },
+  "attributes": {
+    "strength": 22,
+    "dexterity": 9,
+    "intelligence": 5,
+    "wisdom": 5,
+    "vitality": 20,
+    "luck": 4
+  },
+  "resistances": {
+    "fire": 0,
+    "ice": 0,
+    "lightning": 0,
+    "poison": 10,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Machado Giratório",
+    "Grito de Guerra",
+    "Fúria Sangrenta",
+    "Espada Cortante"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "suffix_da_tempestade",
+  "name": "da Tempestade",
+  "kind": "Sufixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Arma",
+    "Acessório"
+  ],
+  "description": "O trovão responde ao portador.",
+  "damage_bonus": {
+    "min": 4,
+    "max": 8,
+    "type": "Elétrico"
+  },
+  "stat_modifiers": {
+    "initiative": 8,
+    "accuracy": 8,
+    "dexterity": 5
+  },
+  "resistances": {
+    "lightning": 30
+  },
+  "special_effects": [
+    {
+      "type": "Paralisia",
+      "value": 0,
+      "duration": 1,
+      "chance": 20,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

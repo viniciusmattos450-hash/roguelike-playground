@@ -1,0 +1,42 @@
+{
+  "id": "skill_toque_paralisante",
+  "name": "Toque Paralisante",
+  "description": "Um toque que paralisa o alvo temporariamente.",
+  "battle_description": "O corpo do inimigo trava!",
+  "type": "Debuff",
+  "target": "Inimigo Único",
+  "tags": [
+    "paralisia",
+    "controle",
+    "morte-viva"
+  ],
+  "damage": {
+    "min": 4,
+    "max": 6,
+    "type": "Sombrio",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 8,
+    "stamina": 0
+  },
+  "cooldown": 4,
+  "duration": 2,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Paralisia",
+      "value": 0,
+      "duration": 2,
+      "condition": "",
+      "chance": 60
+    }
+  ],
+  "requirements": {
+    "level": 3,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  }
+}

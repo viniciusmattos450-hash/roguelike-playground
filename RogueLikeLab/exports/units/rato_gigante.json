@@ -1,0 +1,50 @@
+{
+  "id": "unit_rato_gigante",
+  "name": "Rato Gigante",
+  "race": "Animal",
+  "class": "Fera",
+  "level": 1,
+  "description": "Um roedor do tamanho de um cão, comum em esgotos e porões abandonados. Ataca em bandos.",
+  "resources": {
+    "hp": 18,
+    "stamina": 10,
+    "mana": 0,
+    "hp_regen": 0,
+    "mana_regen": 0,
+    "stamina_regen": 1
+  },
+  "combat": {
+    "attack_physical": 5,
+    "attack_magical": 0,
+    "defense_physical": 2,
+    "defense_magical": 1,
+    "speed": 12,
+    "accuracy": 85,
+    "evasion": 10,
+    "crit_chance": 3,
+    "crit_damage": 130,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 12
+  },
+  "attributes": {
+    "strength": 4,
+    "dexterity": 10,
+    "intelligence": 1,
+    "wisdom": 2,
+    "vitality": 5,
+    "luck": 3
+  },
+  "resistances": {
+    "fire": -10,
+    "ice": 0,
+    "lightning": -5,
+    "poison": 20,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Mordida Feroz",
+    "Mordida Venenosa"
+  ]
+}

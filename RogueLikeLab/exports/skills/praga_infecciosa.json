@@ -1,0 +1,49 @@
+{
+  "id": "skill_praga_infecciosa",
+  "name": "Praga Infecciosa",
+  "description": "Uma maldição que se espalha entre os inimigos próximos.",
+  "battle_description": "Uma nuvem pútrida corrói os inimigos!",
+  "type": "Debuff",
+  "target": "Todos os Inimigos",
+  "tags": [
+    "veneno",
+    "praga",
+    "doenca"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 20,
+    "stamina": 0
+  },
+  "cooldown": 5,
+  "duration": 4,
+  "range": 5,
+  "effects": [
+    {
+      "type": "Veneno",
+      "value": 5,
+      "duration": 4,
+      "condition": "",
+      "chance": 85
+    },
+    {
+      "type": "Debuff de Ataque",
+      "value": 15,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 6,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  }
+}

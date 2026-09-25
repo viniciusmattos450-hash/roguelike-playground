@@ -1,0 +1,28 @@
+{
+  "id": "suffix_do_tita",
+  "name": "do Titã",
+  "kind": "Sufixo",
+  "rarity_min": "Lendário",
+  "applies_to": [
+    "Arma",
+    "Armadura"
+  ],
+  "description": "Força colossal dos titãs antigos.",
+  "damage_bonus": {
+    "min": 10,
+    "max": 18,
+    "type": "Físico"
+  },
+  "stat_modifiers": {
+    "strength": 12,
+    "vitality": 10,
+    "attack_physical": 10,
+    "hp": 80
+  },
+  "resistances": {
+    "fire": 15,
+    "ice": 15,
+    "lightning": 15
+  },
+  "special_effects": []
+}

@@ -1,0 +1,42 @@
+{
+  "id": "skill_cuspe_acido",
+  "name": "Cuspe Ácido",
+  "description": "Cospe uma substância ácida que corrói a armadura.",
+  "battle_description": "O ácido corrói a defesa do inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "acido",
+    "corrosao",
+    "monstro"
+  ],
+  "damage": {
+    "min": 8,
+    "max": 12,
+    "type": "Ácido",
+    "hits": 1,
+    "accuracy": 85
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 10
+  },
+  "cooldown": 2,
+  "duration": 0,
+  "range": 3,
+  "effects": [
+    {
+      "type": "Debuff de Defesa",
+      "value": 20,
+      "duration": 4,
+      "condition": "",
+      "chance": 70
+    }
+  ],
+  "requirements": {
+    "level": 2,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

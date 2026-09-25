@@ -1,0 +1,42 @@
+{
+  "id": "skill_corrente_eletrica",
+  "name": "Corrente Elétrica",
+  "description": "Um arco elétrico salta entre vários inimigos.",
+  "battle_description": "Faíscas pulam de inimigo em inimigo!",
+  "type": "Ataque Múltiplo",
+  "target": "Todos os Inimigos",
+  "tags": [
+    "eletrico",
+    "magia",
+    "area"
+  ],
+  "damage": {
+    "min": 10,
+    "max": 16,
+    "type": "Elétrico",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 25,
+    "stamina": 0
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 5,
+  "effects": [
+    {
+      "type": "Paralisia",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 15
+    }
+  ],
+  "requirements": {
+    "level": 7,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

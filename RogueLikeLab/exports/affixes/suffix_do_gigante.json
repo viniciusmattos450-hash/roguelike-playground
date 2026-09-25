@@ -1,0 +1,23 @@
+{
+  "id": "suffix_do_gigante",
+  "name": "do Gigante",
+  "kind": "Sufixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Arma",
+    "Armadura"
+  ],
+  "description": "Feito para as mãos de gigantes.",
+  "damage_bonus": {
+    "min": 5,
+    "max": 8,
+    "type": "Físico"
+  },
+  "stat_modifiers": {
+    "strength": 8,
+    "vitality": 6,
+    "hp": 40
+  },
+  "resistances": {},
+  "special_effects": []
+}

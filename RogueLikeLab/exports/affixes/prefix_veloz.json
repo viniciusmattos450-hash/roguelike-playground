@@ -1,0 +1,24 @@
+{
+  "id": "prefix_veloz",
+  "name": "Veloz",
+  "kind": "Prefixo",
+  "rarity_min": "Incomum",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Movimento leve e rápido.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "initiative": 5,
+    "dexterity": 3,
+    "evasion": 3
+  },
+  "resistances": {},
+  "special_effects": []
+}

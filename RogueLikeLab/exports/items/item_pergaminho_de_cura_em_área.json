@@ -1,0 +1,38 @@
+{
+  "id": "item_pergaminho_cura_em_area",
+  "name": "Pergaminho de Cura em Área",
+  "description": "Um pergaminho sagrado que cura os aliados.",
+  "long_description": "",
+  "category": "Consumível",
+  "subcategory": "Pergaminho",
+  "rarity": "Raro",
+  "level_required": 8,
+  "value": 350,
+  "weight": 0.1,
+  "stackable": true,
+  "max_stack": 5,
+  "tags": [
+    "pergaminho",
+    "cura",
+    "sagrado"
+  ],
+  "icon": "S",
+  "grid_size": [
+    1,
+    2
+  ],
+  "equipment": null,
+  "consumable": {
+    "consume_type": "Instantâneo",
+    "target": "Todos os Aliados",
+    "effects": [
+      {
+        "type": "Regeneração HP",
+        "value": 80,
+        "duration": 0,
+        "chance": 100,
+        "trigger": "Ao usar"
+      }
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "item_amuleto_da_sorte",
+  "name": "Amuleto da Sorte",
+  "description": "Um amuleto que atrai boa fortuna.",
+  "long_description": "",
+  "category": "Acessório",
+  "subcategory": "Amuleto",
+  "rarity": "Incomum",
+  "level_required": 5,
+  "value": 200,
+  "weight": 0.2,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "amuleto",
+    "sorte"
+  ],
+  "icon": "A",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": {
+    "slot": "Amuleto",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "luck": 8,
+      "crit_chance": 5,
+      "evasion": 3
+    },
+    "resistances": {},
+    "special_effects": []
+  },
+  "consumable": null
+}

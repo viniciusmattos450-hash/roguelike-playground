@@ -1,0 +1,37 @@
+{
+  "id": "item_pergaminho_bola_de_fogo",
+  "name": "Pergaminho de Bola de Fogo",
+  "description": "Um pergaminho contendo a magia de Bola de Fogo.",
+  "long_description": "",
+  "category": "Consumível",
+  "subcategory": "Pergaminho",
+  "rarity": "Incomum",
+  "level_required": 5,
+  "value": 150,
+  "weight": 0.1,
+  "stackable": true,
+  "max_stack": 5,
+  "tags": [
+    "pergaminho",
+    "fogo"
+  ],
+  "icon": "S",
+  "grid_size": [
+    1,
+    2
+  ],
+  "equipment": null,
+  "consumable": {
+    "consume_type": "Instantâneo",
+    "target": "Inimigo Único",
+    "effects": [
+      {
+        "type": "Queimadura",
+        "value": 25,
+        "duration": 3,
+        "chance": 100,
+        "trigger": "Ao usar"
+      }
+    ]
+  }
+}

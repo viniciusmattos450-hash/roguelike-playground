@@ -1,0 +1,52 @@
+{
+  "id": "unit_urso_coruja",
+  "name": "Urso-Coruja",
+  "race": "Bestial",
+  "class": "Fera",
+  "level": 8,
+  "description": "Uma criatura híbrida de urso e coruja, agressiva e territorial, protetora da floresta.",
+  "resources": {
+    "hp": 165,
+    "stamina": 80,
+    "mana": 0,
+    "hp_regen": 4,
+    "mana_regen": 0,
+    "stamina_regen": 7
+  },
+  "combat": {
+    "attack_physical": 32,
+    "attack_magical": 0,
+    "defense_physical": 16,
+    "defense_magical": 8,
+    "speed": 13,
+    "accuracy": 88,
+    "evasion": 10,
+    "crit_chance": 15,
+    "crit_damage": 190,
+    "block": 8,
+    "lifesteal": 0,
+    "initiative": 12
+  },
+  "attributes": {
+    "strength": 24,
+    "dexterity": 14,
+    "intelligence": 4,
+    "wisdom": 8,
+    "vitality": 22,
+    "luck": 6
+  },
+  "resistances": {
+    "fire": 0,
+    "ice": 10,
+    "lightning": 0,
+    "poison": 5,
+    "holy": 5,
+    "dark": 0
+  },
+  "skills": [
+    "Mordida Feroz",
+    "Investida Selvagem",
+    "Rajada Tripla",
+    "Onda Sônica"
+  ]
+}

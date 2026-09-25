@@ -1,0 +1,56 @@
+{
+  "id": "skill_presenca_aterrorizante",
+  "name": "Presença Aterrorizante",
+  "description": "A mera presença do dragão faz os inimigos hesitarem.",
+  "battle_description": "A aura do dragão espalha terror!",
+  "type": "Debuff",
+  "target": "Todos os Inimigos",
+  "tags": [
+    "dragao",
+    "medo",
+    "aura"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 30,
+    "stamina": 0
+  },
+  "cooldown": 8,
+  "duration": 4,
+  "range": 8,
+  "effects": [
+    {
+      "type": "Medo",
+      "value": 0,
+      "duration": 4,
+      "condition": "",
+      "chance": 80
+    },
+    {
+      "type": "Debuff de Ataque",
+      "value": 25,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    },
+    {
+      "type": "Debuff de Defesa",
+      "value": 15,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 22,
+    "class": "",
+    "race": "Dragão",
+    "all": false
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "skill_toque_gelido",
+  "name": "Toque Gélido",
+  "description": "Um toque que congela a alma do alvo.",
+  "battle_description": "Um frio cortante percorre o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "gelo",
+    "sombrio",
+    "morte-viva"
+  ],
+  "damage": {
+    "min": 8,
+    "max": 12,
+    "type": "Gelo",
+    "hits": 1,
+    "accuracy": 92
+  },
+  "cost": {
+    "mana": 6,
+    "stamina": 0
+  },
+  "cooldown": 1,
+  "duration": 0,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Lentidão",
+      "value": 25,
+      "duration": 2,
+      "condition": "",
+      "chance": 60
+    }
+  ],
+  "requirements": {
+    "level": 2,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  }
+}

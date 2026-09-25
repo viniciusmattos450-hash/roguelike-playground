@@ -1,0 +1,42 @@
+{
+  "id": "skill_chicote_infernal",
+  "name": "Chicote Infernal",
+  "description": "Um chicote de fogo que atinge o inimigo e o queima.",
+  "battle_description": "Um chicote de chamas corta o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fogo",
+    "chicote",
+    "demonio"
+  ],
+  "damage": {
+    "min": 35,
+    "max": 50,
+    "type": "Fogo",
+    "hits": 1,
+    "accuracy": 92
+  },
+  "cost": {
+    "mana": 12,
+    "stamina": 0
+  },
+  "cooldown": 2,
+  "duration": 0,
+  "range": 3,
+  "effects": [
+    {
+      "type": "Sangramento",
+      "value": 5,
+      "duration": 3,
+      "condition": "",
+      "chance": 60
+    }
+  ],
+  "requirements": {
+    "level": 10,
+    "class": "",
+    "race": "Demônio",
+    "all": false
+  }
+}

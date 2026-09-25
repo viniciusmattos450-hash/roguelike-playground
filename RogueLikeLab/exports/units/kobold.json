@@ -1,0 +1,51 @@
+{
+  "id": "unit_kobold",
+  "name": "Kobold",
+  "race": "Draconato",
+  "class": "Guerreiro",
+  "level": 3,
+  "description": "Pequeno reptiliano descendente distante de dragões. Trabalha em minas e emboscadas.",
+  "resources": {
+    "hp": 40,
+    "stamina": 30,
+    "mana": 10,
+    "hp_regen": 1,
+    "mana_regen": 0,
+    "stamina_regen": 3
+  },
+  "combat": {
+    "attack_physical": 10,
+    "attack_magical": 3,
+    "defense_physical": 6,
+    "defense_magical": 4,
+    "speed": 11,
+    "accuracy": 88,
+    "evasion": 12,
+    "crit_chance": 6,
+    "crit_damage": 140,
+    "block": 3,
+    "lifesteal": 0,
+    "initiative": 11
+  },
+  "attributes": {
+    "strength": 8,
+    "dexterity": 12,
+    "intelligence": 7,
+    "wisdom": 5,
+    "vitality": 8,
+    "luck": 5
+  },
+  "resistances": {
+    "fire": 15,
+    "ice": 0,
+    "lightning": 0,
+    "poison": 10,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Golpe de Espada",
+    "Bola de Fogo",
+    "Postura Defensiva"
+  ]
+}

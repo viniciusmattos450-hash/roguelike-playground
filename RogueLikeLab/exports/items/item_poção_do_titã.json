@@ -1,0 +1,45 @@
+{
+  "id": "item_pocao_do_tita",
+  "name": "Poção do Titã",
+  "description": "Um elixir lendário que concede poder colossal.",
+  "long_description": "",
+  "category": "Consumível",
+  "subcategory": "Elixir",
+  "rarity": "Épico",
+  "level_required": 20,
+  "value": 1200,
+  "weight": 0.4,
+  "stackable": true,
+  "max_stack": 3,
+  "tags": [
+    "elixir",
+    "tita",
+    "lendario"
+  ],
+  "icon": "!",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": null,
+  "consumable": {
+    "consume_type": "Duração",
+    "target": "Si Mesmo",
+    "effects": [
+      {
+        "type": "Bufo de Ataque",
+        "value": 60,
+        "duration": 5,
+        "chance": 100,
+        "trigger": "Ao usar"
+      },
+      {
+        "type": "Bufo de Defesa",
+        "value": 40,
+        "duration": 5,
+        "chance": 100,
+        "trigger": "Ao usar"
+      }
+    ]
+  }
+}

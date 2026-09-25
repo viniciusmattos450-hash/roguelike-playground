@@ -1,0 +1,34 @@
+{
+  "id": "suffix_da_fenix",
+  "name": "da Fênix",
+  "kind": "Sufixo",
+  "rarity_min": "Lendário",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Renasce das cinzas.",
+  "damage_bonus": {
+    "min": 8,
+    "max": 14,
+    "type": "Fogo"
+  },
+  "stat_modifiers": {
+    "hp": 60,
+    "vitality": 8,
+    "attack_magical": 6
+  },
+  "resistances": {
+    "fire": 50
+  },
+  "special_effects": [
+    {
+      "type": "Regeneração HP",
+      "value": 15,
+      "duration": 6,
+      "chance": 40,
+      "trigger": "Quando HP < 50%"
+    }
+  ]
+}

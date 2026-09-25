@@ -1,0 +1,51 @@
+{
+  "id": "unit_zumbi",
+  "name": "Zumbi",
+  "race": "Morto-Vivo",
+  "class": "Criatura",
+  "level": 5,
+  "description": "Cadáver reanimado que se move lentamente, mas causa feridas infecciosas.",
+  "resources": {
+    "hp": 90,
+    "stamina": 20,
+    "mana": 0,
+    "hp_regen": 0,
+    "mana_regen": 0,
+    "stamina_regen": 0
+  },
+  "combat": {
+    "attack_physical": 16,
+    "attack_magical": 0,
+    "defense_physical": 8,
+    "defense_magical": 5,
+    "speed": 5,
+    "accuracy": 70,
+    "evasion": 0,
+    "crit_chance": 0,
+    "crit_damage": 100,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 3
+  },
+  "attributes": {
+    "strength": 14,
+    "dexterity": 5,
+    "intelligence": 1,
+    "wisdom": 1,
+    "vitality": 18,
+    "luck": 1
+  },
+  "resistances": {
+    "fire": -20,
+    "ice": 30,
+    "lightning": 0,
+    "poison": 100,
+    "holy": -30,
+    "dark": 50
+  },
+  "skills": [
+    "Mordida Feroz",
+    "Praga Infecciosa",
+    "Nuvem Venenosa"
+  ]
+}

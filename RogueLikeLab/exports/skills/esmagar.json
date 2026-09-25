@@ -1,0 +1,42 @@
+{
+  "id": "skill_esmagar",
+  "name": "Esmagar",
+  "description": "Agarra o inimigo e esmaga-o com força bruta.",
+  "battle_description": "O inimigo é esmagado entre as mãos colossais!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fisico",
+    "grapple",
+    "gigante"
+  ],
+  "damage": {
+    "min": 80,
+    "max": 120,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 80
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 40
+  },
+  "cooldown": 5,
+  "duration": 0,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Atordoamento",
+      "value": 0,
+      "duration": 2,
+      "condition": "",
+      "chance": 60
+    }
+  ],
+  "requirements": {
+    "level": 18,
+    "class": "",
+    "race": "Gigante",
+    "all": false
+  }
+}

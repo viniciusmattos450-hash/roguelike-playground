@@ -1,0 +1,42 @@
+{
+  "id": "item_anel_de_ouro",
+  "name": "Anel de Ouro",
+  "description": "Um anel de ouro puro gravado com símbolos.",
+  "long_description": "",
+  "category": "Acessório",
+  "subcategory": "Anel",
+  "rarity": "Incomum",
+  "level_required": 4,
+  "value": 150,
+  "weight": 0.15,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "anel",
+    "ouro"
+  ],
+  "icon": "R",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": {
+    "slot": "Anel",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "luck": 5,
+      "wisdom": 4
+    },
+    "resistances": {
+      "holy": 5
+    },
+    "special_effects": []
+  },
+  "consumable": null
+}

@@ -1,0 +1,52 @@
+{
+  "id": "unit_beholder",
+  "name": "Beholder",
+  "race": "Aberração",
+  "class": "Olho Tirano",
+  "level": 24,
+  "description": "Uma esfera flutuante de olhos e bocas, capaz de lançar raios mágicos com cada tentáculo ocular.",
+  "resources": {
+    "hp": 600,
+    "stamina": 100,
+    "mana": 600,
+    "hp_regen": 8,
+    "mana_regen": 20,
+    "stamina_regen": 5
+  },
+  "combat": {
+    "attack_physical": 30,
+    "attack_magical": 130,
+    "defense_physical": 40,
+    "defense_magical": 60,
+    "speed": 8,
+    "accuracy": 98,
+    "evasion": 5,
+    "crit_chance": 18,
+    "crit_damage": 240,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 12
+  },
+  "attributes": {
+    "strength": 18,
+    "dexterity": 10,
+    "intelligence": 48,
+    "wisdom": 40,
+    "vitality": 36,
+    "luck": 14
+  },
+  "resistances": {
+    "fire": 30,
+    "ice": 30,
+    "lightning": 30,
+    "poison": 30,
+    "holy": 10,
+    "dark": 40
+  },
+  "skills": [
+    "Raio Ocular",
+    "Olhar Petrificante",
+    "Maldição Sombria",
+    "Raio Arcano"
+  ]
+}

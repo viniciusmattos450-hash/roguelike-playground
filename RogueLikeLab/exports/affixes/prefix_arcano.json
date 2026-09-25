@@ -1,0 +1,31 @@
+{
+  "id": "prefix_arcano",
+  "name": "Arcano",
+  "kind": "Prefixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Runas arcanas vibram na superfície.",
+  "damage_bonus": {
+    "min": 3,
+    "max": 6,
+    "type": "Arcano"
+  },
+  "stat_modifiers": {
+    "attack_magical": 6,
+    "intelligence": 3
+  },
+  "resistances": {},
+  "special_effects": [
+    {
+      "type": "Regeneração Mana",
+      "value": 2,
+      "duration": 5,
+      "chance": 30,
+      "trigger": "Ao equipar"
+    }
+  ]
+}

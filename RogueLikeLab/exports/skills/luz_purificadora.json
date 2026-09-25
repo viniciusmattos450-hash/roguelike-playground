@@ -1,0 +1,34 @@
+{
+  "id": "skill_luz_purificadora",
+  "name": "Luz Purificadora",
+  "description": "Um clarão sagrado que fere mortos-vivos e demônios.",
+  "battle_description": "Uma luz divina queima o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "sagrado",
+    "magia",
+    "purificar"
+  ],
+  "damage": {
+    "min": 25,
+    "max": 35,
+    "type": "Sagrado",
+    "hits": 1,
+    "accuracy": 95
+  },
+  "cost": {
+    "mana": 18,
+    "stamina": 0
+  },
+  "cooldown": 3,
+  "duration": 0,
+  "range": 6,
+  "effects": [],
+  "requirements": {
+    "level": 6,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

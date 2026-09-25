@@ -1,0 +1,37 @@
+{
+  "id": "item_pocao_de_mana",
+  "name": "Poção de Mana",
+  "description": "Um frasco de líquido azul cintilante.",
+  "long_description": "",
+  "category": "Consumível",
+  "subcategory": "Poção",
+  "rarity": "Comum",
+  "level_required": 1,
+  "value": 30,
+  "weight": 0.3,
+  "stackable": true,
+  "max_stack": 10,
+  "tags": [
+    "pocao",
+    "mana"
+  ],
+  "icon": "*",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": null,
+  "consumable": {
+    "consume_type": "Instantâneo",
+    "target": "Si Mesmo",
+    "effects": [
+      {
+        "type": "Regeneração Mana",
+        "value": 40,
+        "duration": 0,
+        "chance": 100,
+        "trigger": "Ao usar"
+      }
+    ]
+  }
+}

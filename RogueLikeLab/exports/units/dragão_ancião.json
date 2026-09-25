@@ -1,0 +1,56 @@
+{
+  "id": "unit_dragao_anciao",
+  "name": "Dragão Ancião",
+  "race": "Dragão",
+  "class": "Senhor dos Céus",
+  "level": 35,
+  "description": "Um dos primeiros dragões, com milênios de sabedoria e poder. Sua presença faz tremer montanhas.",
+  "resources": {
+    "hp": 2500,
+    "stamina": 500,
+    "mana": 900,
+    "hp_regen": 25,
+    "mana_regen": 20,
+    "stamina_regen": 15
+  },
+  "combat": {
+    "attack_physical": 220,
+    "attack_magical": 180,
+    "defense_physical": 90,
+    "defense_magical": 85,
+    "speed": 22,
+    "accuracy": 98,
+    "evasion": 15,
+    "crit_chance": 30,
+    "crit_damage": 280,
+    "block": 25,
+    "lifesteal": 0,
+    "initiative": 22
+  },
+  "attributes": {
+    "strength": 80,
+    "dexterity": 30,
+    "intelligence": 55,
+    "wisdom": 50,
+    "vitality": 90,
+    "luck": 20
+  },
+  "resistances": {
+    "fire": 100,
+    "ice": 50,
+    "lightning": 50,
+    "poison": 60,
+    "holy": 30,
+    "dark": 40
+  },
+  "skills": [
+    "Bafo de Fogo",
+    "Tempestade de Fogo",
+    "Voo Rasante",
+    "Presença Aterrorizante",
+    "Bafo Glacial",
+    "Raio Arcano",
+    "Onda de Morte",
+    "Maldição Sombria"
+  ]
+}

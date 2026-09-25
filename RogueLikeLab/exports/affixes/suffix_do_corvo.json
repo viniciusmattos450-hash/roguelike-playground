@@ -1,0 +1,26 @@
+{
+  "id": "suffix_do_corvo",
+  "name": "do Corvo",
+  "kind": "Sufixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Arma",
+    "Acessório"
+  ],
+  "description": "Símbolo do mensageiro sombrio.",
+  "damage_bonus": {
+    "min": 3,
+    "max": 6,
+    "type": "Sombrio"
+  },
+  "stat_modifiers": {
+    "intelligence": 5,
+    "evasion": 6,
+    "crit_chance": 4
+  },
+  "resistances": {
+    "dark": 15,
+    "holy": -10
+  },
+  "special_effects": []
+}

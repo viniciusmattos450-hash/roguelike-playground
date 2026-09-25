@@ -1,0 +1,56 @@
+{
+  "id": "item_coracao_do_dragao",
+  "name": "Coração do Dragão",
+  "description": "Um coração de dragão petrificado que ainda pulsa.",
+  "long_description": "",
+  "category": "Acessório",
+  "subcategory": "Talismã",
+  "rarity": "Lendário",
+  "level_required": 28,
+  "value": 10000,
+  "weight": 0.8,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "dragao",
+    "coracao",
+    "lendario"
+  ],
+  "icon": "T",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": {
+    "slot": "Amuleto",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 8,
+    "stat_modifiers": {
+      "hp": 150,
+      "strength": 12,
+      "vitality": 12,
+      "attack_physical": 10,
+      "attack_magical": 10
+    },
+    "resistances": {
+      "fire": 70,
+      "ice": 30,
+      "lightning": 30
+    },
+    "special_effects": [
+      {
+        "type": "Regeneração HP",
+        "value": 15,
+        "duration": 6,
+        "chance": 60,
+        "trigger": "Quando HP < 50%"
+      }
+    ]
+  },
+  "consumable": null
+}

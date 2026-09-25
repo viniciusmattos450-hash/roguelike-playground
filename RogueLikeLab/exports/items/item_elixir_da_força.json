@@ -1,0 +1,37 @@
+{
+  "id": "item_elixir_da_forca",
+  "name": "Elixir da Força",
+  "description": "Um elixir que fortalece os músculos.",
+  "long_description": "",
+  "category": "Consumível",
+  "subcategory": "Elixir",
+  "rarity": "Raro",
+  "level_required": 5,
+  "value": 250,
+  "weight": 0.3,
+  "stackable": true,
+  "max_stack": 5,
+  "tags": [
+    "elixir",
+    "forca"
+  ],
+  "icon": "!",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": null,
+  "consumable": {
+    "consume_type": "Duração",
+    "target": "Si Mesmo",
+    "effects": [
+      {
+        "type": "Bufo de Ataque",
+        "value": 30,
+        "duration": 5,
+        "chance": 100,
+        "trigger": "Ao usar"
+      }
+    ]
+  }
+}

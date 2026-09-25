@@ -1,0 +1,42 @@
+{
+  "id": "skill_mordida_venenosa",
+  "name": "Mordida Venenosa",
+  "description": "Presas que injetam veneno no alvo.",
+  "battle_description": "O veneno corre pelas veias do inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "veneno",
+    "mordida",
+    "animal"
+  ],
+  "damage": {
+    "min": 3,
+    "max": 6,
+    "type": "Veneno",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 6
+  },
+  "cooldown": 1,
+  "duration": 0,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Veneno",
+      "value": 3,
+      "duration": 5,
+      "condition": "",
+      "chance": 60
+    }
+  ],
+  "requirements": {
+    "level": 1,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

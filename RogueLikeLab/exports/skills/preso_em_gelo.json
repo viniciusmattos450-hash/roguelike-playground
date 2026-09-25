@@ -1,0 +1,49 @@
+{
+  "id": "skill_preso_em_gelo",
+  "name": "Preso em Gelo",
+  "description": "Envolve o alvo em gelo sólido, impedindo seus movimentos.",
+  "battle_description": "O inimigo fica congelado no lugar!",
+  "type": "Debuff",
+  "target": "Inimigo Único",
+  "tags": [
+    "gelo",
+    "congelamento",
+    "controle"
+  ],
+  "damage": {
+    "min": 15,
+    "max": 20,
+    "type": "Gelo",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 18,
+    "stamina": 0
+  },
+  "cooldown": 4,
+  "duration": 2,
+  "range": 5,
+  "effects": [
+    {
+      "type": "Congelamento",
+      "value": 0,
+      "duration": 2,
+      "condition": "",
+      "chance": 80
+    },
+    {
+      "type": "Paralisia",
+      "value": 0,
+      "duration": 2,
+      "condition": "",
+      "chance": 60
+    }
+  ],
+  "requirements": {
+    "level": 8,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

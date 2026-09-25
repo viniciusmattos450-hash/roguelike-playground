@@ -1,0 +1,52 @@
+{
+  "id": "unit_golem_de_pedra",
+  "name": "Golem de Pedra",
+  "race": "Construto",
+  "class": "Guardião",
+  "level": 13,
+  "description": "Uma estátua animada por magia antiga, criada para proteger templos e tumbas.",
+  "resources": {
+    "hp": 420,
+    "stamina": 200,
+    "mana": 40,
+    "hp_regen": 2,
+    "mana_regen": 0,
+    "stamina_regen": 5
+  },
+  "combat": {
+    "attack_physical": 48,
+    "attack_magical": 0,
+    "defense_physical": 45,
+    "defense_magical": 35,
+    "speed": 5,
+    "accuracy": 80,
+    "evasion": 0,
+    "crit_chance": 5,
+    "crit_damage": 150,
+    "block": 30,
+    "lifesteal": 0,
+    "initiative": 4
+  },
+  "attributes": {
+    "strength": 35,
+    "dexterity": 5,
+    "intelligence": 3,
+    "wisdom": 8,
+    "vitality": 40,
+    "luck": 1
+  },
+  "resistances": {
+    "fire": 20,
+    "ice": 20,
+    "lightning": -15,
+    "poison": 100,
+    "holy": 0,
+    "dark": 10
+  },
+  "skills": [
+    "Pele de Pedra",
+    "Onda de Choque",
+    "Soco Esmagador",
+    "Pisotear"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "skill_espada_cortante",
+  "name": "Espada Cortante",
+  "description": "Um corte horizontal que atinge vários inimigos.",
+  "battle_description": "Um arco de aço atinge todos à frente!",
+  "type": "Ataque Múltiplo",
+  "target": "Cone",
+  "tags": [
+    "fisico",
+    "espada",
+    "area",
+    "cone"
+  ],
+  "damage": {
+    "min": 8,
+    "max": 14,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 85
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 15
+  },
+  "cooldown": 3,
+  "duration": 0,
+  "range": 2,
+  "effects": [
+    {
+      "type": "Sangramento",
+      "value": 3,
+      "duration": 3,
+      "condition": "",
+      "chance": 40
+    }
+  ],
+  "requirements": {
+    "level": 4,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

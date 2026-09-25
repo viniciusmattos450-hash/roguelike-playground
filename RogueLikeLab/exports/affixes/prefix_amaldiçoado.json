@@ -1,0 +1,35 @@
+{
+  "id": "prefix_amaldicoado",
+  "name": "Amaldiçoado",
+  "kind": "Prefixo",
+  "rarity_min": "Épico",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Poder imenso, preço terrível.",
+  "damage_bonus": {
+    "min": 6,
+    "max": 10,
+    "type": "Sombrio"
+  },
+  "stat_modifiers": {
+    "attack_physical": 8,
+    "attack_magical": 8,
+    "hp": -30
+  },
+  "resistances": {
+    "holy": -30,
+    "dark": 30
+  },
+  "special_effects": [
+    {
+      "type": "Maldição",
+      "value": 5,
+      "duration": 3,
+      "chance": 25,
+      "trigger": "Ao ser acertado"
+    }
+  ]
+}

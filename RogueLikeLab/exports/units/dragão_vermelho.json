@@ -1,0 +1,52 @@
+{
+  "id": "unit_dragao_vermelho",
+  "name": "Dragão Vermelho",
+  "race": "Dragão",
+  "class": "Tirano Alado",
+  "level": 28,
+  "description": "Um dragão cuspidor de fogo, orgulhoso e ganancioso. Guardião de tesouros incontáveis.",
+  "resources": {
+    "hp": 1200,
+    "stamina": 300,
+    "mana": 400,
+    "hp_regen": 15,
+    "mana_regen": 10,
+    "stamina_regen": 10
+  },
+  "combat": {
+    "attack_physical": 140,
+    "attack_magical": 100,
+    "defense_physical": 60,
+    "defense_magical": 55,
+    "speed": 18,
+    "accuracy": 95,
+    "evasion": 10,
+    "crit_chance": 25,
+    "crit_damage": 250,
+    "block": 15,
+    "lifesteal": 0,
+    "initiative": 18
+  },
+  "attributes": {
+    "strength": 55,
+    "dexterity": 22,
+    "intelligence": 30,
+    "wisdom": 26,
+    "vitality": 60,
+    "luck": 10
+  },
+  "resistances": {
+    "fire": 100,
+    "ice": -30,
+    "lightning": 20,
+    "poison": 40,
+    "holy": 0,
+    "dark": 20
+  },
+  "skills": [
+    "Bafo de Fogo",
+    "Tempestade de Fogo",
+    "Voo Rasante",
+    "Presença Aterrorizante"
+  ]
+}

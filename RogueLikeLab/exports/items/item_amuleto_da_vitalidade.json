@@ -1,0 +1,48 @@
+{
+  "id": "item_amuleto_da_vitalidade",
+  "name": "Amuleto da Vitalidade",
+  "description": "Pulsa com energia vital.",
+  "long_description": "",
+  "category": "Acessório",
+  "subcategory": "Amuleto",
+  "rarity": "Incomum",
+  "level_required": 5,
+  "value": 220,
+  "weight": 0.2,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "amuleto",
+    "vitalidade"
+  ],
+  "icon": "A",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": {
+    "slot": "Amuleto",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "hp": 40,
+      "vitality": 5
+    },
+    "resistances": {},
+    "special_effects": [
+      {
+        "type": "Regeneração HP",
+        "value": 3,
+        "duration": 5,
+        "chance": 30,
+        "trigger": "Ao equipar"
+      }
+    ]
+  },
+  "consumable": null
+}

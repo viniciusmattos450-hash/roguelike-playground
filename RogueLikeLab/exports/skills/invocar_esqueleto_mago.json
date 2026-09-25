@@ -1,0 +1,40 @@
+{
+  "id": "skill_invocar_esqueleto_mago",
+  "name": "Invocar Esqueleto Mago",
+  "description": "Invoca um esqueleto conjurador capaz de lançar magias arcanas.",
+  "battle_description": "Ossos se erguem envoltos em energia arcana!",
+  "type": "Invocação",
+  "target": "Si Mesmo",
+  "tags": [
+    "invocacao",
+    "morte-viva",
+    "skeleton",
+    "magia"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 45,
+    "stamina": 0
+  },
+  "cooldown": 10,
+  "duration": 6,
+  "range": 2,
+  "effects": [],
+  "requirements": {
+    "level": 16,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  },
+  "summon": {
+    "unit_name": "Esqueleto Mago",
+    "count": 1,
+    "duration": 6
+  }
+}

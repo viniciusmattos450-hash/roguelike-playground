@@ -1,0 +1,51 @@
+{
+  "id": "unit_sombra_menor",
+  "name": "Sombra Menor",
+  "race": "Morto-Vivo",
+  "class": "Espírito",
+  "level": 8,
+  "description": "Um fragmento de alma penada, feito de trevas. Difícil de acertar.",
+  "resources": {
+    "hp": 60,
+    "stamina": 40,
+    "mana": 80,
+    "hp_regen": 2,
+    "mana_regen": 4,
+    "stamina_regen": 4
+  },
+  "combat": {
+    "attack_physical": 14,
+    "attack_magical": 18,
+    "defense_physical": 8,
+    "defense_magical": 16,
+    "speed": 14,
+    "accuracy": 94,
+    "evasion": 28,
+    "crit_chance": 12,
+    "crit_damage": 180,
+    "block": 0,
+    "lifesteal": 15,
+    "initiative": 15
+  },
+  "attributes": {
+    "strength": 10,
+    "dexterity": 16,
+    "intelligence": 14,
+    "wisdom": 12,
+    "vitality": 14,
+    "luck": 8
+  },
+  "resistances": {
+    "fire": -15,
+    "ice": 20,
+    "lightning": 0,
+    "poison": 100,
+    "holy": -40,
+    "dark": 80
+  },
+  "skills": [
+    "Golpe Espectral",
+    "Toque Gélido",
+    "Drenar Vida"
+  ]
+}

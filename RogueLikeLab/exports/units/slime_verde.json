@@ -1,0 +1,51 @@
+{
+  "id": "unit_slime_verde",
+  "name": "Slime Verde",
+  "race": "Amorfo",
+  "class": "Criatura",
+  "level": 1,
+  "description": "Uma massa gelatinosa e ácida que se move lentamente. Divide-se quando ferido.",
+  "resources": {
+    "hp": 25,
+    "stamina": 5,
+    "mana": 0,
+    "hp_regen": 2,
+    "mana_regen": 0,
+    "stamina_regen": 0
+  },
+  "combat": {
+    "attack_physical": 4,
+    "attack_magical": 0,
+    "defense_physical": 4,
+    "defense_magical": 4,
+    "speed": 6,
+    "accuracy": 75,
+    "evasion": 2,
+    "crit_chance": 0,
+    "crit_damage": 100,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 5
+  },
+  "attributes": {
+    "strength": 5,
+    "dexterity": 3,
+    "intelligence": 1,
+    "wisdom": 1,
+    "vitality": 8,
+    "luck": 1
+  },
+  "resistances": {
+    "fire": -25,
+    "ice": 10,
+    "lightning": -10,
+    "poison": 50,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Cuspe Ácido",
+    "Praga Infecciosa",
+    "Explosão Ácida"
+  ]
+}

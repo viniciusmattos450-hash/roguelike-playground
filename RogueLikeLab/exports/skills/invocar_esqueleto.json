@@ -1,0 +1,39 @@
+{
+  "id": "skill_invocar_esqueleto",
+  "name": "Invocar Esqueleto",
+  "description": "Invoca um esqueleto guerreiro para lutar ao seu lado.",
+  "battle_description": "Ossos se erguem do chão e formam um aliado!",
+  "type": "Invocação",
+  "target": "Si Mesmo",
+  "tags": [
+    "invocacao",
+    "morte-viva",
+    "skeleton"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 25,
+    "stamina": 0
+  },
+  "cooldown": 8,
+  "duration": 5,
+  "range": 2,
+  "effects": [],
+  "requirements": {
+    "level": 12,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  },
+  "summon": {
+    "unit_name": "Esqueleto Guerreiro",
+    "count": 1,
+    "duration": 5
+  }
+}

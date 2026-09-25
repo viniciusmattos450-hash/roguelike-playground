@@ -1,0 +1,56 @@
+{
+  "id": "unit_lich",
+  "name": "Lich",
+  "race": "Morto-Vivo",
+  "class": "Arquimago",
+  "level": 20,
+  "description": "Um mago que transcendeu a morte ao selar sua alma em uma filactéria. Domina magias arcanas supremas.",
+  "resources": {
+    "hp": 350,
+    "stamina": 80,
+    "mana": 500,
+    "hp_regen": 4,
+    "mana_regen": 25,
+    "stamina_regen": 4
+  },
+  "combat": {
+    "attack_physical": 25,
+    "attack_magical": 120,
+    "defense_physical": 20,
+    "defense_magical": 50,
+    "speed": 14,
+    "accuracy": 96,
+    "evasion": 12,
+    "crit_chance": 22,
+    "crit_damage": 240,
+    "block": 0,
+    "lifesteal": 15,
+    "initiative": 16
+  },
+  "attributes": {
+    "strength": 12,
+    "dexterity": 14,
+    "intelligence": 45,
+    "wisdom": 35,
+    "vitality": 24,
+    "luck": 10
+  },
+  "resistances": {
+    "fire": 15,
+    "ice": 30,
+    "lightning": 20,
+    "poison": 100,
+    "holy": -35,
+    "dark": 80
+  },
+  "skills": [
+    "Onda de Morte",
+    "Maldição Sombria",
+    "Invocar Esqueleto",
+    "Invocar Esqueleto Arqueiro",
+    "Invocar Esqueleto Mago",
+    "Invocar Sombra",
+    "Praga Infecciosa",
+    "Raio Arcano"
+  ]
+}

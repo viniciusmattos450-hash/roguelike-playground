@@ -1,0 +1,21 @@
+{
+  "id": "suffix_da_sorte",
+  "name": "da Sorte",
+  "kind": "Sufixo",
+  "rarity_min": "Incomum",
+  "applies_to": [
+    "Acessório"
+  ],
+  "description": "A sorte sorri para o portador.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "luck": 10,
+    "crit_chance": 5
+  },
+  "resistances": {},
+  "special_effects": []
+}

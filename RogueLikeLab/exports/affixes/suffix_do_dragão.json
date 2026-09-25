@@ -1,0 +1,34 @@
+{
+  "id": "suffix_do_dragao",
+  "name": "do Dragão",
+  "kind": "Sufixo",
+  "rarity_min": "Épico",
+  "applies_to": [
+    "Arma",
+    "Armadura"
+  ],
+  "description": "Forjado com escamas de dragão.",
+  "damage_bonus": {
+    "min": 5,
+    "max": 9,
+    "type": "Fogo"
+  },
+  "stat_modifiers": {
+    "strength": 6,
+    "vitality": 5,
+    "attack_physical": 5
+  },
+  "resistances": {
+    "fire": 30,
+    "ice": -10
+  },
+  "special_effects": [
+    {
+      "type": "Queimadura",
+      "value": 5,
+      "duration": 3,
+      "chance": 35,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "skill_teia_pegajosa",
+  "name": "Teia Pegajosa",
+  "description": "Dispara teias que prendem o alvo no lugar.",
+  "battle_description": "O inimigo fica preso na teia!",
+  "type": "Debuff",
+  "target": "Inimigo Único",
+  "tags": [
+    "teia",
+    "controle",
+    "aranha"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 8
+  },
+  "cooldown": 3,
+  "duration": 2,
+  "range": 4,
+  "effects": [
+    {
+      "type": "Lentidão",
+      "value": 50,
+      "duration": 2,
+      "condition": "",
+      "chance": 100
+    },
+    {
+      "type": "Paralisia",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 30
+    }
+  ],
+  "requirements": {
+    "level": 3,
+    "class": "",
+    "race": "Aracnídeo",
+    "all": false
+  }
+}

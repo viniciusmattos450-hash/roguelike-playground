@@ -1,0 +1,51 @@
+{
+  "id": "unit_esqueleto_guerreiro",
+  "name": "Esqueleto Guerreiro",
+  "race": "Morto-Vivo",
+  "class": "Guerreiro",
+  "level": 4,
+  "description": "Ossos animados por magia profana, empunhando uma espada enferrujada. Não sente dor.",
+  "resources": {
+    "hp": 55,
+    "stamina": 30,
+    "mana": 0,
+    "hp_regen": 0,
+    "mana_regen": 0,
+    "stamina_regen": 2
+  },
+  "combat": {
+    "attack_physical": 15,
+    "attack_magical": 0,
+    "defense_physical": 8,
+    "defense_magical": 3,
+    "speed": 10,
+    "accuracy": 85,
+    "evasion": 5,
+    "crit_chance": 5,
+    "crit_damage": 130,
+    "block": 10,
+    "lifesteal": 0,
+    "initiative": 8
+  },
+  "attributes": {
+    "strength": 12,
+    "dexterity": 10,
+    "intelligence": 3,
+    "wisdom": 3,
+    "vitality": 12,
+    "luck": 2
+  },
+  "resistances": {
+    "fire": -10,
+    "ice": 25,
+    "lightning": 0,
+    "poison": 100,
+    "holy": -25,
+    "dark": 50
+  },
+  "skills": [
+    "Golpe de Espada",
+    "Golpe Espectral",
+    "Toque Gélido"
+  ]
+}

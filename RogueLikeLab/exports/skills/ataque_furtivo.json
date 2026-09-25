@@ -1,0 +1,49 @@
+{
+  "id": "skill_ataque_furtivo",
+  "name": "Ataque Furtivo",
+  "description": "Um golpe preciso nas costas ou pontos vitais do inimigo.",
+  "battle_description": "A adaga encontra a brecha na armadura!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fisico",
+    "furtivo",
+    "critico"
+  ],
+  "damage": {
+    "min": 12,
+    "max": 20,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 95
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 10
+  },
+  "cooldown": 2,
+  "duration": 0,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Sangramento",
+      "value": 4,
+      "duration": 3,
+      "condition": "",
+      "chance": 50
+    },
+    {
+      "type": "Debuff de Defesa",
+      "value": 15,
+      "duration": 2,
+      "condition": "",
+      "chance": 40
+    }
+  ],
+  "requirements": {
+    "level": 3,
+    "class": "Ladino",
+    "race": "",
+    "all": false
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "skill_raio_arcano",
+  "name": "Raio Arcano",
+  "description": "Um feixe concentrado de energia arcana pura.",
+  "battle_description": "Um raio arcano perfura o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "arcano",
+    "magia",
+    "preciso"
+  ],
+  "damage": {
+    "min": 35,
+    "max": 50,
+    "type": "Arcano",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 30,
+    "stamina": 0
+  },
+  "cooldown": 3,
+  "duration": 0,
+  "range": 8,
+  "effects": [],
+  "requirements": {
+    "level": 9,
+    "class": "Mago",
+    "race": "",
+    "all": false
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "item_armadura_de_couro",
+  "name": "Armadura de Couro",
+  "description": "Uma proteção simples e leve.",
+  "long_description": "",
+  "category": "Armadura",
+  "subcategory": "Peitoral",
+  "rarity": "Comum",
+  "level_required": 1,
+  "value": 25,
+  "weight": 3.0,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "couro",
+    "leve"
+  ],
+  "icon": "P",
+  "grid_size": [
+    2,
+    3
+  ],
+  "equipment": {
+    "slot": "Peito",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 4,
+    "stat_modifiers": {
+      "defense_physical": 3,
+      "evasion": 2
+    },
+    "resistances": {},
+    "special_effects": []
+  },
+  "consumable": null
+}

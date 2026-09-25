@@ -1,0 +1,52 @@
+{
+  "id": "unit_wyvern",
+  "name": "Wyvern",
+  "race": "Dragão",
+  "class": "Fera Alada",
+  "level": 16,
+  "description": "Um dragão menor alado com cauda venenosa. Mais selvagem que inteligente.",
+  "resources": {
+    "hp": 480,
+    "stamina": 150,
+    "mana": 80,
+    "hp_regen": 6,
+    "mana_regen": 3,
+    "stamina_regen": 8
+  },
+  "combat": {
+    "attack_physical": 70,
+    "attack_magical": 30,
+    "defense_physical": 28,
+    "defense_magical": 25,
+    "speed": 22,
+    "accuracy": 92,
+    "evasion": 20,
+    "crit_chance": 20,
+    "crit_damage": 220,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 20
+  },
+  "attributes": {
+    "strength": 36,
+    "dexterity": 24,
+    "intelligence": 8,
+    "wisdom": 10,
+    "vitality": 34,
+    "luck": 8
+  },
+  "resistances": {
+    "fire": 20,
+    "ice": -10,
+    "lightning": 10,
+    "poison": 50,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Cauda Venenosa",
+    "Voo Rasante",
+    "Bafo de Fogo",
+    "Mordida Venenosa"
+  ]
+}

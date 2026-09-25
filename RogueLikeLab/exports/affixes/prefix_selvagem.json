@@ -1,0 +1,32 @@
+{
+  "id": "prefix_selvagem",
+  "name": "Selvagem",
+  "kind": "Prefixo",
+  "rarity_min": "Incomum",
+  "applies_to": [
+    "Arma",
+    "Armadura"
+  ],
+  "description": "Feito com materiais brutos da natureza.",
+  "damage_bonus": {
+    "min": 2,
+    "max": 4,
+    "type": "Físico"
+  },
+  "stat_modifiers": {
+    "strength": 3,
+    "dexterity": 3
+  },
+  "resistances": {
+    "poison": 10
+  },
+  "special_effects": [
+    {
+      "type": "Sangramento",
+      "value": 2,
+      "duration": 2,
+      "chance": 20,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

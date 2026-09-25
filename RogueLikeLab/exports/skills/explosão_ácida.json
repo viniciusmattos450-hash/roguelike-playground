@@ -1,0 +1,42 @@
+{
+  "id": "skill_explosao_acida",
+  "name": "Explosão Ácida",
+  "description": "Uma explosão de ácido que atinge todos os inimigos próximos.",
+  "battle_description": "Uma onda de ácido queima os inimigos!",
+  "type": "Ataque Múltiplo",
+  "target": "Todos os Inimigos",
+  "tags": [
+    "acido",
+    "area",
+    "explosao"
+  ],
+  "damage": {
+    "min": 18,
+    "max": 28,
+    "type": "Ácido",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 25,
+    "stamina": 0
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 4,
+  "effects": [
+    {
+      "type": "Debuff de Defesa",
+      "value": 25,
+      "duration": 3,
+      "condition": "",
+      "chance": 70
+    }
+  ],
+  "requirements": {
+    "level": 6,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

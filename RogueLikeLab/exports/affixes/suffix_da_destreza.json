@@ -1,0 +1,24 @@
+{
+  "id": "suffix_da_destreza",
+  "name": "da Destreza",
+  "kind": "Sufixo",
+  "rarity_min": "Comum",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Movimentos mais ágeis.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "dexterity": 5,
+    "evasion": 3,
+    "initiative": 3
+  },
+  "resistances": {},
+  "special_effects": []
+}

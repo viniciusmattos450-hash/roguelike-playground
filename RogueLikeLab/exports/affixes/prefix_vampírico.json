@@ -1,0 +1,32 @@
+{
+  "id": "prefix_vampirico",
+  "name": "Vampírico",
+  "kind": "Prefixo",
+  "rarity_min": "Épico",
+  "applies_to": [
+    "Arma"
+  ],
+  "description": "Bebe a vida de quem fere.",
+  "damage_bonus": {
+    "min": 4,
+    "max": 7,
+    "type": "Sombrio"
+  },
+  "stat_modifiers": {
+    "lifesteal": 15,
+    "attack_physical": 3
+  },
+  "resistances": {
+    "dark": 15,
+    "holy": -15
+  },
+  "special_effects": [
+    {
+      "type": "Roubo de Vida",
+      "value": 10,
+      "duration": 0,
+      "chance": 50,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

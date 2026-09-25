@@ -1,0 +1,52 @@
+{
+  "id": "unit_troll",
+  "name": "Troll",
+  "race": "Gigante",
+  "class": "Predador",
+  "level": 12,
+  "description": "Uma criatura monstruosa de pele grossa que se regenera rapidamente dos ferimentos.",
+  "resources": {
+    "hp": 340,
+    "stamina": 110,
+    "mana": 0,
+    "hp_regen": 20,
+    "mana_regen": 0,
+    "stamina_regen": 8
+  },
+  "combat": {
+    "attack_physical": 52,
+    "attack_magical": 0,
+    "defense_physical": 22,
+    "defense_magical": 12,
+    "speed": 11,
+    "accuracy": 82,
+    "evasion": 5,
+    "crit_chance": 15,
+    "crit_damage": 210,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 10
+  },
+  "attributes": {
+    "strength": 34,
+    "dexterity": 12,
+    "intelligence": 5,
+    "wisdom": 6,
+    "vitality": 32,
+    "luck": 4
+  },
+  "resistances": {
+    "fire": -25,
+    "ice": 10,
+    "lightning": 0,
+    "poison": 30,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Regeneração Troll",
+    "Soco Esmagador",
+    "Onda de Choque",
+    "Fúria Sangrenta"
+  ]
+}

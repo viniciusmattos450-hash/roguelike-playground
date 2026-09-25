@@ -1,0 +1,42 @@
+{
+  "id": "skill_bola_de_fogo",
+  "name": "Bola de Fogo",
+  "description": "Uma esfera incandescente que explode no alvo.",
+  "battle_description": "Uma bola de fogo explode no inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fogo",
+    "magia",
+    "elemental"
+  ],
+  "damage": {
+    "min": 15,
+    "max": 25,
+    "type": "Fogo",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 15,
+    "stamina": 0
+  },
+  "cooldown": 2,
+  "duration": 0,
+  "range": 6,
+  "effects": [
+    {
+      "type": "Queimadura",
+      "value": 4,
+      "duration": 3,
+      "condition": "",
+      "chance": 50
+    }
+  ],
+  "requirements": {
+    "level": 3,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

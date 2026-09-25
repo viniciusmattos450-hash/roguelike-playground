@@ -1,0 +1,42 @@
+{
+  "id": "skill_raio",
+  "name": "Raio",
+  "description": "Um relâmpago desce dos céus sobre o alvo.",
+  "battle_description": "Um raio atinge o inimigo com estrondo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "eletrico",
+    "magia",
+    "elemental"
+  ],
+  "damage": {
+    "min": 16,
+    "max": 24,
+    "type": "Elétrico",
+    "hits": 1,
+    "accuracy": 88
+  },
+  "cost": {
+    "mana": 14,
+    "stamina": 0
+  },
+  "cooldown": 2,
+  "duration": 0,
+  "range": 6,
+  "effects": [
+    {
+      "type": "Paralisia",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 20
+    }
+  ],
+  "requirements": {
+    "level": 4,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "skill_onda_sonica",
+  "name": "Onda Sônica",
+  "description": "Um grito agudo que atordoa inimigos à distância.",
+  "battle_description": "Um grito ensurdecedor atordoa os inimigos!",
+  "type": "Ataque Múltiplo",
+  "target": "Cone",
+  "tags": [
+    "sonoro",
+    "atordoamento",
+    "area"
+  ],
+  "damage": {
+    "min": 15,
+    "max": 22,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 90
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 18
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 3,
+  "effects": [
+    {
+      "type": "Atordoamento",
+      "value": 0,
+      "duration": 2,
+      "condition": "",
+      "chance": 50
+    }
+  ],
+  "requirements": {
+    "level": 6,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

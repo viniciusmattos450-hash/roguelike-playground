@@ -1,0 +1,51 @@
+{
+  "id": "unit_esqueleto_mago",
+  "name": "Esqueleto Mago",
+  "race": "Morto-Vivo",
+  "class": "Mago",
+  "level": 6,
+  "description": "Restos de um conjurador, ainda capaz de lançar magias arcanas.",
+  "resources": {
+    "hp": 40,
+    "stamina": 20,
+    "mana": 120,
+    "hp_regen": 0,
+    "mana_regen": 4,
+    "stamina_regen": 2
+  },
+  "combat": {
+    "attack_physical": 5,
+    "attack_magical": 28,
+    "defense_physical": 4,
+    "defense_magical": 14,
+    "speed": 10,
+    "accuracy": 90,
+    "evasion": 6,
+    "crit_chance": 10,
+    "crit_damage": 170,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 9
+  },
+  "attributes": {
+    "strength": 6,
+    "dexterity": 8,
+    "intelligence": 20,
+    "wisdom": 12,
+    "vitality": 8,
+    "luck": 5
+  },
+  "resistances": {
+    "fire": -10,
+    "ice": 25,
+    "lightning": 0,
+    "poison": 100,
+    "holy": -25,
+    "dark": 60
+  },
+  "skills": [
+    "Mísseis Mágicos",
+    "Toque Gélido",
+    "Raio Arcano"
+  ]
+}

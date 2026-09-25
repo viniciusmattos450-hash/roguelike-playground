@@ -1,0 +1,50 @@
+{
+  "id": "item_machado_de_guerra_orc",
+  "name": "Machado de Guerra Orc",
+  "description": "Um machado pesado e brutal, forjado em ferro negro.",
+  "long_description": "Os orcs forjam estas armas em fornos de carvão negro, temperadas com sangue de inimigos caídos.",
+  "category": "Arma",
+  "subcategory": "Machado",
+  "rarity": "Raro",
+  "level_required": 7,
+  "value": 320,
+  "weight": 6.5,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "machado",
+    "orc",
+    "brutal"
+  ],
+  "icon": "A",
+  "grid_size": [
+    2,
+    3
+  ],
+  "equipment": {
+    "slot": "Arma",
+    "two_handed": true,
+    "damage": {
+      "min": 16,
+      "max": 24,
+      "type": "Físico"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "attack_physical": 10,
+      "strength": 5,
+      "crit_damage": 20
+    },
+    "resistances": {},
+    "special_effects": [
+      {
+        "type": "Sangramento",
+        "value": 5,
+        "duration": 3,
+        "chance": 40,
+        "trigger": "Ao acertar"
+      }
+    ]
+  },
+  "consumable": null
+}

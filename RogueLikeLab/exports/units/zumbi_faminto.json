@@ -1,0 +1,50 @@
+{
+  "id": "unit_zumbi_faminto",
+  "name": "Zumbi Faminto",
+  "race": "Morto-Vivo",
+  "class": "Criatura",
+  "level": 3,
+  "description": "Zumbi mais rápido e agressivo que o comum, movido por fome eterna.",
+  "resources": {
+    "hp": 55,
+    "stamina": 25,
+    "mana": 0,
+    "hp_regen": 0,
+    "mana_regen": 0,
+    "stamina_regen": 2
+  },
+  "combat": {
+    "attack_physical": 12,
+    "attack_magical": 0,
+    "defense_physical": 5,
+    "defense_magical": 3,
+    "speed": 8,
+    "accuracy": 75,
+    "evasion": 2,
+    "crit_chance": 3,
+    "crit_damage": 120,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 6
+  },
+  "attributes": {
+    "strength": 12,
+    "dexterity": 6,
+    "intelligence": 1,
+    "wisdom": 1,
+    "vitality": 14,
+    "luck": 2
+  },
+  "resistances": {
+    "fire": -20,
+    "ice": 30,
+    "lightning": 0,
+    "poison": 100,
+    "holy": -30,
+    "dark": 50
+  },
+  "skills": [
+    "Mordida Feroz",
+    "Fúria Sangrenta"
+  ]
+}

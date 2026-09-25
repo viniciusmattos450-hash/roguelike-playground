@@ -1,0 +1,42 @@
+{
+  "id": "skill_soco_esmagador",
+  "name": "Soco Esmagador",
+  "description": "Um soco poderoso que pode atordoar o alvo.",
+  "battle_description": "Um punho gigantesco esmaga o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fisico",
+    "bruto",
+    "soco"
+  ],
+  "damage": {
+    "min": 18,
+    "max": 26,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 85
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 12
+  },
+  "cooldown": 3,
+  "duration": 0,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Atordoamento",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 40
+    }
+  ],
+  "requirements": {
+    "level": 4,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

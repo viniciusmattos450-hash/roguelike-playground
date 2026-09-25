@@ -1,0 +1,24 @@
+{
+  "id": "suffix_da_sabedoria",
+  "name": "da Sabedoria",
+  "kind": "Sufixo",
+  "rarity_min": "Incomum",
+  "applies_to": [
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Concede clareza e fé.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "wisdom": 6,
+    "defense_magical": 4
+  },
+  "resistances": {
+    "holy": 10
+  },
+  "special_effects": []
+}

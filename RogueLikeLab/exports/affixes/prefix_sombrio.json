@@ -1,0 +1,34 @@
+{
+  "id": "prefix_sombrio",
+  "name": "Sombrio",
+  "kind": "Prefixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Absorve a luz ao redor.",
+  "damage_bonus": {
+    "min": 4,
+    "max": 7,
+    "type": "Sombrio"
+  },
+  "stat_modifiers": {
+    "attack_magical": 4,
+    "evasion": 5
+  },
+  "resistances": {
+    "dark": 20,
+    "holy": -10
+  },
+  "special_effects": [
+    {
+      "type": "Debuff de Ataque",
+      "value": 10,
+      "duration": 2,
+      "chance": 30,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

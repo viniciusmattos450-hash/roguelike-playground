@@ -1,0 +1,52 @@
+{
+  "id": "unit_lobo_selvagem",
+  "name": "Lobo Selvagem",
+  "race": "Animal",
+  "class": "Fera",
+  "level": 3,
+  "description": "Predador veloz que caça em matilha. Morde a jugular e derruba a presa.",
+  "resources": {
+    "hp": 45,
+    "stamina": 40,
+    "mana": 0,
+    "hp_regen": 1,
+    "mana_regen": 0,
+    "stamina_regen": 5
+  },
+  "combat": {
+    "attack_physical": 14,
+    "attack_magical": 0,
+    "defense_physical": 5,
+    "defense_magical": 3,
+    "speed": 18,
+    "accuracy": 92,
+    "evasion": 18,
+    "crit_chance": 10,
+    "crit_damage": 160,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 18
+  },
+  "attributes": {
+    "strength": 12,
+    "dexterity": 16,
+    "intelligence": 3,
+    "wisdom": 5,
+    "vitality": 10,
+    "luck": 6
+  },
+  "resistances": {
+    "fire": -5,
+    "ice": 5,
+    "lightning": 0,
+    "poison": 0,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Mordida Feroz",
+    "Investida Selvagem",
+    "Uivo Intimidador",
+    "Rajada Tripla"
+  ]
+}

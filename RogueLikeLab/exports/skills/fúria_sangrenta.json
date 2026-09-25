@@ -1,0 +1,49 @@
+{
+  "id": "skill_furia_sangrenta",
+  "name": "Fúria Sangrenta",
+  "description": "Entra em fúria, sacrificando defesa por ataque devastador.",
+  "battle_description": "A fúria aumenta o poder de ataque!",
+  "type": "Buff",
+  "target": "Si Mesmo",
+  "tags": [
+    "buff",
+    "furia",
+    "berserker"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 15
+  },
+  "cooldown": 6,
+  "duration": 4,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Bufo de Ataque",
+      "value": 40,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    },
+    {
+      "type": "Debuff de Defesa",
+      "value": 20,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 7,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

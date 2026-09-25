@@ -1,0 +1,42 @@
+{
+  "id": "skill_poste_defensivo",
+  "name": "Postura Defensiva",
+  "description": "Assume uma postura que aumenta a defesa, reduzindo o dano recebido.",
+  "battle_description": "A guarda é erguida contra os golpes!",
+  "type": "Buff",
+  "target": "Si Mesmo",
+  "tags": [
+    "buff",
+    "defesa",
+    "postura"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 5
+  },
+  "cooldown": 3,
+  "duration": 3,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Bufo de Defesa",
+      "value": 25,
+      "duration": 3,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 1,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "item_couraca_de_ossos",
+  "name": "Couraça de Ossos",
+  "description": "Feita de ossos de inimigos caídos.",
+  "long_description": "",
+  "category": "Armadura",
+  "subcategory": "Peitoral",
+  "rarity": "Raro",
+  "level_required": 10,
+  "value": 550,
+  "weight": 7.0,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "ossos",
+    "morto-vivo"
+  ],
+  "icon": "P",
+  "grid_size": [
+    2,
+    3
+  ],
+  "equipment": {
+    "slot": "Peito",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 12,
+    "stat_modifiers": {
+      "defense_physical": 8,
+      "vitality": 6,
+      "hp": 50
+    },
+    "resistances": {
+      "dark": 25,
+      "ice": 15,
+      "holy": -20,
+      "poison": 30
+    },
+    "special_effects": []
+  },
+  "consumable": null
+}

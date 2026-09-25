@@ -1,0 +1,52 @@
+{
+  "id": "unit_gigante_de_gelo",
+  "name": "Gigante de Gelo",
+  "race": "Gigante",
+  "class": "Guerreiro",
+  "level": 21,
+  "description": "Um colosso de gelo eterno das montanhas do norte. Seu hálito congela tudo ao redor.",
+  "resources": {
+    "hp": 700,
+    "stamina": 200,
+    "mana": 120,
+    "hp_regen": 8,
+    "mana_regen": 4,
+    "stamina_regen": 8
+  },
+  "combat": {
+    "attack_physical": 95,
+    "attack_magical": 40,
+    "defense_physical": 45,
+    "defense_magical": 35,
+    "speed": 10,
+    "accuracy": 88,
+    "evasion": 5,
+    "crit_chance": 15,
+    "crit_damage": 220,
+    "block": 20,
+    "lifesteal": 0,
+    "initiative": 10
+  },
+  "attributes": {
+    "strength": 48,
+    "dexterity": 12,
+    "intelligence": 10,
+    "wisdom": 14,
+    "vitality": 50,
+    "luck": 5
+  },
+  "resistances": {
+    "fire": -40,
+    "ice": 100,
+    "lightning": 10,
+    "poison": 30,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Bafo Glacial",
+    "Preso em Gelo",
+    "Esmagar",
+    "Pisotear"
+  ]
+}

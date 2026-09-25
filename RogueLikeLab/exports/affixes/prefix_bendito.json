@@ -1,0 +1,34 @@
+{
+  "id": "prefix_bendito",
+  "name": "Bendito",
+  "kind": "Prefixo",
+  "rarity_min": "Épico",
+  "applies_to": [
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Protegido pelos deuses.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "hp": 30,
+    "wisdom": 5,
+    "defense_magical": 6
+  },
+  "resistances": {
+    "holy": 25,
+    "dark": 25
+  },
+  "special_effects": [
+    {
+      "type": "Regeneração HP",
+      "value": 5,
+      "duration": 4,
+      "chance": 30,
+      "trigger": "Ao ser acertado"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "item_adaga_vampirica",
+  "name": "Adaga Vampírica",
+  "description": "Bebe a vida de suas vítimas.",
+  "long_description": "",
+  "category": "Arma",
+  "subcategory": "Adaga",
+  "rarity": "Raro",
+  "level_required": 10,
+  "value": 600,
+  "weight": 1.0,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "adaga",
+    "vampiro"
+  ],
+  "icon": "D",
+  "grid_size": [
+    1,
+    2
+  ],
+  "equipment": {
+    "slot": "Arma",
+    "two_handed": false,
+    "damage": {
+      "min": 10,
+      "max": 15,
+      "type": "Sombrio"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "lifesteal": 25,
+      "dexterity": 6,
+      "crit_chance": 8
+    },
+    "resistances": {
+      "dark": 20,
+      "holy": -15
+    },
+    "special_effects": [
+      {
+        "type": "Sangramento",
+        "value": 4,
+        "duration": 3,
+        "chance": 35,
+        "trigger": "Ao acertar"
+      }
+    ]
+  },
+  "consumable": null
+}

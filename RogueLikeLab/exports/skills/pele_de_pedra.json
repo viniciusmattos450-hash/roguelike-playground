@@ -1,0 +1,49 @@
+{
+  "id": "skill_pele_de_pedra",
+  "name": "Pele de Pedra",
+  "description": "A pele endurece como rocha, aumentando muito a defesa.",
+  "battle_description": "A pele vira pedra bruta!",
+  "type": "Buff",
+  "target": "Si Mesmo",
+  "tags": [
+    "buff",
+    "defesa",
+    "golem"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 15,
+    "stamina": 0
+  },
+  "cooldown": 6,
+  "duration": 5,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Bufo de Defesa",
+      "value": 60,
+      "duration": 5,
+      "condition": "",
+      "chance": 100
+    },
+    {
+      "type": "Debuff de Velocidade",
+      "value": 20,
+      "duration": 5,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 8,
+    "class": "",
+    "race": "Construto",
+    "all": false
+  }
+}

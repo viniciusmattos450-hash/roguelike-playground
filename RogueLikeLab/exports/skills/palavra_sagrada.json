@@ -1,0 +1,42 @@
+{
+  "id": "skill_palavra_sagrada",
+  "name": "Palavra Sagrada",
+  "description": "Uma palavra divina que cura aliados próximos.",
+  "battle_description": "Uma luz sagrada restaura os aliados!",
+  "type": "Cura",
+  "target": "Todos os Aliados",
+  "tags": [
+    "sagrado",
+    "cura",
+    "suporte"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 20,
+    "stamina": 0
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 5,
+  "effects": [
+    {
+      "type": "Regeneração HP",
+      "value": 35,
+      "duration": 0,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 5,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

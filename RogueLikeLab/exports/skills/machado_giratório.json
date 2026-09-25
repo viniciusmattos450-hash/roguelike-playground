@@ -1,0 +1,43 @@
+{
+  "id": "skill_machado_giratorio",
+  "name": "Machado Giratório",
+  "description": "Um ataque giratório com machado que atinge todos ao redor.",
+  "battle_description": "Um redemoinho de aço corta tudo em volta!",
+  "type": "Ataque Múltiplo",
+  "target": "Área",
+  "tags": [
+    "fisico",
+    "machado",
+    "area",
+    "orc"
+  ],
+  "damage": {
+    "min": 20,
+    "max": 32,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 85
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 25
+  },
+  "cooldown": 4,
+  "duration": 0,
+  "range": 2,
+  "effects": [
+    {
+      "type": "Sangramento",
+      "value": 5,
+      "duration": 3,
+      "condition": "",
+      "chance": 60
+    }
+  ],
+  "requirements": {
+    "level": 6,
+    "class": "",
+    "race": "Orc",
+    "all": false
+  }
+}

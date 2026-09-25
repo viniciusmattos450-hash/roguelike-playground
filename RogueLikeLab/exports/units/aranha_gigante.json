@@ -1,0 +1,52 @@
+{
+  "id": "unit_aranha_gigante",
+  "name": "Aranha Gigante",
+  "race": "Aracnídeo",
+  "class": "Fera",
+  "level": 5,
+  "description": "Uma aranha do tamanho de um cavalo, com veneno paralisante e teias pegajosas.",
+  "resources": {
+    "hp": 65,
+    "stamina": 40,
+    "mana": 20,
+    "hp_regen": 2,
+    "mana_regen": 1,
+    "stamina_regen": 3
+  },
+  "combat": {
+    "attack_physical": 18,
+    "attack_magical": 5,
+    "defense_physical": 6,
+    "defense_magical": 6,
+    "speed": 15,
+    "accuracy": 90,
+    "evasion": 22,
+    "crit_chance": 8,
+    "crit_damage": 150,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 15
+  },
+  "attributes": {
+    "strength": 14,
+    "dexterity": 18,
+    "intelligence": 3,
+    "wisdom": 5,
+    "vitality": 13,
+    "luck": 4
+  },
+  "resistances": {
+    "fire": -15,
+    "ice": 0,
+    "lightning": 5,
+    "poison": 100,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Mordida Venenosa",
+    "Teia Pegajosa",
+    "Nuvem Venenosa",
+    "Cuspe Ácido"
+  ]
+}

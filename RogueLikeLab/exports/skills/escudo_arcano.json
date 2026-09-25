@@ -1,0 +1,42 @@
+{
+  "id": "skill_esquiva_arcana",
+  "name": "Escudo Arcano",
+  "description": "Uma barreira mágica absorve dano por um tempo.",
+  "battle_description": "Um escudo translúcido envolve o conjurador!",
+  "type": "Buff",
+  "target": "Si Mesmo",
+  "tags": [
+    "buff",
+    "escudo",
+    "magia"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 20,
+    "stamina": 0
+  },
+  "cooldown": 5,
+  "duration": 4,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Escudo",
+      "value": 40,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 5,
+    "class": "Mago",
+    "race": "",
+    "all": false
+  }
+}

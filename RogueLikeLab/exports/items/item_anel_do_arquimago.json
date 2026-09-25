@@ -1,0 +1,55 @@
+{
+  "id": "item_anel_do_arquimago",
+  "name": "Anel do Arquimago",
+  "description": "Anel lendário dos mestres arcanos.",
+  "long_description": "",
+  "category": "Acessório",
+  "subcategory": "Anel",
+  "rarity": "Épico",
+  "level_required": 20,
+  "value": 3000,
+  "weight": 0.1,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "anel",
+    "mago",
+    "arcano"
+  ],
+  "icon": "R",
+  "grid_size": [
+    1,
+    1
+  ],
+  "equipment": {
+    "slot": "Anel",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "intelligence": 15,
+      "attack_magical": 12,
+      "mana": 120,
+      "crit_chance": 6
+    },
+    "resistances": {
+      "fire": 10,
+      "ice": 10,
+      "lightning": 10
+    },
+    "special_effects": [
+      {
+        "type": "Regeneração Mana",
+        "value": 4,
+        "duration": 5,
+        "chance": 50,
+        "trigger": "Ao equipar"
+      }
+    ]
+  },
+  "consumable": null
+}

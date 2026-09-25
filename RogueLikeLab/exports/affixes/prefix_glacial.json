@@ -1,0 +1,33 @@
+{
+  "id": "prefix_glacial",
+  "name": "Glacial",
+  "kind": "Prefixo",
+  "rarity_min": "Incomum",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Frio cortante emana do item.",
+  "damage_bonus": {
+    "min": 2,
+    "max": 4,
+    "type": "Gelo"
+  },
+  "stat_modifiers": {
+    "attack_magical": 3
+  },
+  "resistances": {
+    "ice": 15,
+    "fire": -5
+  },
+  "special_effects": [
+    {
+      "type": "Lentidão",
+      "value": 20,
+      "duration": 2,
+      "chance": 25,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

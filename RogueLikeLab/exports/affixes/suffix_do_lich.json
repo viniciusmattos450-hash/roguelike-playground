@@ -1,0 +1,36 @@
+{
+  "id": "suffix_do_lich",
+  "name": "do Lich",
+  "kind": "Sufixo",
+  "rarity_min": "Épico",
+  "applies_to": [
+    "Arma",
+    "Armadura"
+  ],
+  "description": "Imbuído de magia necromântica.",
+  "damage_bonus": {
+    "min": 6,
+    "max": 11,
+    "type": "Sombrio"
+  },
+  "stat_modifiers": {
+    "intelligence": 10,
+    "attack_magical": 8,
+    "mana": 60
+  },
+  "resistances": {
+    "dark": 40,
+    "holy": -25,
+    "ice": 15,
+    "poison": 30
+  },
+  "special_effects": [
+    {
+      "type": "Drenar Vida",
+      "value": 20,
+      "duration": 3,
+      "chance": 25,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

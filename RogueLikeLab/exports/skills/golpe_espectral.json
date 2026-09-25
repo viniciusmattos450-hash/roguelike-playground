@@ -1,0 +1,42 @@
+{
+  "id": "skill_golpe_espectral",
+  "name": "Golpe Espectral",
+  "description": "Um ataque com energia do além que ignora defesas físicas.",
+  "battle_description": "Uma lâmina fantasmagórica atravessa o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "sombrio",
+    "espectral",
+    "morte-viva"
+  ],
+  "damage": {
+    "min": 14,
+    "max": 22,
+    "type": "Sombrio",
+    "hits": 1,
+    "accuracy": 95
+  },
+  "cost": {
+    "mana": 10,
+    "stamina": 0
+  },
+  "cooldown": 2,
+  "duration": 0,
+  "range": 2,
+  "effects": [
+    {
+      "type": "Debuff de Defesa",
+      "value": 15,
+      "duration": 2,
+      "condition": "",
+      "chance": 40
+    }
+  ],
+  "requirements": {
+    "level": 5,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  }
+}

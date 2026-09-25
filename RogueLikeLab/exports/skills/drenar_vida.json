@@ -1,0 +1,42 @@
+{
+  "id": "skill_drenar_vida",
+  "name": "Drenar Vida",
+  "description": "Rouba a força vital do alvo, curando o usuário.",
+  "battle_description": "A energia vital do inimigo é sugada!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "sombrio",
+    "drenar",
+    "cura"
+  ],
+  "damage": {
+    "min": 10,
+    "max": 18,
+    "type": "Sombrio",
+    "hits": 1,
+    "accuracy": 95
+  },
+  "cost": {
+    "mana": 15,
+    "stamina": 0
+  },
+  "cooldown": 3,
+  "duration": 0,
+  "range": 3,
+  "effects": [
+    {
+      "type": "Roubo de Vida",
+      "value": 60,
+      "duration": 0,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 5,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

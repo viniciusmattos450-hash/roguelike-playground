@@ -1,0 +1,49 @@
+{
+  "id": "skill_mordida_vampirica",
+  "name": "Mordida Vampírica",
+  "description": "Uma mordida que drena o sangue do inimigo.",
+  "battle_description": "O vampiro crava as presas na jugular!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "vampiro",
+    "mordida",
+    "drenar"
+  ],
+  "damage": {
+    "min": 20,
+    "max": 30,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 92
+  },
+  "cost": {
+    "mana": 10,
+    "stamina": 5
+  },
+  "cooldown": 2,
+  "duration": 0,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Roubo de Vida",
+      "value": 80,
+      "duration": 0,
+      "condition": "",
+      "chance": 100
+    },
+    {
+      "type": "Sangramento",
+      "value": 3,
+      "duration": 2,
+      "condition": "",
+      "chance": 50
+    }
+  ],
+  "requirements": {
+    "level": 8,
+    "class": "",
+    "race": "Morto-Vivo",
+    "all": false
+  }
+}

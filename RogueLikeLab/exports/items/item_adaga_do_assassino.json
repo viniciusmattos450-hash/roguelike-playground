@@ -1,0 +1,49 @@
+{
+  "id": "item_adaga_do_assassino",
+  "name": "Adaga do Assassino",
+  "description": "Uma adaga silenciosa e mortal.",
+  "long_description": "",
+  "category": "Arma",
+  "subcategory": "Adaga",
+  "rarity": "Incomum",
+  "level_required": 3,
+  "value": 120,
+  "weight": 0.8,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "adaga",
+    "furtivo"
+  ],
+  "icon": "D",
+  "grid_size": [
+    1,
+    2
+  ],
+  "equipment": {
+    "slot": "Arma",
+    "two_handed": false,
+    "damage": {
+      "min": 6,
+      "max": 10,
+      "type": "Físico"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "crit_chance": 12,
+      "accuracy": 5,
+      "evasion": 5
+    },
+    "resistances": {},
+    "special_effects": [
+      {
+        "type": "Sangramento",
+        "value": 3,
+        "duration": 3,
+        "chance": 30,
+        "trigger": "Ao acertar"
+      }
+    ]
+  },
+  "consumable": null
+}

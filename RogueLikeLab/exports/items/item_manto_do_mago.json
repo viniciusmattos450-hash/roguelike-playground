@@ -1,0 +1,54 @@
+{
+  "id": "item_manto_do_mago",
+  "name": "Manto do Mago",
+  "description": "Um manto azul bordado com runas.",
+  "long_description": "",
+  "category": "Armadura",
+  "subcategory": "Capa",
+  "rarity": "Incomum",
+  "level_required": 5,
+  "value": 180,
+  "weight": 1.0,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "manto",
+    "mago",
+    "capa"
+  ],
+  "icon": "K",
+  "grid_size": [
+    2,
+    2
+  ],
+  "equipment": {
+    "slot": "Capa",
+    "two_handed": false,
+    "damage": {
+      "min": 0,
+      "max": 0,
+      "type": "Nenhum"
+    },
+    "armor": 1,
+    "stat_modifiers": {
+      "defense_magical": 8,
+      "intelligence": 5,
+      "mana": 40
+    },
+    "resistances": {
+      "fire": 10,
+      "ice": 10,
+      "lightning": 10
+    },
+    "special_effects": [
+      {
+        "type": "Regeneração Mana",
+        "value": 2,
+        "duration": 5,
+        "chance": 30,
+        "trigger": "Ao equipar"
+      }
+    ]
+  },
+  "consumable": null
+}

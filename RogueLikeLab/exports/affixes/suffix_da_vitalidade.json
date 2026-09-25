@@ -1,0 +1,22 @@
+{
+  "id": "suffix_da_vitalidade",
+  "name": "da Vitalidade",
+  "kind": "Sufixo",
+  "rarity_min": "Comum",
+  "applies_to": [
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Aumenta a resistência física.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "vitality": 6,
+    "hp": 25
+  },
+  "resistances": {},
+  "special_effects": []
+}

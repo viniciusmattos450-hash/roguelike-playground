@@ -1,0 +1,39 @@
+{
+  "id": "skill_invocar_imp",
+  "name": "Invocar Imp",
+  "description": "Invoca um diabrete travesso que ataca com fogo.",
+  "battle_description": "Um pequeno demônio surge em uma nuvem de enxofre!",
+  "type": "Invocação",
+  "target": "Si Mesmo",
+  "tags": [
+    "invocacao",
+    "demonio",
+    "fogo"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 28,
+    "stamina": 0
+  },
+  "cooldown": 8,
+  "duration": 5,
+  "range": 2,
+  "effects": [],
+  "requirements": {
+    "level": 12,
+    "class": "",
+    "race": "Demônio",
+    "all": false
+  },
+  "summon": {
+    "unit_name": "Imp",
+    "count": 1,
+    "duration": 5
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "skill_tempestade_de_fogo",
+  "name": "Tempestade de Fogo",
+  "description": "Invoca uma tempestade de fogo que atinge todos os inimigos.",
+  "battle_description": "Chamas caem do céu sobre os inimigos!",
+  "type": "Ataque Múltiplo",
+  "target": "Todos os Inimigos",
+  "tags": [
+    "fogo",
+    "dragao",
+    "area",
+    "ultimate"
+  ],
+  "damage": {
+    "min": 90,
+    "max": 140,
+    "type": "Fogo",
+    "hits": 1,
+    "accuracy": 95
+  },
+  "cost": {
+    "mana": 60,
+    "stamina": 0
+  },
+  "cooldown": 7,
+  "duration": 0,
+  "range": 8,
+  "effects": [
+    {
+      "type": "Queimadura",
+      "value": 15,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 20,
+    "class": "",
+    "race": "Dragão",
+    "all": false
+  }
+}

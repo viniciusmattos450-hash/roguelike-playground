@@ -1,0 +1,33 @@
+{
+  "id": "prefix_sagrado",
+  "name": "Sagrado",
+  "kind": "Prefixo",
+  "rarity_min": "Raro",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Brilha com uma luz divina suave.",
+  "damage_bonus": {
+    "min": 3,
+    "max": 6,
+    "type": "Sagrado"
+  },
+  "stat_modifiers": {
+    "wisdom": 3
+  },
+  "resistances": {
+    "holy": 20,
+    "dark": 10
+  },
+  "special_effects": [
+    {
+      "type": "Regeneração HP",
+      "value": 3,
+      "duration": 5,
+      "chance": 20,
+      "trigger": "Ao equipar"
+    }
+  ]
+}

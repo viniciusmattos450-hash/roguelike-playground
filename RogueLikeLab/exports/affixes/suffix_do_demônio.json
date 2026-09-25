@@ -1,0 +1,37 @@
+{
+  "id": "suffix_do_demonio",
+  "name": "do Demônio",
+  "kind": "Sufixo",
+  "rarity_min": "Épico",
+  "applies_to": [
+    "Arma",
+    "Armadura",
+    "Acessório"
+  ],
+  "description": "Pacto com as forças infernais.",
+  "damage_bonus": {
+    "min": 6,
+    "max": 10,
+    "type": "Fogo"
+  },
+  "stat_modifiers": {
+    "attack_physical": 6,
+    "attack_magical": 6,
+    "crit_chance": 5
+  },
+  "resistances": {
+    "fire": 40,
+    "ice": -15,
+    "holy": -30,
+    "dark": 25
+  },
+  "special_effects": [
+    {
+      "type": "Queimadura",
+      "value": 6,
+      "duration": 3,
+      "chance": 35,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

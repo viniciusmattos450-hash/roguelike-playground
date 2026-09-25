@@ -1,0 +1,42 @@
+{
+  "id": "skill_investida_selvagem",
+  "name": "Investida Selvagem",
+  "description": "O usuário avança a toda velocidade contra o alvo.",
+  "battle_description": "Uma investida furiosa derruba o inimigo!",
+  "type": "Ataque Único",
+  "target": "Inimigo Único",
+  "tags": [
+    "fisico",
+    "investida",
+    "animal"
+  ],
+  "damage": {
+    "min": 8,
+    "max": 14,
+    "type": "Físico",
+    "hits": 1,
+    "accuracy": 85
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 12
+  },
+  "cooldown": 2,
+  "duration": 0,
+  "range": 1,
+  "effects": [
+    {
+      "type": "Atordoamento",
+      "value": 0,
+      "duration": 1,
+      "condition": "",
+      "chance": 25
+    }
+  ],
+  "requirements": {
+    "level": 2,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

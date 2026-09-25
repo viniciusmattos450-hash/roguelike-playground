@@ -1,0 +1,42 @@
+{
+  "id": "skill_grito_de_guerra",
+  "name": "Grito de Guerra",
+  "description": "Um grito que enche os aliados de coragem.",
+  "battle_description": "Os aliados sentem-se mais fortes!",
+  "type": "Buff",
+  "target": "Todos os Aliados",
+  "tags": [
+    "buff",
+    "suporte",
+    "sonoro"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 0,
+    "stamina": 12
+  },
+  "cooldown": 5,
+  "duration": 3,
+  "range": 5,
+  "effects": [
+    {
+      "type": "Bufo de Ataque",
+      "value": 20,
+      "duration": 3,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 4,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "prefix_sangrento",
+  "name": "Sangrento",
+  "kind": "Prefixo",
+  "rarity_min": "Incomum",
+  "applies_to": [
+    "Arma"
+  ],
+  "description": "Deixa feridas que não param de sangrar.",
+  "damage_bonus": {
+    "min": 2,
+    "max": 4,
+    "type": "Físico"
+  },
+  "stat_modifiers": {
+    "attack_physical": 4,
+    "crit_chance": 3
+  },
+  "resistances": {},
+  "special_effects": [
+    {
+      "type": "Sangramento",
+      "value": 3,
+      "duration": 4,
+      "chance": 35,
+      "trigger": "Ao acertar"
+    }
+  ]
+}

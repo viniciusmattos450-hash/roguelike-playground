@@ -1,0 +1,51 @@
+{
+  "id": "item_martelo_do_tita",
+  "name": "Martelo do Titã",
+  "description": "Um martelo colossal capaz de rachar montanhas.",
+  "long_description": "",
+  "category": "Arma",
+  "subcategory": "Martelo",
+  "rarity": "Lendário",
+  "level_required": 25,
+  "value": 8000,
+  "weight": 12.0,
+  "stackable": false,
+  "max_stack": 1,
+  "tags": [
+    "martelo",
+    "tita",
+    "lendario"
+  ],
+  "icon": "H",
+  "grid_size": [
+    2,
+    3
+  ],
+  "equipment": {
+    "slot": "Arma",
+    "two_handed": true,
+    "damage": {
+      "min": 40,
+      "max": 60,
+      "type": "Físico"
+    },
+    "armor": 0,
+    "stat_modifiers": {
+      "attack_physical": 25,
+      "strength": 15,
+      "hp": 80,
+      "crit_damage": 40
+    },
+    "resistances": {},
+    "special_effects": [
+      {
+        "type": "Atordoamento",
+        "value": 0,
+        "duration": 1,
+        "chance": 25,
+        "trigger": "Ao acertar"
+      }
+    ]
+  },
+  "consumable": null
+}

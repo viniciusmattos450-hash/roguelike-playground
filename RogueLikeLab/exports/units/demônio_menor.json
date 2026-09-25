@@ -1,0 +1,52 @@
+{
+  "id": "unit_demonio_menor",
+  "name": "Demônio Menor",
+  "race": "Demônio",
+  "class": "Guerreiro Infernal",
+  "level": 22,
+  "description": "Um soldado das legiões infernais, envolto em chamas. Serve senhores demoníacos.",
+  "resources": {
+    "hp": 560,
+    "stamina": 160,
+    "mana": 220,
+    "hp_regen": 10,
+    "mana_regen": 8,
+    "stamina_regen": 8
+  },
+  "combat": {
+    "attack_physical": 85,
+    "attack_magical": 70,
+    "defense_physical": 38,
+    "defense_magical": 42,
+    "speed": 16,
+    "accuracy": 94,
+    "evasion": 12,
+    "crit_chance": 20,
+    "crit_damage": 230,
+    "block": 10,
+    "lifesteal": 10,
+    "initiative": 15
+  },
+  "attributes": {
+    "strength": 40,
+    "dexterity": 22,
+    "intelligence": 24,
+    "wisdom": 18,
+    "vitality": 38,
+    "luck": 8
+  },
+  "resistances": {
+    "fire": 100,
+    "ice": -20,
+    "lightning": 30,
+    "poison": 50,
+    "holy": -50,
+    "dark": 60
+  },
+  "skills": [
+    "Brasa Ardente",
+    "Chicote Infernal",
+    "Pacto Sombrio",
+    "Bola de Fogo"
+  ]
+}

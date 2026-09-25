@@ -1,0 +1,52 @@
+{
+  "id": "unit_bandido",
+  "name": "Bandido",
+  "race": "Humano",
+  "class": "Ladino",
+  "level": 4,
+  "description": "Fora-da-lei que vive de saquear viajantes nas estradas. Sempre acompanhado de comparsas.",
+  "resources": {
+    "hp": 60,
+    "stamina": 45,
+    "mana": 0,
+    "hp_regen": 2,
+    "mana_regen": 0,
+    "stamina_regen": 5
+  },
+  "combat": {
+    "attack_physical": 16,
+    "attack_magical": 0,
+    "defense_physical": 7,
+    "defense_magical": 5,
+    "speed": 13,
+    "accuracy": 92,
+    "evasion": 12,
+    "crit_chance": 12,
+    "crit_damage": 160,
+    "block": 2,
+    "lifesteal": 0,
+    "initiative": 13
+  },
+  "attributes": {
+    "strength": 12,
+    "dexterity": 14,
+    "intelligence": 9,
+    "wisdom": 8,
+    "vitality": 11,
+    "luck": 10
+  },
+  "resistances": {
+    "fire": 0,
+    "ice": 0,
+    "lightning": 0,
+    "poison": 0,
+    "holy": 0,
+    "dark": 0
+  },
+  "skills": [
+    "Golpe de Espada",
+    "Ataque Furtivo",
+    "Espada Cortante",
+    "Ataque Duplo"
+  ]
+}

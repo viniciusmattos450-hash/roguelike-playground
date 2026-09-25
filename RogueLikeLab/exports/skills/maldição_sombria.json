@@ -1,0 +1,56 @@
+{
+  "id": "skill_maldicao_sombria",
+  "name": "Maldição Sombria",
+  "description": "Uma maldição que reduz todos os atributos do alvo.",
+  "battle_description": "O inimigo é amaldiçoado pelas sombras!",
+  "type": "Debuff",
+  "target": "Inimigo Único",
+  "tags": [
+    "sombrio",
+    "maldicao",
+    "debuff"
+  ],
+  "damage": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum",
+    "hits": 1,
+    "accuracy": 100
+  },
+  "cost": {
+    "mana": 22,
+    "stamina": 0
+  },
+  "cooldown": 6,
+  "duration": 4,
+  "range": 6,
+  "effects": [
+    {
+      "type": "Debuff de Ataque",
+      "value": 25,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    },
+    {
+      "type": "Debuff de Defesa",
+      "value": 25,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    },
+    {
+      "type": "Debuff de Velocidade",
+      "value": 25,
+      "duration": 4,
+      "condition": "",
+      "chance": 100
+    }
+  ],
+  "requirements": {
+    "level": 8,
+    "class": "",
+    "race": "",
+    "all": true
+  }
+}

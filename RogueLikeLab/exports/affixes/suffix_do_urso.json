@@ -1,0 +1,23 @@
+{
+  "id": "suffix_do_urso",
+  "name": "do Urso",
+  "kind": "Sufixo",
+  "rarity_min": "Incomum",
+  "applies_to": [
+    "Armadura"
+  ],
+  "description": "Couro grosso e resistente.",
+  "damage_bonus": {
+    "min": 0,
+    "max": 0,
+    "type": "Nenhum"
+  },
+  "stat_modifiers": {
+    "strength": 4,
+    "vitality": 5,
+    "defense_physical": 5,
+    "hp": 30
+  },
+  "resistances": {},
+  "special_effects": []
+}

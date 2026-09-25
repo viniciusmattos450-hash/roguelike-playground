@@ -1,0 +1,51 @@
+{
+  "id": "unit_imp",
+  "name": "Imp",
+  "race": "Demônio",
+  "class": "Diabrete",
+  "level": 5,
+  "description": "Pequeno demônio travesso, veloz e incendiário. Serve como batedor dos infernos.",
+  "resources": {
+    "hp": 30,
+    "stamina": 25,
+    "mana": 40,
+    "hp_regen": 2,
+    "mana_regen": 3,
+    "stamina_regen": 3
+  },
+  "combat": {
+    "attack_physical": 8,
+    "attack_magical": 12,
+    "defense_physical": 4,
+    "defense_magical": 8,
+    "speed": 18,
+    "accuracy": 90,
+    "evasion": 20,
+    "crit_chance": 12,
+    "crit_damage": 170,
+    "block": 0,
+    "lifesteal": 0,
+    "initiative": 16
+  },
+  "attributes": {
+    "strength": 6,
+    "dexterity": 16,
+    "intelligence": 12,
+    "wisdom": 6,
+    "vitality": 6,
+    "luck": 10
+  },
+  "resistances": {
+    "fire": 100,
+    "ice": -20,
+    "lightning": 20,
+    "poison": 30,
+    "holy": -50,
+    "dark": 40
+  },
+  "skills": [
+    "Brasa Ardente",
+    "Mísseis Mágicos",
+    "Esquiva Ágil"
+  ]
+}
