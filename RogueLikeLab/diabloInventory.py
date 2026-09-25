@@ -9,9 +9,11 @@ Sistema de encaixe:
 - Preview: verde (vazio) / azul (swap) / sem preview (bloqueado)
 - Item desenhado cola no preview quando há encaixe válido
 - Auto-organize (multi-heurística + rotação) — tecla O / botão
+- Destaque de raridade pulsante no chão
+- Stack de consumíveis com contador e merge automático
 """
 
-import os, json, random
+import os, json, random, math
 import pygame
 
 pygame.init()
@@ -59,6 +61,16 @@ RARITY_COLORS = {
     "Épico":    (200, 130, 240),
     "Lendário": (240, 170, 60),
     "Mítico":   (255, 100, 100),
+}
+
+# (alpha_base, velocidade) do pulso — Comum não pulsa
+RARITY_GLOW = {
+    "Comum":    (0,   0.0),
+    "Incomum":  (55,  1.8),
+    "Raro":     (85,  2.2),
+    "Épico":    (115, 2.6),
+    "Lendário": (150, 3.0),
+    "Mítico":   (185, 3.6),
 }
 
 FONT_XL = pygame.font.SysFont("georgia,cambria,dejavuserif,serif", 22, bold=True)
@@ -200,15 +212,44 @@ def icon_font_for_size(w_px, h_px):
     return FONT_ICON_M
 
 
+def draw_stack_badge(surf, x, y, count, font=FONT_S):
+    """Desenha o contador de stack no canto inferior direito da área (x,y)."""
+    txt = str(count)
+    ts = font.render(txt, True, (255, 245, 220))
+    pad = 3
+    bw = ts.get_width() + pad*2
+    bh = ts.get_height() + 1
+    bx = x - bw - 2
+    by = y - bh - 2
+    bg = pygame.Surface((bw, bh), pygame.SRCALPHA)
+    bg.fill((0, 0, 0, 210))
+    surf.blit(bg, (bx, by))
+    pygame.draw.rect(surf, (60, 45, 30), (bx, by, bw, bh), 1, border_radius=2)
+    surf.blit(ts, (bx + pad, by))
+
+
 # ============================================================================
-# Auto-organize — packer multi-heurística com rotação
+# Auto-organize — packer multi-heurística com rotação + merge de stacks
 # ============================================================================
+def _merge_stacks(items):
+    """Mescla stacks empilháveis idênticos numa única lista."""
+    merged = []
+    for it in items:
+        remaining = it.stack_count
+        for m in merged:
+            if remaining <= 0: break
+            if m.can_stack_with(it):
+                space = m.max_stack() - m.stack_count
+                move = min(space, remaining)
+                m.stack_count += move
+                remaining -= move
+        if remaining > 0:
+            it.stack_count = remaining
+            merged.append(it)
+    return merged
+
+
 def _pack_attempt(items, orig_sizes, cont_w, cont_h, order):
-    """
-    Tenta empacotar `order` num grid w x h usando first-fit + rotação.
-    Retorna (leftovers, placements, used_cells).
-    placements = [(item, (w,h), (x,y)), ...]
-    """
     grid = [[False]*cont_w for _ in range(cont_h)]
 
     def can_place(w, h, x, y):
@@ -252,15 +293,16 @@ def _pack_attempt(items, orig_sizes, cont_w, cont_h, order):
 
 
 def pack_items_into(cont, items):
-    """
-    Empacota `items` num container VAZIO testando várias ordenações e
-    rotações; escolhe o resultado que coloca mais itens no menor espaço.
-    Aplica o melhor layout no container real e retorna os leftovers.
-    """
     if not items:
         return []
 
-    # Guarda os tamanhos originais (PlacedItem.size pode ter sido rotacionado antes)
+    items = _merge_stacks(items)
+    if not items:
+        # Tudo virou merge — limpa o container e retorna
+        for it in list(cont.items):
+            cont.remove(it)
+        return []
+
     orig_sizes = {id(it): tuple(it.size) for it in items}
 
     def key_area(it):   s = orig_sizes[id(it)]; return (-(s[0]*s[1]), -max(s), -min(s))
@@ -277,19 +319,17 @@ def pack_items_into(cont, items):
         sorted(items, key=key_minside),
     ]
 
-    best = None  # (score_tuple, placements, leftovers)
+    best = None
     for order in orders:
         leftovers, placements, used = _pack_attempt(
             items, orig_sizes, cont.w, cont.h, order
         )
-        # score: menos leftovers é melhor; empate desempata por mais células usadas
         score = (len(leftovers), -used)
         if best is None or score < best[0]:
             best = (score, placements, leftovers)
 
     _, placements, leftovers = best
 
-    # Aplica o layout escolhido no container real
     for it in list(cont.items):
         cont.remove(it)
     for it, (w, h), (x, y) in placements:
@@ -300,13 +340,8 @@ def pack_items_into(cont, items):
 
 
 def organize_container(cont):
-    """
-    Reorganiza os itens do container. Se algum item não couber no repack,
-    reverte tudo ao estado anterior (nunca piora).
-    Retorna True se organizou, False se reverteu.
-    """
-    saved = [(it, it.x, it.y, tuple(it.size)) for it in cont.items]
-    items = [it for it, _, _, _ in saved]
+    saved = [(it, it.x, it.y, tuple(it.size), it.stack_count) for it in cont.items]
+    items = [it for it, _, _, _, _ in saved]
 
     for it in items:
         cont.remove(it)
@@ -314,11 +349,11 @@ def organize_container(cont):
     leftovers = pack_items_into(cont, items)
 
     if leftovers:
-        # Reverte
         for it in list(cont.items):
             cont.remove(it)
-        for it, x, y, size in saved:
+        for it, x, y, size, sc in saved:
             it.size = size
+            it.stack_count = sc
             cont.place(it, x, y)
         return False
     return True
@@ -328,14 +363,39 @@ def organize_container(cont):
 # PlacedItem
 # ============================================================================
 class PlacedItem:
-    def __init__(self, data, prefix=None, suffix=None):
+    def __init__(self, data, prefix=None, suffix=None, stack_count=1):
         self.data = data
         self.prefix = prefix
         self.suffix = suffix
         self.size = item_size(data)
         self.x = 0; self.y = 0
         self.container = None
+        self.stack_count = max(1, int(stack_count))
 
+    # --- Stacking ------------------------------------------------------
+    def max_stack(self):
+        try:
+            return max(1, int(self.data.get("max_stack", 1)))
+        except Exception:
+            return 1
+
+    def is_stackable(self):
+        if self.data.get("category") != "Consumível": return False
+        return self.max_stack() > 1
+
+    def stack_key(self):
+        if not self.is_stackable(): return None
+        pid = self.prefix.get("name") if self.prefix else None
+        sid = self.suffix.get("name") if self.suffix else None
+        return (id(self.data), pid, sid)
+
+    def can_stack_with(self, other):
+        if other is self or other is None: return False
+        if not self.is_stackable() or not other.is_stackable(): return False
+        if self.stack_count >= self.max_stack(): return False
+        return self.stack_key() == other.stack_key()
+
+    # --- Display -------------------------------------------------------
     def display_name(self):
         parts = []
         if self.prefix: parts.append(self.prefix.get("name",""))
@@ -411,6 +471,9 @@ class PlacedItem:
         cat = self.data.get("category", "")
         sub = self.data.get("subcategory", "")
         lines.append((f"{self.rarity()} {sub or cat}", TEXT_DIM))
+
+        if self.stack_count > 1:
+            lines.append((f"Quantidade: {self.stack_count} / {self.max_stack()}", (220, 200, 140)))
 
         dmg = self.get_damage()
         eq = self.data.get("equipment") or {}
@@ -513,6 +576,17 @@ class Container:
         return None
 
     def add_auto(self, item):
+        """Tenta empilhar em stacks existentes e depois achar slot livre."""
+        if item.is_stackable():
+            for existing in list(self.items):
+                if item.stack_count <= 0: break
+                if existing.can_stack_with(item):
+                    space = existing.max_stack() - existing.stack_count
+                    move = min(space, item.stack_count)
+                    existing.stack_count += move
+                    item.stack_count -= move
+            if item.stack_count <= 0:
+                return True
         spot = self.find_free_spot(item)
         if not spot: return False
         return self.place(item, spot[0], spot[1])
@@ -586,7 +660,12 @@ def roll_item(items_lib, affixes_lib):
         cands = [a for a in affixes_lib if a.get("kind") == "Sufixo"
                  and cat in a.get("applies_to", [])]
         if cands: suffix = random.choice(cands)
-    return PlacedItem(item, prefix, suffix)
+    pi = PlacedItem(item, prefix, suffix)
+    # Consumíveis spawnam em pequenos stacks aleatórios (até max_stack)
+    if pi.is_stackable():
+        cap = pi.max_stack()
+        pi.stack_count = random.randint(1, cap)
+    return pi
 
 
 # ============================================================================
@@ -652,18 +731,14 @@ class MainScene:
         self.msg = text; self.msg_color = color; self.msg_timer = 3.0
 
     # ------------------------------------------------------------------
-    # Spawn helpers (usam o packer)
-    # ------------------------------------------------------------------
     def _fill_container_random(self, cont, n_items):
-        """Gera n itens aleatórios e empacota de forma organizada no container."""
         items = []
         for _ in range(n_items):
             it = roll_item(self.items_lib, self.affixes_lib)
             if it: items.append(it)
-        pack_items_into(cont, items)  # leftovers descartados
+        pack_items_into(cont, items)
 
     def _organize_all(self):
-        """Reorganiza inventário do jogador e o container aberto (se houver)."""
         ok_inv = organize_container(self.player.inventory)
         ok_cont = True
         if self.open_container:
@@ -733,7 +808,8 @@ class MainScene:
         if not spot:
             self._msg("Sem espaço ao redor.", DANGER); return
         self.world.ground_items.append(GroundItem(it, spot[0], spot[1]))
-        self._log(f"Item gerado: {it.display_name()}", it.rarity_color())
+        extra = f" x{it.stack_count}" if it.stack_count > 1 else ""
+        self._log(f"Item gerado: {it.display_name()}{extra}", it.rarity_color())
 
     def _spawn_chest_near(self):
         spot = self.world.find_free_near(self.player.x, self.player.y)
@@ -881,8 +957,6 @@ class MainScene:
                     self._log(f"Desequipou: {item.display_name()}", ACCENT)
 
     # ==================================================================
-    # SNAP — arredonda pela célula sob o cursor (item centrado)
-    # ==================================================================
     def _snap_for_container(self, cont, grid_origin, item, mouse_pos):
         x0, y0 = grid_origin
         iw, ih = item.size
@@ -1013,20 +1087,7 @@ class MainScene:
             if self._inside(pos, x0, y0, cw, ch):
                 sol = self._snap_for_container(cont, (x0, y0), it, pos)
                 if sol:
-                    gx, gy, target, kind = sol["gx"], sol["gy"], sol["target"], sol["kind"]
-                    if kind == "ok":
-                        cont.place(it, gx, gy)
-                        self.cursor_item = None
-                        self.cursor_source = None
-                        return True
-                    elif kind == "swap":
-                        cont.remove(target)
-                        cont.place(it, gx, gy)
-                        self.cursor_item = target
-                        self.cursor_source = cont
-                        self.drag_offset = self._compute_drag_offset(target, pos)
-                        self._log(f"Trocou: {target.display_name()} <-> "
-                                  f"{it.display_name()}", ACCENT)
+                    if self._apply_drop(cont, sol, it, pos):
                         return True
                 else:
                     self._msg("Sem espaço aí.", DANGER)
@@ -1039,25 +1100,52 @@ class MainScene:
             sol = self._snap_for_container(self.player.inventory,
                                             (inv_x0, inv_y0), it, pos)
             if sol:
-                gx, gy, target, kind = sol["gx"], sol["gy"], sol["target"], sol["kind"]
-                if kind == "ok":
-                    self.player.inventory.place(it, gx, gy)
-                    self.cursor_item = None
-                    self.cursor_source = None
-                    return True
-                elif kind == "swap":
-                    self.player.inventory.remove(target)
-                    self.player.inventory.place(it, gx, gy)
-                    self.cursor_item = target
-                    self.cursor_source = self.player.inventory
-                    self.drag_offset = self._compute_drag_offset(target, pos)
-                    self._log(f"Trocou: {target.display_name()} <-> "
-                              f"{it.display_name()}", ACCENT)
+                if self._apply_drop(self.player.inventory, sol, it, pos):
                     return True
             else:
                 self._msg("Sem espaço aí.", DANGER)
                 return False
 
+        return False
+
+    def _apply_drop(self, cont, sol, it, pos):
+        """Aplica o resultado do snap: coloca, empilha ou troca."""
+        gx, gy, target, kind = sol["gx"], sol["gy"], sol["target"], sol["kind"]
+
+        if kind == "ok":
+            cont.place(it, gx, gy)
+            self.cursor_item = None
+            self.cursor_source = None
+            return True
+
+        if kind == "swap":
+            # Se der pra empilhar no alvo, empilha em vez de trocar
+            if target is not None and it.can_stack_with(target):
+                space = target.max_stack() - target.stack_count
+                move = min(space, it.stack_count)
+                target.stack_count += move
+                it.stack_count -= move
+                if it.stack_count <= 0:
+                    self.cursor_item = None
+                    self.cursor_source = None
+                    self._log(f"Empilhou: {target.display_name()} "
+                              f"(x{target.stack_count})", ACCENT)
+                else:
+                    # sobrou no cursor; continua com ele
+                    self.cursor_item = it
+                    self._log(f"Empilhou parcialmente: "
+                              f"{target.display_name()} (x{target.stack_count})", ACCENT)
+                return True
+
+            # Swap padrão
+            cont.remove(target)
+            cont.place(it, gx, gy)
+            self.cursor_item = target
+            self.cursor_source = cont
+            self.drag_offset = self._compute_drag_offset(target, pos)
+            self._log(f"Trocou: {target.display_name()} <-> "
+                      f"{it.display_name()}", ACCENT)
+            return True
         return False
 
     def _can_equip_to_slot(self, item, slot):
@@ -1112,15 +1200,21 @@ class MainScene:
             self._log(f"Equipou: {item.display_name()}", item.rarity_color())
             return
         if item.is_consumable():
-            self._log(f"Usou: {item.display_name()} (efeito omitido)", SUCCESS)
-            self.player.inventory.remove(item)
+            if item.stack_count > 1:
+                item.stack_count -= 1
+                self._log(f"Usou: {item.display_name()} "
+                          f"({item.stack_count} restam)", SUCCESS)
+            else:
+                self._log(f"Usou: {item.display_name()} (efeito omitido)", SUCCESS)
+                self.player.inventory.remove(item)
             return
 
     def _pickup_ground(self, ground_item):
         it = ground_item.item
         if self.player.inventory.add_auto(it):
             self.world.ground_items.remove(ground_item)
-            self._log(f"Pegou: {it.display_name()}", it.rarity_color())
+            extra = f" x{it.stack_count}" if it.stack_count > 1 else ""
+            self._log(f"Pegou: {it.display_name()}{extra}", it.rarity_color())
             return
         self.world.ground_items.remove(ground_item)
         self.cursor_item = it
@@ -1135,7 +1229,8 @@ class MainScene:
             if not spot: return
             tile = spot
         self.world.ground_items.append(GroundItem(item, tile[0], tile[1]))
-        self._log(f"Jogou no chão: {item.display_name()}", TEXT_DIM)
+        extra = f" x{item.stack_count}" if item.stack_count > 1 else ""
+        self._log(f"Jogou no chão: {item.display_name()}{extra}", TEXT_DIM)
 
     # ==================================================================
     def _tile_at(self, pos):
@@ -1257,13 +1352,44 @@ class MainScene:
 
     def _draw_ground_items_icons(self, surf):
         self._ground_icon_cache = []
+        t = pygame.time.get_ticks() / 1000.0
+
         for gi in self.world.ground_items:
             x = MAP_X + gi.x * TILE
             y = MAP_Y + gi.y * TILE
             col = gi.item.rarity_color()
+            rarity = gi.item.rarity()
 
-            pygame.draw.rect(surf, (30, 20, 15), (x+6, y+6, TILE-12, TILE-12), border_radius=4)
-            pygame.draw.rect(surf, col, (x+6, y+6, TILE-12, TILE-12), 2, border_radius=4)
+            # Glow pulsante por raridade
+            base_a, speed = RARITY_GLOW.get(rarity, (0, 0.0))
+            if base_a > 0:
+                pulse = 0.5 + 0.5 * math.sin(t * speed)
+                alpha = int(base_a * (0.30 + 0.70 * pulse))
+                expand = int(4 * pulse) + 1
+
+                glow_size = TILE - 12 + expand * 2
+                glow_surf = pygame.Surface((glow_size + 10, glow_size + 10),
+                                           pygame.SRCALPHA)
+                cx = glow_surf.get_width() // 2
+                cy = glow_surf.get_height() // 2
+                for layer in range(3):
+                    a = int(alpha * (1.0 - layer * 0.35))
+                    if a <= 0: continue
+                    r = glow_size // 2 + layer * 2
+                    pygame.draw.rect(
+                        glow_surf, (*col, a),
+                        (cx - r, cy - r, r*2, r*2),
+                        border_radius=6 + layer * 2
+                    )
+                surf.blit(glow_surf,
+                          (x + TILE//2 - glow_surf.get_width()//2,
+                           y + TILE//2 - glow_surf.get_height()//2))
+
+            # Caixa do item
+            pygame.draw.rect(surf, (30, 20, 15), (x+6, y+6, TILE-12, TILE-12),
+                             border_radius=4)
+            pygame.draw.rect(surf, col, (x+6, y+6, TILE-12, TILE-12), 2,
+                             border_radius=4)
 
             icon_glyph = gi.item.icon()
             r = FONT_ICON_M.render(icon_glyph, True, col)
@@ -1272,7 +1398,13 @@ class MainScene:
                 scale = max_w / r.get_width()
                 r = pygame.transform.smoothscale(
                     r, (int(r.get_width()*scale), int(r.get_height()*scale)))
-            surf.blit(r, (x+TILE//2 - r.get_width()//2, y+TILE//2 - r.get_height()//2))
+            surf.blit(r, (x+TILE//2 - r.get_width()//2,
+                          y+TILE//2 - r.get_height()//2))
+
+            # Contador de stack
+            if gi.item.stack_count > 1:
+                draw_stack_badge(surf, x + TILE - 4, y + TILE - 4,
+                                 gi.item.stack_count, FONT_XS)
 
             self._ground_icon_cache.append((gi, x, y))
 
@@ -1284,6 +1416,8 @@ class MainScene:
         pending = []
         for gi, x, y in self._ground_icon_cache:
             label = gi.item.display_name()
+            if gi.item.stack_count > 1:
+                label += f" x{gi.item.stack_count}"
             text_w = FONT_S.size(label)[0]
             lw = text_w + 8
             lh = 18
@@ -1312,8 +1446,10 @@ class MainScene:
             pygame.draw.rect(surf, bg_col, final, border_radius=3)
             border_col = col if hovered else tuple(int(c*0.8) for c in col)
             pygame.draw.rect(surf, border_col, final, 1, border_radius=3)
-            draw_text(surf, gi.item.display_name(),
-                      final.x+4, final.y+2, FONT_S, col)
+            label = gi.item.display_name()
+            if gi.item.stack_count > 1:
+                label += f" x{gi.item.stack_count}"
+            draw_text(surf, label, final.x+4, final.y+2, FONT_S, col)
             self.ground_labels.append((final, gi))
 
     def _resolve_label_position(self, lx, ly, lw, lh, used_rects):
@@ -1427,6 +1563,11 @@ class MainScene:
                            y + h - ri.get_height() - 4))
         else:
             surf.blit(ri, (x + (w - ri.get_width())//2, y + (h - ri.get_height())//2))
+
+        # Contador de stack
+        if item.stack_count > 1:
+            draw_stack_badge(surf, x + w - 3, y + h - 3,
+                             item.stack_count, FONT_S)
 
     def _draw_buttons(self, surf):
         rects = self._buttons_rects()
@@ -1728,8 +1869,6 @@ class MainScene:
             pygame.draw.rect(surf, PREVIEW_OK, (rx, ry, rw, rh), 2, border_radius=4)
 
     def _draw_cursor_item(self, surf):
-        """Item desenhado colado no preview quando há encaixe válido;
-        senão, segue o mouse centrado."""
         if not self.cursor_item: return
         col = self.cursor_item.rarity_color()
         w = self.cursor_item.size[0] * CELL
@@ -1762,6 +1901,10 @@ class MainScene:
             ri = pygame.transform.smoothscale(ri, (max(1, int(ri.get_width()*scale)),
                                                    max(1, int(ri.get_height()*scale))))
         surf.blit(ri, (x + (w - ri.get_width())//2, y + (h - ri.get_height())//2))
+
+        if self.cursor_item.stack_count > 1:
+            draw_stack_badge(surf, x + w - 3, y + h - 3,
+                             self.cursor_item.stack_count, FONT_S)
 
         hint = FONT_XS.render("R: girar", True, (230, 210, 180))
         surf.blit(hint, (x + w//2 - hint.get_width()//2, y + h + 4))
