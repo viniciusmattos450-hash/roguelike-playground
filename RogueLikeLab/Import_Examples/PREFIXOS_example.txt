@@ -1,0 +1,97 @@
+[
+  { "id": "prefix_flamejante", "name": "Flamejante", "kind": "Prefixo", "rarity_min": "Incomum", "applies_to": ["Arma","Armadura","Acessório"], "description": "Envolto em chamas perpétuas.",
+    "damage_bonus": { "min": 2, "max": 4, "type": "Fogo" },
+    "stat_modifiers": { "attack_magical": 3, "crit_chance": 2 },
+    "resistances": { "fire": 15, "ice": -5 },
+    "special_effects": [ { "type": "Queimadura", "value": 3, "duration": 3, "chance": 30, "trigger": "Ao acertar" } ] },
+
+  { "id": "prefix_glacial", "name": "Glacial", "kind": "Prefixo", "rarity_min": "Incomum", "applies_to": ["Arma","Armadura","Acessório"], "description": "Frio cortante emana do item.",
+    "damage_bonus": { "min": 2, "max": 4, "type": "Gelo" },
+    "stat_modifiers": { "attack_magical": 3 },
+    "resistances": { "ice": 15, "fire": -5 },
+    "special_effects": [ { "type": "Lentidão", "value": 20, "duration": 2, "chance": 25, "trigger": "Ao acertar" } ] },
+
+  { "id": "prefix_trovejante", "name": "Trovejante", "kind": "Prefixo", "rarity_min": "Raro", "applies_to": ["Arma","Acessório"], "description": "Faíscas elétricas percorrem a superfície.",
+    "damage_bonus": { "min": 3, "max": 5, "type": "Elétrico" },
+    "stat_modifiers": { "accuracy": 5, "crit_chance": 3 },
+    "resistances": { "lightning": 15 },
+    "special_effects": [ { "type": "Paralisia", "value": 0, "duration": 1, "chance": 15, "trigger": "Ao acertar" } ] },
+
+  { "id": "prefix_venenoso", "name": "Venenoso", "kind": "Prefixo", "rarity_min": "Incomum", "applies_to": ["Arma","Acessório"], "description": "Goteja uma substância esverdeada.",
+    "damage_bonus": { "min": 2, "max": 3, "type": "Veneno" },
+    "stat_modifiers": {},
+    "resistances": { "poison": 20 },
+    "special_effects": [ { "type": "Veneno", "value": 4, "duration": 4, "chance": 35, "trigger": "Ao acertar" } ] },
+
+  { "id": "prefix_acido", "name": "Corrosivo", "kind": "Prefixo", "rarity_min": "Raro", "applies_to": ["Arma"], "description": "Corrói armaduras ao menor toque.",
+    "damage_bonus": { "min": 3, "max": 5, "type": "Ácido" },
+    "stat_modifiers": {},
+    "resistances": {},
+    "special_effects": [ { "type": "Debuff de Defesa", "value": 20, "duration": 3, "chance": 40, "trigger": "Ao acertar" } ] },
+
+  { "id": "prefix_sombrio", "name": "Sombrio", "kind": "Prefixo", "rarity_min": "Raro", "applies_to": ["Arma","Armadura","Acessório"], "description": "Absorve a luz ao redor.",
+    "damage_bonus": { "min": 4, "max": 7, "type": "Sombrio" },
+    "stat_modifiers": { "attack_magical": 4, "evasion": 5 },
+    "resistances": { "dark": 20, "holy": -10 },
+    "special_effects": [ { "type": "Debuff de Ataque", "value": 10, "duration": 2, "chance": 30, "trigger": "Ao acertar" } ] },
+
+  { "id": "prefix_sagrado", "name": "Sagrado", "kind": "Prefixo", "rarity_min": "Raro", "applies_to": ["Arma","Armadura","Acessório"], "description": "Brilha com uma luz divina suave.",
+    "damage_bonus": { "min": 3, "max": 6, "type": "Sagrado" },
+    "stat_modifiers": { "wisdom": 3 },
+    "resistances": { "holy": 20, "dark": 10 },
+    "special_effects": [ { "type": "Regeneração HP", "value": 3, "duration": 5, "chance": 20, "trigger": "Ao equipar" } ] },
+
+  { "id": "prefix_arcano", "name": "Arcano", "kind": "Prefixo", "rarity_min": "Raro", "applies_to": ["Arma","Armadura","Acessório"], "description": "Runas arcanas vibram na superfície.",
+    "damage_bonus": { "min": 3, "max": 6, "type": "Arcano" },
+    "stat_modifiers": { "attack_magical": 6, "intelligence": 3 },
+    "resistances": {},
+    "special_effects": [ { "type": "Regeneração Mana", "value": 2, "duration": 5, "chance": 30, "trigger": "Ao equipar" } ] },
+
+  { "id": "prefix_sangrento", "name": "Sangrento", "kind": "Prefixo", "rarity_min": "Incomum", "applies_to": ["Arma"], "description": "Deixa feridas que não param de sangrar.",
+    "damage_bonus": { "min": 2, "max": 4, "type": "Físico" },
+    "stat_modifiers": { "attack_physical": 4, "crit_chance": 3 },
+    "resistances": {},
+    "special_effects": [ { "type": "Sangramento", "value": 3, "duration": 4, "chance": 35, "trigger": "Ao acertar" } ] },
+
+  { "id": "prefix_robusto", "name": "Robusto", "kind": "Prefixo", "rarity_min": "Comum", "applies_to": ["Armadura","Acessório"], "description": "Aparência sólida e resistente.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "hp": 20, "defense_physical": 3, "vitality": 2 },
+    "resistances": {},
+    "special_effects": [] },
+
+  { "id": "prefix_veloz", "name": "Veloz", "kind": "Prefixo", "rarity_min": "Incomum", "applies_to": ["Arma","Armadura","Acessório"], "description": "Movimento leve e rápido.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "initiative": 5, "dexterity": 3, "evasion": 3 },
+    "resistances": {},
+    "special_effects": [] },
+
+  { "id": "prefix_preciso", "name": "Preciso", "kind": "Prefixo", "rarity_min": "Incomum", "applies_to": ["Arma","Acessório"], "description": "Encontra pontos vitais com facilidade.",
+    "damage_bonus": { "min": 1, "max": 3, "type": "Físico" },
+    "stat_modifiers": { "accuracy": 8, "crit_chance": 4 },
+    "resistances": {},
+    "special_effects": [] },
+
+  { "id": "prefix_vampirico", "name": "Vampírico", "kind": "Prefixo", "rarity_min": "Épico", "applies_to": ["Arma"], "description": "Bebe a vida de quem fere.",
+    "damage_bonus": { "min": 4, "max": 7, "type": "Sombrio" },
+    "stat_modifiers": { "lifesteal": 15, "attack_physical": 3 },
+    "resistances": { "dark": 15, "holy": -15 },
+    "special_effects": [ { "type": "Roubo de Vida", "value": 10, "duration": 0, "chance": 50, "trigger": "Ao acertar" } ] },
+
+  { "id": "prefix_amaldicoado", "name": "Amaldiçoado", "kind": "Prefixo", "rarity_min": "Épico", "applies_to": ["Arma","Armadura","Acessório"], "description": "Poder imenso, preço terrível.",
+    "damage_bonus": { "min": 6, "max": 10, "type": "Sombrio" },
+    "stat_modifiers": { "attack_physical": 8, "attack_magical": 8, "hp": -30 },
+    "resistances": { "holy": -30, "dark": 30 },
+    "special_effects": [ { "type": "Maldição", "value": 5, "duration": 3, "chance": 25, "trigger": "Ao ser acertado" } ] },
+
+  { "id": "prefix_bendito", "name": "Bendito", "kind": "Prefixo", "rarity_min": "Épico", "applies_to": ["Armadura","Acessório"], "description": "Protegido pelos deuses.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "hp": 30, "wisdom": 5, "defense_magical": 6 },
+    "resistances": { "holy": 25, "dark": 25 },
+    "special_effects": [ { "type": "Regeneração HP", "value": 5, "duration": 4, "chance": 30, "trigger": "Ao ser acertado" } ] },
+
+  { "id": "prefix_selvagem", "name": "Selvagem", "kind": "Prefixo", "rarity_min": "Incomum", "applies_to": ["Arma","Armadura"], "description": "Feito com materiais brutos da natureza.",
+    "damage_bonus": { "min": 2, "max": 4, "type": "Físico" },
+    "stat_modifiers": { "strength": 3, "dexterity": 3 },
+    "resistances": { "poison": 10 },
+    "special_effects": [ { "type": "Sangramento", "value": 2, "duration": 2, "chance": 20, "trigger": "Ao acertar" } ] }
+]

@@ -3,12 +3,12 @@
 DiabloInventory.py
 Sistema de inventário estilo Diablo + mapa roguelike simples.
 
-Sistema de encaixe portado do GridTest que funcionou:
-- Item sempre centralizado no cursor (pega do chão/inventário/container/equip)
+Sistema de encaixe:
+- Item sempre centralizado no cursor
 - Snap pela célula sob o cursor com clamp
 - Preview: verde (vazio) / azul (swap) / sem preview (bloqueado)
-- Swap: coleta todos os ocupantes; se for 1, troca; se 2+, bloqueado
-- Item desenhado cola no preview quando há encaixe válido (sem escape)
+- Item desenhado cola no preview quando há encaixe válido
+- Auto-organize (multi-heurística + rotação) — tecla O / botão
 """
 
 import os, json, random
@@ -201,6 +201,130 @@ def icon_font_for_size(w_px, h_px):
 
 
 # ============================================================================
+# Auto-organize — packer multi-heurística com rotação
+# ============================================================================
+def _pack_attempt(items, orig_sizes, cont_w, cont_h, order):
+    """
+    Tenta empacotar `order` num grid w x h usando first-fit + rotação.
+    Retorna (leftovers, placements, used_cells).
+    placements = [(item, (w,h), (x,y)), ...]
+    """
+    grid = [[False]*cont_w for _ in range(cont_h)]
+
+    def can_place(w, h, x, y):
+        if x < 0 or y < 0 or x + w > cont_w or y + h > cont_h: return False
+        for dy in range(h):
+            for dx in range(w):
+                if grid[y+dy][x+dx]: return False
+        return True
+
+    def first_fit(w, h):
+        for y in range(cont_h - h + 1):
+            for x in range(cont_w - w + 1):
+                if can_place(w, h, x, y): return (x, y)
+        return None
+
+    def mark(w, h, x, y):
+        for dy in range(h):
+            for dx in range(w):
+                grid[y+dy][x+dx] = True
+
+    placements = []
+    leftovers = []
+    used = 0
+    for it in order:
+        ow, oh = orig_sizes[id(it)]
+        candidates = [(ow, oh)] if ow == oh else [(ow, oh), (oh, ow)]
+        done = False
+        for (w, h) in candidates:
+            if w > cont_w or h > cont_h: continue
+            pos = first_fit(w, h)
+            if pos:
+                mark(w, h, pos[0], pos[1])
+                placements.append((it, (w, h), pos))
+                used += w * h
+                done = True
+                break
+        if not done:
+            leftovers.append(it)
+
+    return leftovers, placements, used
+
+
+def pack_items_into(cont, items):
+    """
+    Empacota `items` num container VAZIO testando várias ordenações e
+    rotações; escolhe o resultado que coloca mais itens no menor espaço.
+    Aplica o melhor layout no container real e retorna os leftovers.
+    """
+    if not items:
+        return []
+
+    # Guarda os tamanhos originais (PlacedItem.size pode ter sido rotacionado antes)
+    orig_sizes = {id(it): tuple(it.size) for it in items}
+
+    def key_area(it):   s = orig_sizes[id(it)]; return (-(s[0]*s[1]), -max(s), -min(s))
+    def key_tall(it):   s = orig_sizes[id(it)]; return (-s[1], -(s[0]*s[1]), -s[0])
+    def key_wide(it):   s = orig_sizes[id(it)]; return (-s[0], -(s[0]*s[1]), -s[1])
+    def key_maxside(it):s = orig_sizes[id(it)]; return (-max(s), -min(s))
+    def key_minside(it):s = orig_sizes[id(it)]; return (-min(s), -max(s))
+
+    orders = [
+        sorted(items, key=key_area),
+        sorted(items, key=key_tall),
+        sorted(items, key=key_wide),
+        sorted(items, key=key_maxside),
+        sorted(items, key=key_minside),
+    ]
+
+    best = None  # (score_tuple, placements, leftovers)
+    for order in orders:
+        leftovers, placements, used = _pack_attempt(
+            items, orig_sizes, cont.w, cont.h, order
+        )
+        # score: menos leftovers é melhor; empate desempata por mais células usadas
+        score = (len(leftovers), -used)
+        if best is None or score < best[0]:
+            best = (score, placements, leftovers)
+
+    _, placements, leftovers = best
+
+    # Aplica o layout escolhido no container real
+    for it in list(cont.items):
+        cont.remove(it)
+    for it, (w, h), (x, y) in placements:
+        it.size = (w, h)
+        cont.place(it, x, y)
+
+    return leftovers
+
+
+def organize_container(cont):
+    """
+    Reorganiza os itens do container. Se algum item não couber no repack,
+    reverte tudo ao estado anterior (nunca piora).
+    Retorna True se organizou, False se reverteu.
+    """
+    saved = [(it, it.x, it.y, tuple(it.size)) for it in cont.items]
+    items = [it for it, _, _, _ in saved]
+
+    for it in items:
+        cont.remove(it)
+
+    leftovers = pack_items_into(cont, items)
+
+    if leftovers:
+        # Reverte
+        for it in list(cont.items):
+            cont.remove(it)
+        for it, x, y, size in saved:
+            it.size = size
+            cont.place(it, x, y)
+        return False
+    return True
+
+
+# ============================================================================
 # PlacedItem
 # ============================================================================
 class PlacedItem:
@@ -348,13 +472,16 @@ class Container:
         self.grid = [[None]*w for _ in range(h)]
         self.items = []
 
-    def can_place(self, item, x, y):
-        iw, ih = item.size
-        if x < 0 or y < 0 or x + iw > self.w or y + ih > self.h: return False
-        for dy in range(ih):
-            for dx in range(iw):
+    def can_place_size(self, w, h, x, y):
+        if x < 0 or y < 0 or x + w > self.w or y + h > self.h: return False
+        for dy in range(h):
+            for dx in range(w):
                 if self.grid[y+dy][x+dx] is not None: return False
         return True
+
+    def can_place(self, item, x, y):
+        w, h = item.size
+        return self.can_place_size(w, h, x, y)
 
     def place(self, item, x, y):
         if not self.can_place(item, x, y): return False
@@ -484,21 +611,15 @@ class MainScene:
                         self.world.ground_items.append(GroundItem(it, spot[0], spot[1]))
 
         chest = Chest(3, 3, "Baú Antigo")
-        for _ in range(4):
-            it = roll_item(self.items_lib, self.affixes_lib)
-            if it: chest.container.add_auto(it)
+        self._fill_container_random(chest.container, 4)
         self.world.chests.append(chest)
 
         chest2 = Chest(16, 11, "Baú do Tesouro")
-        for _ in range(5):
-            it = roll_item(self.items_lib, self.affixes_lib)
-            if it: chest2.container.add_auto(it)
+        self._fill_container_random(chest2.container, 5)
         self.world.chests.append(chest2)
 
         corpse = Corpse(5, 11, "Corpo de Aventureiro")
-        for _ in range(3):
-            it = roll_item(self.items_lib, self.affixes_lib)
-            if it: corpse.container.add_auto(it)
+        self._fill_container_random(corpse.container, 3)
         self.world.corpses.append(corpse)
 
         self.cursor_item = None
@@ -521,7 +642,7 @@ class MainScene:
         self.temp_labels = False
         self.ctrl_held = False
 
-        self._log("Sistema iniciado. CTRL compara · R gira · Z nomes", ACCENT)
+        self._log("Sistema iniciado. CTRL compara · R gira · Z nomes · O organiza", ACCENT)
 
     def _log(self, text, color=TEXT):
         self.log.append((text, color))
@@ -529,6 +650,28 @@ class MainScene:
 
     def _msg(self, text, color=ACCENT):
         self.msg = text; self.msg_color = color; self.msg_timer = 3.0
+
+    # ------------------------------------------------------------------
+    # Spawn helpers (usam o packer)
+    # ------------------------------------------------------------------
+    def _fill_container_random(self, cont, n_items):
+        """Gera n itens aleatórios e empacota de forma organizada no container."""
+        items = []
+        for _ in range(n_items):
+            it = roll_item(self.items_lib, self.affixes_lib)
+            if it: items.append(it)
+        pack_items_into(cont, items)  # leftovers descartados
+
+    def _organize_all(self):
+        """Reorganiza inventário do jogador e o container aberto (se houver)."""
+        ok_inv = organize_container(self.player.inventory)
+        ok_cont = True
+        if self.open_container:
+            ok_cont = organize_container(self.open_container)
+        if ok_inv and ok_cont:
+            self._log("Organizado.", ACCENT)
+        else:
+            self._msg("Não deu pra organizar (sem espaço).", DANGER)
 
     # ==================================================================
     def handle_events(self, events):
@@ -554,6 +697,7 @@ class MainScene:
                 if e.key == pygame.K_SPACE: self._spawn_near()
                 if e.key == pygame.K_c: self._spawn_chest_near()
                 if e.key == pygame.K_x: self._spawn_corpse_near()
+                if e.key == pygame.K_o: self._organize_all()
                 if e.key == pygame.K_z:
                     self.show_labels = not self.show_labels
                     state = "ATIVADOS" if self.show_labels else "DESATIVADOS"
@@ -596,9 +740,7 @@ class MainScene:
         if not spot:
             self._msg("Sem espaço.", DANGER); return
         chest = Chest(spot[0], spot[1], "Baú")
-        for _ in range(random.randint(2, 5)):
-            it = roll_item(self.items_lib, self.affixes_lib)
-            if it: chest.container.add_auto(it)
+        self._fill_container_random(chest.container, random.randint(2, 5))
         self.world.chests.append(chest)
         self._log(f"Baú em ({spot[0]},{spot[1]})", ACCENT)
 
@@ -607,18 +749,12 @@ class MainScene:
         if not spot:
             self._msg("Sem espaço.", DANGER); return
         corpse = Corpse(spot[0], spot[1], "Corpo")
-        for _ in range(random.randint(1, 4)):
-            it = roll_item(self.items_lib, self.affixes_lib)
-            if it: corpse.container.add_auto(it)
+        self._fill_container_random(corpse.container, random.randint(1, 4))
         self.world.corpses.append(corpse)
         self._log(f"Corpo em ({spot[0]},{spot[1]})", ACCENT)
 
     # ------------------------------------------------------------------
     def _compute_drag_offset(self, item, mouse_pos):
-        """
-        Item sempre centralizado no cursor (topo-esquerdo = mouse - metade do tamanho).
-        Assim o encaixe fica previsível, não importa onde você clicou no item.
-        """
         w_px = item.size[0] * CELL
         h_px = item.size[1] * CELL
         return (-w_px // 2, -h_px // 2)
@@ -748,13 +884,6 @@ class MainScene:
     # SNAP — arredonda pela célula sob o cursor (item centrado)
     # ==================================================================
     def _snap_for_container(self, cont, grid_origin, item, mouse_pos):
-        """
-        Calcula o encaixe com base no CENTRO do item arrastado (que é o cursor),
-        já que o item agora sempre fica centralizado no mouse. Retorna:
-        - {"gx", "gy", "target": None, "kind": "ok"}   → encaixa em vazio
-        - {"gx", "gy", "target": ITEM, "kind": "swap"} → swap válido
-        - None → não cabe
-        """
         x0, y0 = grid_origin
         iw, ih = item.size
 
@@ -1039,10 +1168,16 @@ class MainScene:
         return x <= pos[0] < x+w and y <= pos[1] < y+h
 
     def _buttons_rects(self):
-        r1 = pygame.Rect(LOG_X + 10, LOG_Y + 10, 130, 30)
+        r1 = pygame.Rect(LOG_X + 10,  LOG_Y + 10, 130, 30)
         r2 = pygame.Rect(LOG_X + 150, LOG_Y + 10, 130, 30)
         r3 = pygame.Rect(LOG_X + 290, LOG_Y + 10, 130, 30)
-        return [(r1, self._spawn_near), (r2, self._spawn_chest_near), (r3, self._spawn_corpse_near)]
+        r4 = pygame.Rect(LOG_X + 430, LOG_Y + 10, 130, 30)
+        return [
+            (r1, self._spawn_near),
+            (r2, self._spawn_chest_near),
+            (r3, self._spawn_corpse_near),
+            (r4, self._organize_all),
+        ]
 
     # ==================================================================
     def update(self, dt):
@@ -1077,8 +1212,8 @@ class MainScene:
             state_col = TEXT_DIM
         draw_text(surf, state_txt, WIDTH//2, HEIGHT - 40, FONT_S, state_col, center=True)
 
-        ctrl = ("WASD: mover · ESPAÇO: item · C: baú · X: corpo · Z: nomes · "
-                "ALT: nomes · R: girar · CTRL: comparar · ESC: sair")
+        ctrl = ("WASD: mover · ESPAÇO: item · C: baú · X: corpo · O: organizar · "
+                "Z: nomes · ALT: nomes · R: girar · CTRL: comparar · ESC: sair")
         draw_text(surf, ctrl, WIDTH//2, HEIGHT - 20, FONT_S, TEXT_DIM, center=True)
 
     def _draw_map(self, surf):
@@ -1235,7 +1370,7 @@ class MainScene:
 
         inv_title_y = PANEL_Y + 280
         draw_text(surf, "INVENTÁRIO", PANEL_X + 20, inv_title_y, FONT_L, ACCENT)
-        draw_text(surf, "(clique p/ pegar · R gira · CTRL compara · dir. equipa)",
+        draw_text(surf, "(clique p/ pegar · R gira · CTRL compara · dir. equipa · O organiza)",
                   PANEL_X + 130, inv_title_y + 2, FONT_XS, TEXT_DIM)
 
         inv_x0, inv_y0 = self._inv_origin()
@@ -1299,6 +1434,7 @@ class MainScene:
             ("GERAR ITEM (SPAÇO)", ACCENT),
             ("GERAR BAÚ (C)", (140, 100, 50)),
             ("GERAR CORPO (X)", (110, 90, 80)),
+            ("ORGANIZAR (O)", (80, 140, 90)),
         ]
         mouse = pygame.mouse.get_pos()
         for (r, _), (label, col) in zip(rects, labels):
@@ -1336,7 +1472,7 @@ class MainScene:
         draw_panel(surf, bg_rect, bg=PANEL_BG, border=ACCENT, radius=6, thickness=2)
 
         draw_text(surf, cont.name, x + 10, y + 10, FONT_L, ACCENT_BRIGHT)
-        draw_text(surf, "Clique em item para pegar. Botão direito = pegar direto. ESC ou X fecha.",
+        draw_text(surf, "Clique em item para pegar. Botão direito = pegar direto. ESC ou X fecha. O organiza.",
                   x + 10, y + 30, FONT_XS, TEXT_DIM)
 
         close_rect = pygame.Rect(x + w - 32, y + 8, 24, 24)
@@ -1599,7 +1735,6 @@ class MainScene:
         w = self.cursor_item.size[0] * CELL
         h = self.cursor_item.size[1] * CELL
 
-        # Se há snap válido, cola o item desenhado na posição do preview
         if self._snap and self._snap.get("kind") == "grid":
             x = self._snap["x"]
             y = self._snap["y"]

@@ -1,0 +1,1193 @@
+[
+  {
+    "id": "skill_mordida_feroz",
+    "name": "Mordida Feroz",
+    "description": "Uma mordida brutal com presas afiadas que rasga a carne.",
+    "battle_description": "O inimigo crava as presas profundamente!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "mordida", "animal"],
+    "damage": { "min": 4, "max": 8, "type": "Físico", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 0, "stamina": 5 },
+    "cooldown": 0,
+    "duration": 0,
+    "range": 1,
+    "effects": [
+      { "type": "Sangramento", "value": 2, "duration": 3, "condition": "", "chance": 30 }
+    ],
+    "requirements": { "level": 1, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_mordida_venenosa",
+    "name": "Mordida Venenosa",
+    "description": "Presas que injetam veneno no alvo.",
+    "battle_description": "O veneno corre pelas veias do inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["veneno", "mordida", "animal"],
+    "damage": { "min": 3, "max": 6, "type": "Veneno", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 0, "stamina": 6 },
+    "cooldown": 1,
+    "duration": 0,
+    "range": 1,
+    "effects": [
+      { "type": "Veneno", "value": 3, "duration": 5, "condition": "", "chance": 60 }
+    ],
+    "requirements": { "level": 1, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_investida_selvagem",
+    "name": "Investida Selvagem",
+    "description": "O usuário avança a toda velocidade contra o alvo.",
+    "battle_description": "Uma investida furiosa derruba o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "investida", "animal"],
+    "damage": { "min": 8, "max": 14, "type": "Físico", "hits": 1, "accuracy": 85 },
+    "cost": { "mana": 0, "stamina": 12 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 1,
+    "effects": [
+      { "type": "Atordoamento", "value": 0, "duration": 1, "condition": "", "chance": 25 }
+    ],
+    "requirements": { "level": 2, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_uivo_intimidador",
+    "name": "Uivo Intimidador",
+    "description": "Um uivo longo que abala a coragem dos inimigos.",
+    "battle_description": "O uivo ecoa e faz os inimigos hesitarem!",
+    "type": "Debuff",
+    "target": "Todos os Inimigos",
+    "tags": ["debuff", "medo", "sonoro"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 0, "stamina": 8 },
+    "cooldown": 4,
+    "duration": 3,
+    "range": 5,
+    "effects": [
+      { "type": "Medo", "value": 0, "duration": 3, "condition": "", "chance": 70 },
+      { "type": "Debuff de Ataque", "value": 10, "duration": 3, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 3, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_golpe_espada",
+    "name": "Golpe de Espada",
+    "description": "Um corte simples e direto com a lâmina.",
+    "battle_description": "A lâmina corta o ar e acerta o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "espada", "arma"],
+    "damage": { "min": 6, "max": 10, "type": "Físico", "hits": 1, "accuracy": 92 },
+    "cost": { "mana": 0, "stamina": 4 },
+    "cooldown": 0,
+    "duration": 0,
+    "range": 1,
+    "effects": [],
+    "requirements": { "level": 1, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_espada_cortante",
+    "name": "Espada Cortante",
+    "description": "Um corte horizontal que atinge vários inimigos.",
+    "battle_description": "Um arco de aço atinge todos à frente!",
+    "type": "Ataque Múltiplo",
+    "target": "Cone",
+    "tags": ["fisico", "espada", "area", "cone"],
+    "damage": { "min": 8, "max": 14, "type": "Físico", "hits": 1, "accuracy": 85 },
+    "cost": { "mana": 0, "stamina": 15 },
+    "cooldown": 3,
+    "duration": 0,
+    "range": 2,
+    "effects": [
+      { "type": "Sangramento", "value": 3, "duration": 3, "condition": "", "chance": 40 }
+    ],
+    "requirements": { "level": 4, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_ataque_furtivo",
+    "name": "Ataque Furtivo",
+    "description": "Um golpe preciso nas costas ou pontos vitais do inimigo.",
+    "battle_description": "A adaga encontra a brecha na armadura!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "furtivo", "critico"],
+    "damage": { "min": 12, "max": 20, "type": "Físico", "hits": 1, "accuracy": 95 },
+    "cost": { "mana": 0, "stamina": 10 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 1,
+    "effects": [
+      { "type": "Sangramento", "value": 4, "duration": 3, "condition": "", "chance": 50 },
+      { "type": "Debuff de Defesa", "value": 15, "duration": 2, "condition": "", "chance": 40 }
+    ],
+    "requirements": { "level": 3, "class": "Ladino", "race": "", "all": false }
+  },
+  {
+    "id": "skill_ataque_duplo",
+    "name": "Ataque Duplo",
+    "description": "Dois golpes rápidos em sequência.",
+    "battle_description": "Duas estocadas em rápida sucessão!",
+    "type": "Ataque Múltiplo",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "multiplo", "arma"],
+    "damage": { "min": 5, "max": 9, "type": "Físico", "hits": 2, "accuracy": 90 },
+    "cost": { "mana": 0, "stamina": 8 },
+    "cooldown": 1,
+    "duration": 0,
+    "range": 1,
+    "effects": [],
+    "requirements": { "level": 2, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_rajada_tripla",
+    "name": "Rajada Tripla",
+    "description": "Três ataques rápidos em sequência devastadora.",
+    "battle_description": "Três golpes relampejantes!"
+    "type": "Ataque Múltiplo",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "multiplo", "rapido"],
+    "damage": { "min": 6, "max": 10, "type": "Físico", "hits": 3, "accuracy": 88 },
+    "cost": { "mana": 0, "stamina": 15 },
+    "cooldown": 3,
+    "duration": 0,
+    "range": 1,
+    "effects": [],
+    "requirements": { "level": 5, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_grito_de_guerra",
+    "name": "Grito de Guerra",
+    "description": "Um grito que enche os aliados de coragem.",
+    "battle_description": "Os aliados sentem-se mais fortes!",
+    "type": "Buff",
+    "target": "Todos os Aliados",
+    "tags": ["buff", "suporte", "sonoro"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 0, "stamina": 12 },
+    "cooldown": 5,
+    "duration": 3,
+    "range": 5,
+    "effects": [
+      { "type": "Bufo de Ataque", "value": 20, "duration": 3, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 4, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_poste_defensivo",
+    "name": "Postura Defensiva",
+    "description": "Assume uma postura que aumenta a defesa, reduzindo o dano recebido.",
+    "battle_description": "A guarda é erguida contra os golpes!",
+    "type": "Buff",
+    "target": "Si Mesmo",
+    "tags": ["buff", "defesa", "postura"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 0, "stamina": 5 },
+    "cooldown": 3,
+    "duration": 3,
+    "range": 1,
+    "effects": [
+      { "type": "Bufo de Defesa", "value": 25, "duration": 3, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 1, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_esquiva_agil",
+    "name": "Esquiva Ágil",
+    "description": "Um movimento rápido que aumenta a chance de esquivar.",
+    "battle_description": "O corpo se move como o vento!",
+    "type": "Buff",
+    "target": "Si Mesmo",
+    "tags": ["buff", "esquiva", "agilidade"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 0, "stamina": 8 },
+    "cooldown": 4,
+    "duration": 3,
+    "range": 1,
+    "effects": [
+      { "type": "Chance de Esquiva +", "value": 30, "duration": 3, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 3, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_esquiva_arcana",
+    "name": "Escudo Arcano",
+    "description": "Uma barreira mágica absorve dano por um tempo.",
+    "battle_description": "Um escudo translúcido envolve o conjurador!",
+    "type": "Buff",
+    "target": "Si Mesmo",
+    "tags": ["buff", "escudo", "magia"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 20, "stamina": 0 },
+    "cooldown": 5,
+    "duration": 4,
+    "range": 1,
+    "effects": [
+      { "type": "Escudo", "value": 40, "duration": 4, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 5, "class": "Mago", "race": "", "all": false }
+  },
+  {
+    "id": "skill_bola_de_fogo",
+    "name": "Bola de Fogo",
+    "description": "Uma esfera incandescente que explode no alvo.",
+    "battle_description": "Uma bola de fogo explode no inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fogo", "magia", "elemental"],
+    "damage": { "min": 15, "max": 25, "type": "Fogo", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 15, "stamina": 0 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 6,
+    "effects": [
+      { "type": "Queimadura", "value": 4, "duration": 3, "condition": "", "chance": 50 }
+    ],
+    "requirements": { "level": 3, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_bafo_de_fogo",
+    "name": "Bafo de Fogo",
+    "description": "Um cone de chamas que incendeia vários inimigos.",
+    "battle_description": "Uma onda de fogo engole os inimigos!",
+    "type": "Ataque Múltiplo",
+    "target": "Cone",
+    "tags": ["fogo", "dragao", "cone", "elemental"],
+    "damage": { "min": 30, "max": 50, "type": "Fogo", "hits": 1, "accuracy": 95 },
+    "cost": { "mana": 30, "stamina": 0 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 4,
+    "effects": [
+      { "type": "Queimadura", "value": 8, "duration": 3, "condition": "", "chance": 80 }
+    ],
+    "requirements": { "level": 10, "class": "", "race": "Dragão", "all": false }
+  },
+  {
+    "id": "skill_lanca_de_gelo",
+    "name": "Lança de Gelo",
+    "description": "Uma lança congelante perfura o alvo.",
+    "battle_description": "Uma lança de gelo atravessa o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["gelo", "magia", "elemental"],
+    "damage": { "min": 12, "max": 20, "type": "Gelo", "hits": 1, "accuracy": 92 },
+    "cost": { "mana": 12, "stamina": 0 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 6,
+    "effects": [
+      { "type": "Congelamento", "value": 0, "duration": 2, "condition": "", "chance": 35 },
+      { "type": "Lentidão", "value": 20, "duration": 3, "condition": "", "chance": 60 }
+    ],
+    "requirements": { "level": 3, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_raio",
+    "name": "Raio",
+    "description": "Um relâmpago desce dos céus sobre o alvo.",
+    "battle_description": "Um raio atinge o inimigo com estrondo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["eletrico", "magia", "elemental"],
+    "damage": { "min": 16, "max": 24, "type": "Elétrico", "hits": 1, "accuracy": 88 },
+    "cost": { "mana": 14, "stamina": 0 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 6,
+    "effects": [
+      { "type": "Paralisia", "value": 0, "duration": 1, "condition": "", "chance": 20 }
+    ],
+    "requirements": { "level": 4, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_corrente_eletrica",
+    "name": "Corrente Elétrica",
+    "description": "Um arco elétrico salta entre vários inimigos.",
+    "battle_description": "Faíscas pulam de inimigo em inimigo!",
+    "type": "Ataque Múltiplo",
+    "target": "Todos os Inimigos",
+    "tags": ["eletrico", "magia", "area"],
+    "damage": { "min": 10, "max": 16, "type": "Elétrico", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 25, "stamina": 0 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 5,
+    "effects": [
+      { "type": "Paralisia", "value": 0, "duration": 1, "condition": "", "chance": 15 }
+    ],
+    "requirements": { "level": 7, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_cuspe_acido",
+    "name": "Cuspe Ácido",
+    "description": "Cospe uma substância ácida que corrói a armadura.",
+    "battle_description": "O ácido corrói a defesa do inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["acido", "corrosao", "monstro"],
+    "damage": { "min": 8, "max": 12, "type": "Ácido", "hits": 1, "accuracy": 85 },
+    "cost": { "mana": 0, "stamina": 10 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 3,
+    "effects": [
+      { "type": "Debuff de Defesa", "value": 20, "duration": 4, "condition": "", "chance": 70 }
+    ],
+    "requirements": { "level": 2, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_teia_pegajosa",
+    "name": "Teia Pegajosa",
+    "description": "Dispara teias que prendem o alvo no lugar.",
+    "battle_description": "O inimigo fica preso na teia!",
+    "type": "Debuff",
+    "target": "Inimigo Único",
+    "tags": ["teia", "controle", "aranha"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 0, "stamina": 8 },
+    "cooldown": 3,
+    "duration": 2,
+    "range": 4,
+    "effects": [
+      { "type": "Lentidão", "value": 50, "duration": 2, "condition": "", "chance": 100 },
+      { "type": "Paralisia", "value": 0, "duration": 1, "condition": "", "chance": 30 }
+    ],
+    "requirements": { "level": 3, "class": "", "race": "Aracnídeo", "all": false }
+  },
+  {
+    "id": "skill_toque_paralisante",
+    "name": "Toque Paralisante",
+    "description": "Um toque que paralisa o alvo temporariamente.",
+    "battle_description": "O corpo do inimigo trava!",
+    "type": "Debuff",
+    "target": "Inimigo Único",
+    "tags": ["paralisia", "controle", "morte-viva"],
+    "damage": { "min": 4, "max": 6, "type": "Sombrio", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 8, "stamina": 0 },
+    "cooldown": 4,
+    "duration": 2,
+    "range": 1,
+    "effects": [
+      { "type": "Paralisia", "value": 0, "duration": 2, "condition": "", "chance": 60 }
+    ],
+    "requirements": { "level": 3, "class": "", "race": "Morto-Vivo", "all": false }
+  },
+  {
+    "id": "skill_drenar_vida",
+    "name": "Drenar Vida",
+    "description": "Rouba a força vital do alvo, curando o usuário.",
+    "battle_description": "A energia vital do inimigo é sugada!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["sombrio", "drenar", "cura"],
+    "damage": { "min": 10, "max": 18, "type": "Sombrio", "hits": 1, "accuracy": 95 },
+    "cost": { "mana": 15, "stamina": 0 },
+    "cooldown": 3,
+    "duration": 0,
+    "range": 3,
+    "effects": [
+      { "type": "Roubo de Vida", "value": 60, "duration": 0, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 5, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_mordida_vampirica",
+    "name": "Mordida Vampírica",
+    "description": "Uma mordida que drena o sangue do inimigo.",
+    "battle_description": "O vampiro crava as presas na jugular!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["vampiro", "mordida", "drenar"],
+    "damage": { "min": 20, "max": 30, "type": "Físico", "hits": 1, "accuracy": 92 },
+    "cost": { "mana": 10, "stamina": 5 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 1,
+    "effects": [
+      { "type": "Roubo de Vida", "value": 80, "duration": 0, "condition": "", "chance": 100 },
+      { "type": "Sangramento", "value": 3, "duration": 2, "condition": "", "chance": 50 }
+    ],
+    "requirements": { "level": 8, "class": "", "race": "Morto-Vivo", "all": false }
+  },
+  {
+    "id": "skill_golpe_espectral",
+    "name": "Golpe Espectral",
+    "description": "Um ataque com energia do além que ignora defesas físicas.",
+    "battle_description": "Uma lâmina fantasmagórica atravessa o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["sombrio", "espectral", "morte-viva"],
+    "damage": { "min": 14, "max": 22, "type": "Sombrio", "hits": 1, "accuracy": 95 },
+    "cost": { "mana": 10, "stamina": 0 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 2,
+    "effects": [
+      { "type": "Debuff de Defesa", "value": 15, "duration": 2, "condition": "", "chance": 40 }
+    ],
+    "requirements": { "level": 5, "class": "", "race": "Morto-Vivo", "all": false }
+  },
+  {
+    "id": "skill_toque_gelido",
+    "name": "Toque Gélido",
+    "description": "Um toque que congela a alma do alvo.",
+    "battle_description": "Um frio cortante percorre o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["gelo", "sombrio", "morte-viva"],
+    "damage": { "min": 8, "max": 12, "type": "Gelo", "hits": 1, "accuracy": 92 },
+    "cost": { "mana": 6, "stamina": 0 },
+    "cooldown": 1,
+    "duration": 0,
+    "range": 1,
+    "effects": [
+      { "type": "Lentidão", "value": 25, "duration": 2, "condition": "", "chance": 60 }
+    ],
+    "requirements": { "level": 2, "class": "", "race": "Morto-Vivo", "all": false }
+  },
+  {
+    "id": "skill_praga_infecciosa",
+    "name": "Praga Infecciosa",
+    "description": "Uma maldição que se espalha entre os inimigos próximos.",
+    "battle_description": "Uma nuvem pútrida corrói os inimigos!",
+    "type": "Debuff",
+    "target": "Todos os Inimigos",
+    "tags": ["veneno", "praga", "doenca"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 20, "stamina": 0 },
+    "cooldown": 5,
+    "duration": 4,
+    "range": 5,
+    "effects": [
+      { "type": "Veneno", "value": 5, "duration": 4, "condition": "", "chance": 85 },
+      { "type": "Debuff de Ataque", "value": 15, "duration": 4, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 6, "class": "", "race": "Morto-Vivo", "all": false }
+  },
+  {
+    "id": "skill_explosao_acida",
+    "name": "Explosão Ácida",
+    "description": "Uma explosão de ácido que atinge todos os inimigos próximos.",
+    "battle_description": "Uma onda de ácido queima os inimigos!",
+    "type": "Ataque Múltiplo",
+    "target": "Todos os Inimigos",
+    "tags": ["acido", "area", "explosao"],
+    "damage": { "min": 18, "max": 28, "type": "Ácido", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 25, "stamina": 0 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 4,
+    "effects": [
+      { "type": "Debuff de Defesa", "value": 25, "duration": 3, "condition": "", "chance": 70 }
+    ],
+    "requirements": { "level": 6, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_machado_giratorio",
+    "name": "Machado Giratório",
+    "description": "Um ataque giratório com machado que atinge todos ao redor.",
+    "battle_description": "Um redemoinho de aço corta tudo em volta!",
+    "type": "Ataque Múltiplo",
+    "target": "Área",
+    "tags": ["fisico", "machado", "area", "orc"],
+    "damage": { "min": 20, "max": 32, "type": "Físico", "hits": 1, "accuracy": 85 },
+    "cost": { "mana": 0, "stamina": 25 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 2,
+    "effects": [
+      { "type": "Sangramento", "value": 5, "duration": 3, "condition": "", "chance": 60 }
+    ],
+    "requirements": { "level": 6, "class": "", "race": "Orc", "all": false }
+  },
+  {
+    "id": "skill_furia_sangrenta",
+    "name": "Fúria Sangrenta",
+    "description": "Entra em fúria, sacrificando defesa por ataque devastador.",
+    "battle_description": "A fúria aumenta o poder de ataque!",
+    "type": "Buff",
+    "target": "Si Mesmo",
+    "tags": ["buff", "furia", "berserker"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 0, "stamina": 15 },
+    "cooldown": 6,
+    "duration": 4,
+    "range": 1,
+    "effects": [
+      { "type": "Bufo de Ataque", "value": 40, "duration": 4, "condition": "", "chance": 100 },
+      { "type": "Debuff de Defesa", "value": 20, "duration": 4, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 7, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_soco_esmagador",
+    "name": "Soco Esmagador",
+    "description": "Um soco poderoso que pode atordoar o alvo.",
+    "battle_description": "Um punho gigantesco esmaga o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "bruto", "soco"],
+    "damage": { "min": 18, "max": 26, "type": "Físico", "hits": 1, "accuracy": 85 },
+    "cost": { "mana": 0, "stamina": 12 },
+    "cooldown": 3,
+    "duration": 0,
+    "range": 1,
+    "effects": [
+      { "type": "Atordoamento", "value": 0, "duration": 1, "condition": "", "chance": 40 }
+    ],
+    "requirements": { "level": 4, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_arremesso_pedra",
+    "name": "Arremesso de Pedra",
+    "description": "Arremessa uma pedra gigante contra o inimigo à distância.",
+    "battle_description": "Uma rocha voa e esmaga o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "arremesso", "gigante"],
+    "damage": { "min": 22, "max": 34, "type": "Físico", "hits": 1, "accuracy": 80 },
+    "cost": { "mana": 0, "stamina": 10 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 6,
+    "effects": [
+      { "type": "Atordoamento", "value": 0, "duration": 1, "condition": "", "chance": 25 }
+    ],
+    "requirements": { "level": 5, "class": "", "race": "Gigante", "all": false }
+  },
+  {
+    "id": "skill_regeneracao_troll",
+    "name": "Regeneração Troll",
+    "description": "Regenera ferimentos a uma velocidade anormal.",
+    "battle_description": "As feridas se fecham diante dos olhos!",
+    "type": "Buff",
+    "target": "Si Mesmo",
+    "tags": ["cura", "regeneracao", "troll"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 0, "stamina": 20 },
+    "cooldown": 6,
+    "duration": 4,
+    "range": 1,
+    "effects": [
+      { "type": "Regeneração HP", "value": 25, "duration": 4, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 8, "class": "", "race": "Gigante", "all": false }
+  },
+  {
+    "id": "skill_pele_de_pedra",
+    "name": "Pele de Pedra",
+    "description": "A pele endurece como rocha, aumentando muito a defesa.",
+    "battle_description": "A pele vira pedra bruta!",
+    "type": "Buff",
+    "target": "Si Mesmo",
+    "tags": ["buff", "defesa", "golem"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 15, "stamina": 0 },
+    "cooldown": 6,
+    "duration": 5,
+    "range": 1,
+    "effects": [
+      { "type": "Bufo de Defesa", "value": 60, "duration": 5, "condition": "", "chance": 100 },
+      { "type": "Debuff de Velocidade", "value": 20, "duration": 5, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 8, "class": "", "race": "Construto", "all": false }
+  },
+  {
+    "id": "skill_onda_de_choque",
+    "name": "Onda de Choque",
+    "description": "Bate no chão criando uma onda que atinge todos ao redor.",
+    "battle_description": "O chão treme e o impacto derruba os inimigos!",
+    "type": "Ataque Múltiplo",
+    "target": "Área",
+    "tags": ["fisico", "area", "impacto"],
+    "damage": { "min": 25, "max": 40, "type": "Físico", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 0, "stamina": 20 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 2,
+    "effects": [
+      { "type": "Atordoamento", "value": 0, "duration": 1, "condition": "", "chance": 30 }
+    ],
+    "requirements": { "level": 8, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_misseis_magicos",
+    "name": "Mísseis Mágicos",
+    "description": "Três dardos de energia arcana perseguem o alvo.",
+    "battle_description": "Dardos mágicos acertam o inimigo em cheio!",
+    "type": "Ataque Múltiplo",
+    "target": "Inimigo Único",
+    "tags": ["arcano", "magia", "multiplo"],
+    "damage": { "min": 8, "max": 12, "type": "Arcano", "hits": 3, "accuracy": 100 },
+    "cost": { "mana": 12, "stamina": 0 },
+    "cooldown": 1,
+    "duration": 0,
+    "range": 7,
+    "effects": [],
+    "requirements": { "level": 2, "class": "Mago", "race": "", "all": false }
+  },
+  {
+    "id": "skill_nova_de_gelo",
+    "name": "Nova de Gelo",
+    "description": "Uma explosão de gelo que congela todos os inimigos próximos.",
+    "battle_description": "Uma onda congelante paralisa os inimigos!",
+    "type": "Ataque Múltiplo",
+    "target": "Área",
+    "tags": ["gelo", "area", "magia"],
+    "damage": { "min": 20, "max": 30, "type": "Gelo", "hits": 1, "accuracy": 92 },
+    "cost": { "mana": 28, "stamina": 0 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 3,
+    "effects": [
+      { "type": "Congelamento", "value": 0, "duration": 2, "condition": "", "chance": 50 },
+      { "type": "Lentidão", "value": 30, "duration": 3, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 7, "class": "Mago", "race": "", "all": false }
+  },
+  {
+    "id": "skill_raio_arcano",
+    "name": "Raio Arcano",
+    "description": "Um feixe concentrado de energia arcana pura.",
+    "battle_description": "Um raio arcano perfura o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["arcano", "magia", "preciso"],
+    "damage": { "min": 35, "max": 50, "type": "Arcano", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 30, "stamina": 0 },
+    "cooldown": 3,
+    "duration": 0,
+    "range": 8,
+    "effects": [],
+    "requirements": { "level": 9, "class": "Mago", "race": "", "all": false }
+  },
+  {
+    "id": "skill_drenar_mana",
+    "name": "Drenar Mana",
+    "description": "Suga a energia mágica do inimigo para si.",
+    "battle_description": "A mana do inimigo é absorvida!",
+    "type": "Debuff",
+    "target": "Inimigo Único",
+    "tags": ["arcano", "drenar", "magia"],
+    "damage": { "min": 5, "max": 8, "type": "Arcano", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 0, "stamina": 0 },
+    "cooldown": 3,
+    "duration": 0,
+    "range": 6,
+    "effects": [
+      { "type": "Regeneração Mana", "value": 20, "duration": 0, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 5, "class": "Mago", "race": "", "all": false }
+  },
+  {
+    "id": "skill_palavra_sagrada",
+    "name": "Palavra Sagrada",
+    "description": "Uma palavra divina que cura aliados próximos.",
+    "battle_description": "Uma luz sagrada restaura os aliados!",
+    "type": "Cura",
+    "target": "Todos os Aliados",
+    "tags": ["sagrado", "cura", "suporte"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 20, "stamina": 0 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 5,
+    "effects": [
+      { "type": "Regeneração HP", "value": 35, "duration": 0, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 5, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_luz_purificadora",
+    "name": "Luz Purificadora",
+    "description": "Um clarão sagrado que fere mortos-vivos e demônios.",
+    "battle_description": "Uma luz divina queima o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["sagrado", "magia", "purificar"],
+    "damage": { "min": 25, "max": 35, "type": "Sagrado", "hits": 1, "accuracy": 95 },
+    "cost": { "mana": 18, "stamina": 0 },
+    "cooldown": 3,
+    "duration": 0,
+    "range": 6,
+    "effects": [],
+    "requirements": { "level": 6, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_maldicao_sombria",
+    "name": "Maldição Sombria",
+    "description": "Uma maldição que reduz todos os atributos do alvo.",
+    "battle_description": "O inimigo é amaldiçoado pelas sombras!",
+    "type": "Debuff",
+    "target": "Inimigo Único",
+    "tags": ["sombrio", "maldicao", "debuff"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 22, "stamina": 0 },
+    "cooldown": 6,
+    "duration": 4,
+    "range": 6,
+    "effects": [
+      { "type": "Debuff de Ataque", "value": 25, "duration": 4, "condition": "", "chance": 100 },
+      { "type": "Debuff de Defesa", "value": 25, "duration": 4, "condition": "", "chance": 100 },
+      { "type": "Debuff de Velocidade", "value": 25, "duration": 4, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 8, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_nuvem_venenosa",
+    "name": "Nuvem Venenosa",
+    "description": "Uma nuvem tóxica persistente que envenena inimigos.",
+    "battle_description": "Uma nuvem pútrida cobre os inimigos!",
+    "type": "Debuff",
+    "target": "Área",
+    "tags": ["veneno", "area", "nuvem"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 20, "stamina": 0 },
+    "cooldown": 5,
+    "duration": 5,
+    "range": 4,
+    "effects": [
+      { "type": "Veneno", "value": 6, "duration": 5, "condition": "", "chance": 90 }
+    ],
+    "requirements": { "level": 6, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_onda_sonica",
+    "name": "Onda Sônica",
+    "description": "Um grito agudo que atordoa inimigos à distância.",
+    "battle_description": "Um grito ensurdecedor atordoa os inimigos!",
+    "type": "Ataque Múltiplo",
+    "target": "Cone",
+    "tags": ["sonoro", "atordoamento", "area"],
+    "damage": { "min": 15, "max": 22, "type": "Físico", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 0, "stamina": 18 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 3,
+    "effects": [
+      { "type": "Atordoamento", "value": 0, "duration": 2, "condition": "", "chance": 50 }
+    ],
+    "requirements": { "level": 6, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_olhar_petrificante",
+    "name": "Olhar Petrificante",
+    "description": "Um olhar aterrorizante que paralisa o inimigo de medo.",
+    "battle_description": "O olhar terrível congela o inimigo de pavor!",
+    "type": "Debuff",
+    "target": "Inimigo Único",
+    "tags": ["medo", "controle", "beholder"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 25, "stamina": 0 },
+    "cooldown": 5,
+    "duration": 3,
+    "range": 6,
+    "effects": [
+      { "type": "Medo", "value": 0, "duration": 3, "condition": "", "chance": 75 },
+      { "type": "Paralisia", "value": 0, "duration": 2, "condition": "", "chance": 40 }
+    ],
+    "requirements": { "level": 10, "class": "", "race": "Aberração", "all": false }
+  },
+  {
+    "id": "skill_raio_ocular",
+    "name": "Raio Ocular",
+    "description": "Dispara um raio mágico a partir de um dos olhos.",
+    "battle_description": "Um raio dispara do olho flutuante!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["arcano", "raio", "beholder"],
+    "damage": { "min": 40, "max": 60, "type": "Arcano", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 20, "stamina": 0 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 8,
+    "effects": [],
+    "requirements": { "level": 12, "class": "", "race": "Aberração", "all": false }
+  },
+  {
+    "id": "skill_cauda_venenosa",
+    "name": "Cauda Venenosa",
+    "description": "Um golpe de cauda que injeta veneno paralisante.",
+    "battle_description": "A cauda chicoteia e envenena o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["veneno", "cauda", "wyvern"],
+    "damage": { "min": 30, "max": 45, "type": "Físico", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 0, "stamina": 15 },
+    "cooldown": 3,
+    "duration": 0,
+    "range": 2,
+    "effects": [
+      { "type": "Veneno", "value": 10, "duration": 4, "condition": "", "chance": 80 },
+      { "type": "Paralisia", "value": 0, "duration": 1, "condition": "", "chance": 30 }
+    ],
+    "requirements": { "level": 10, "class": "", "race": "Dragão", "all": false }
+  },
+  {
+    "id": "skill_voo_rasante",
+    "name": "Voo Rasante",
+    "description": "Mergulha do céu contra o inimigo em alta velocidade.",
+    "battle_description": "O usuário desce como um meteoro!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "voo", "dragao"],
+    "damage": { "min": 45, "max": 65, "type": "Físico", "hits": 1, "accuracy": 92 },
+    "cost": { "mana": 0, "stamina": 25 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 3,
+    "effects": [
+      { "type": "Atordoamento", "value": 0, "duration": 1, "condition": "", "chance": 35 }
+    ],
+    "requirements": { "level": 12, "class": "", "race": "Dragão", "all": false }
+  },
+  {
+    "id": "skill_brasa_ardente",
+    "name": "Brasa Ardente",
+    "description": "Cospe brasas que incendeiam o alvo por vários turnos.",
+    "battle_description": "Brasas flamejantes cobrem o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fogo", "queimadura", "demônio"],
+    "damage": { "min": 20, "max": 30, "type": "Fogo", "hits": 1, "accuracy": 95 },
+    "cost": { "mana": 10, "stamina": 0 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 4,
+    "effects": [
+      { "type": "Queimadura", "value": 8, "duration": 4, "condition": "", "chance": 90 }
+    ],
+    "requirements": { "level": 8, "class": "", "race": "Demônio", "all": false }
+  },
+  {
+    "id": "skill_chicote_infernal",
+    "name": "Chicote Infernal",
+    "description": "Um chicote de fogo que atinge o inimigo e o queima.",
+    "battle_description": "Um chicote de chamas corta o inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fogo", "chicote", "demonio"],
+    "damage": { "min": 35, "max": 50, "type": "Fogo", "hits": 1, "accuracy": 92 },
+    "cost": { "mana": 12, "stamina": 0 },
+    "cooldown": 2,
+    "duration": 0,
+    "range": 3,
+    "effects": [
+      { "type": "Sangramento", "value": 5, "duration": 3, "condition": "", "chance": 60 }
+    ],
+    "requirements": { "level": 10, "class": "", "race": "Demônio", "all": false }
+  },
+  {
+    "id": "skill_pacto_sombrio",
+    "name": "Pacto Sombrio",
+    "description": "Sacrifica HP em troca de grande poder mágico temporário.",
+    "battle_description": "A energia sombria flui com força total!",
+    "type": "Buff",
+    "target": "Si Mesmo",
+    "tags": ["sombrio", "buff", "sacrificio"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 0, "stamina": 0 },
+    "cooldown": 8,
+    "duration": 3,
+    "range": 1,
+    "effects": [
+      { "type": "Bufo de Ataque", "value": 50, "duration": 3, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 12, "class": "", "race": "Demônio", "all": false }
+  },
+  {
+    "id": "skill_invocar_esqueleto",
+    "name": "Invocar Esqueleto",
+    "description": "Invoca um esqueleto guerreiro para lutar ao seu lado.",
+    "battle_description": "Ossos se erguem do chão e formam um aliado!",
+    "type": "Invocação",
+    "target": "Si Mesmo",
+    "tags": ["invocacao", "morte-viva", "skeleton"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 25, "stamina": 0 },
+    "cooldown": 8,
+    "duration": 5,
+    "range": 2,
+    "effects": [],
+    "requirements": { "level": 12, "class": "", "race": "Morto-Vivo", "all": false },
+    "summon": {
+      "unit_name": "Esqueleto Guerreiro",
+      "count": 1,
+      "duration": 5
+    }
+  },
+  {
+    "id": "skill_invocar_esqueleto_arqueiro",
+    "name": "Invocar Esqueleto Arqueiro",
+    "description": "Invoca um esqueleto arqueiro que ataca à distância.",
+    "battle_description": "Um esqueleto surge empunhando um arco!",
+    "type": "Invocação",
+    "target": "Si Mesmo",
+    "tags": ["invocacao", "morte-viva", "skeleton", "ranged"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 30, "stamina": 0 },
+    "cooldown": 8,
+    "duration": 5,
+    "range": 2,
+    "effects": [],
+    "requirements": { "level": 14, "class": "", "race": "Morto-Vivo", "all": false },
+    "summon": {
+      "unit_name": "Esqueleto Arqueiro",
+      "count": 1,
+      "duration": 5
+    }
+  },
+  {
+    "id": "skill_invocar_esqueleto_mago",
+    "name": "Invocar Esqueleto Mago",
+    "description": "Invoca um esqueleto conjurador capaz de lançar magias arcanas.",
+    "battle_description": "Ossos se erguem envoltos em energia arcana!",
+    "type": "Invocação",
+    "target": "Si Mesmo",
+    "tags": ["invocacao", "morte-viva", "skeleton", "magia"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 45, "stamina": 0 },
+    "cooldown": 10,
+    "duration": 6,
+    "range": 2,
+    "effects": [],
+    "requirements": { "level": 16, "class": "", "race": "Morto-Vivo", "all": false },
+    "summon": {
+      "unit_name": "Esqueleto Mago",
+      "count": 1,
+      "duration": 6
+    }
+  },
+  {
+    "id": "skill_invocar_zumbi",
+    "name": "Invocar Zumbi",
+    "description": "Invoca um zumbi faminto para atacar seus inimigos.",
+    "battle_description": "Um cadáver se levanta com fome insaciável!",
+    "type": "Invocação",
+    "target": "Si Mesmo",
+    "tags": ["invocacao", "morte-viva", "zumbi"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 20, "stamina": 0 },
+    "cooldown": 7,
+    "duration": 4,
+    "range": 2,
+    "effects": [],
+    "requirements": { "level": 10, "class": "", "race": "Morto-Vivo", "all": false },
+    "summon": {
+      "unit_name": "Zumbi Faminto",
+      "count": 1,
+      "duration": 4
+    }
+  },
+  {
+    "id": "skill_invocar_imp",
+    "name": "Invocar Imp",
+    "description": "Invoca um diabrete travesso que ataca com fogo.",
+    "battle_description": "Um pequeno demônio surge em uma nuvem de enxofre!",
+    "type": "Invocação",
+    "target": "Si Mesmo",
+    "tags": ["invocacao", "demonio", "fogo"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 28, "stamina": 0 },
+    "cooldown": 8,
+    "duration": 5,
+    "range": 2,
+    "effects": [],
+    "requirements": { "level": 12, "class": "", "race": "Demônio", "all": false },
+    "summon": {
+      "unit_name": "Imp",
+      "count": 1,
+      "duration": 5
+    }
+  },
+  {
+    "id": "skill_invocar_sombra",
+    "name": "Invocar Sombra",
+    "description": "Invoca uma sombra malevolente que drena a vida dos inimigos.",
+    "battle_description": "Uma massa de trevas surge diante de você!",
+    "type": "Invocação",
+    "target": "Si Mesmo",
+    "tags": ["invocacao", "sombrio", "espirito"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 50, "stamina": 0 },
+    "cooldown": 12,
+    "duration": 6,
+    "range": 2,
+    "effects": [],
+    "requirements": { "level": 18, "class": "", "race": "Morto-Vivo", "all": false },
+    "summon": {
+      "unit_name": "Sombra Menor",
+      "count": 1,
+      "duration": 6
+    }
+  },
+  {
+    "id": "skill_toque_vampirico",
+    "name": "Toque Vampírico",
+    "description": "Rouba energia vital com um toque frio.",
+    "battle_description": "O toque gelado drena a vida do inimigo!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["sombrio", "vampiro", "drenar"],
+    "damage": { "min": 25, "max": 35, "type": "Sombrio", "hits": 1, "accuracy": 95 },
+    "cost": { "mana": 15, "stamina": 0 },
+    "cooldown": 3,
+    "duration": 0,
+    "range": 1,
+    "effects": [
+      { "type": "Roubo de Vida", "value": 70, "duration": 0, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 10, "class": "", "race": "Morto-Vivo", "all": false }
+  },
+  {
+    "id": "skill_forma_de_nievoa",
+    "name": "Forma de Névoa",
+    "description": "Transforma-se em névoa, ficando quase impossível de acertar.",
+    "battle_description": "O corpo se dissolve em névoa!",
+    "type": "Buff",
+    "target": "Si Mesmo",
+    "tags": ["buff", "esquiva", "vampiro"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 20, "stamina": 0 },
+    "cooldown": 6,
+    "duration": 2,
+    "range": 1,
+    "effects": [
+      { "type": "Chance de Esquiva +", "value": 70, "duration": 2, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 14, "class": "", "race": "Morto-Vivo", "all": false }
+  },
+  {
+    "id": "skill_onda_de_morte",
+    "name": "Onda de Morte",
+    "description": "Uma explosão de energia necrótica que atinge todos ao redor.",
+    "battle_description": "Uma onda de morte varre os inimigos!",
+    "type": "Ataque Múltiplo",
+    "target": "Todos os Inimigos",
+    "tags": ["sombrio", "necromancia", "area"],
+    "damage": { "min": 35, "max": 55, "type": "Sombrio", "hits": 1, "accuracy": 95 },
+    "cost": { "mana": 40, "stamina": 0 },
+    "cooldown": 5,
+    "duration": 0,
+    "range": 6,
+    "effects": [
+      { "type": "Debuff de Defesa", "value": 20, "duration": 3, "condition": "", "chance": 80 }
+    ],
+    "requirements": { "level": 15, "class": "", "race": "Morto-Vivo", "all": false }
+  },
+  {
+    "id": "skill_preso_em_gelo",
+    "name": "Preso em Gelo",
+    "description": "Envolve o alvo em gelo sólido, impedindo seus movimentos.",
+    "battle_description": "O inimigo fica congelado no lugar!",
+    "type": "Debuff",
+    "target": "Inimigo Único",
+    "tags": ["gelo", "congelamento", "controle"],
+    "damage": { "min": 15, "max": 20, "type": "Gelo", "hits": 1, "accuracy": 90 },
+    "cost": { "mana": 18, "stamina": 0 },
+    "cooldown": 4,
+    "duration": 2,
+    "range": 5,
+    "effects": [
+      { "type": "Congelamento", "value": 0, "duration": 2, "condition": "", "chance": 80 },
+      { "type": "Paralisia", "value": 0, "duration": 2, "condition": "", "chance": 60 }
+    ],
+    "requirements": { "level": 8, "class": "", "race": "", "all": true }
+  },
+  {
+    "id": "skill_bafo_glacial",
+    "name": "Bafo Glacial",
+    "description": "Um cone de gelo que congela vários inimigos de uma só vez.",
+    "battle_description": "Uma ventania congelante atinge a todos!",
+    "type": "Ataque Múltiplo",
+    "target": "Cone",
+    "tags": ["gelo", "gigante", "cone"],
+    "damage": { "min": 50, "max": 75, "type": "Gelo", "hits": 1, "accuracy": 92 },
+    "cost": { "mana": 35, "stamina": 0 },
+    "cooldown": 5,
+    "duration": 0,
+    "range": 4,
+    "effects": [
+      { "type": "Congelamento", "value": 0, "duration": 2, "condition": "", "chance": 50 },
+      { "type": "Lentidão", "value": 30, "duration": 3, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 15, "class": "", "race": "Gigante", "all": false }
+  },
+  {
+    "id": "skill_esmagar",
+    "name": "Esmagar",
+    "description": "Agarra o inimigo e esmaga-o com força bruta.",
+    "battle_description": "O inimigo é esmagado entre as mãos colossais!",
+    "type": "Ataque Único",
+    "target": "Inimigo Único",
+    "tags": ["fisico", "grapple", "gigante"],
+    "damage": { "min": 80, "max": 120, "type": "Físico", "hits": 1, "accuracy": 80 },
+    "cost": { "mana": 0, "stamina": 40 },
+    "cooldown": 5,
+    "duration": 0,
+    "range": 1,
+    "effects": [
+      { "type": "Atordoamento", "value": 0, "duration": 2, "condition": "", "chance": 60 }
+    ],
+    "requirements": { "level": 18, "class": "", "race": "Gigante", "all": false }
+  },
+  {
+    "id": "skill_pisotear",
+    "name": "Pisotear",
+    "description": "Um pisão devastador que abala o solo e atordoa todos ao redor.",
+    "battle_description": "O chão racha com o impacto!",
+    "type": "Ataque Múltiplo",
+    "target": "Área",
+    "tags": ["fisico", "area", "gigante"],
+    "damage": { "min": 55, "max": 80, "type": "Físico", "hits": 1, "accuracy": 85 },
+    "cost": { "mana": 0, "stamina": 30 },
+    "cooldown": 4,
+    "duration": 0,
+    "range": 2,
+    "effects": [
+      { "type": "Atordoamento", "value": 0, "duration": 1, "condition": "", "chance": 50 }
+    ],
+    "requirements": { "level": 14, "class": "", "race": "Gigante", "all": false }
+  },
+  {
+    "id": "skill_tempestade_de_fogo",
+    "name": "Tempestade de Fogo",
+    "description": "Invoca uma tempestade de fogo que atinge todos os inimigos.",
+    "battle_description": "Chamas caem do céu sobre os inimigos!",
+    "type": "Ataque Múltiplo",
+    "target": "Todos os Inimigos",
+    "tags": ["fogo", "dragao", "area", "ultimate"],
+    "damage": { "min": 90, "max": 140, "type": "Fogo", "hits": 1, "accuracy": 95 },
+    "cost": { "mana": 60, "stamina": 0 },
+    "cooldown": 7,
+    "duration": 0,
+    "range": 8,
+    "effects": [
+      { "type": "Queimadura", "value": 15, "duration": 4, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 20, "class": "", "race": "Dragão", "all": false }
+  },
+  {
+    "id": "skill_presenca_aterrorizante",
+    "name": "Presença Aterrorizante",
+    "description": "A mera presença do dragão faz os inimigos hesitarem.",
+    "battle_description": "A aura do dragão espalha terror!",
+    "type": "Debuff",
+    "target": "Todos os Inimigos",
+    "tags": ["dragao", "medo", "aura"],
+    "damage": { "min": 0, "max": 0, "type": "Nenhum", "hits": 1, "accuracy": 100 },
+    "cost": { "mana": 30, "stamina": 0 },
+    "cooldown": 8,
+    "duration": 4,
+    "range": 8,
+    "effects": [
+      { "type": "Medo", "value": 0, "duration": 4, "condition": "", "chance": 80 },
+      { "type": "Debuff de Ataque", "value": 25, "duration": 4, "condition": "", "chance": 100 },
+      { "type": "Debuff de Defesa", "value": 15, "duration": 4, "condition": "", "chance": 100 }
+    ],
+    "requirements": { "level": 22, "class": "", "race": "Dragão", "all": false }
+  }
+]

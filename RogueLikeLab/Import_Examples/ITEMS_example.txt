@@ -1,0 +1,161 @@
+[
+  { "id": "item_espada_curta_de_ferro", "name": "Espada Curta de Ferro", "description": "Uma lâmina simples de guarnição.", "long_description": "", "category": "Arma", "subcategory": "Espada", "rarity": "Comum", "level_required": 1, "value": 30, "weight": 1.5, "stackable": false, "max_stack": 1, "tags": ["espada","ferro"],
+    "equipment": { "slot": "Arma", "two_handed": false, "damage": { "min": 5, "max": 8, "type": "Físico" }, "armor": 0, "stat_modifiers": { "attack_physical": 2 }, "resistances": {}, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_espada_longa_de_aco", "name": "Espada Longa de Aço", "description": "Uma lâmina equilibrada de aço temperado.", "long_description": "", "category": "Arma", "subcategory": "Espada", "rarity": "Comum", "level_required": 3, "value": 80, "weight": 3.0, "stackable": false, "max_stack": 1, "tags": ["espada","aco"],
+    "equipment": { "slot": "Arma", "two_handed": false, "damage": { "min": 9, "max": 13, "type": "Físico" }, "armor": 0, "stat_modifiers": { "attack_physical": 4 }, "resistances": {}, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_adaga_do_assassino", "name": "Adaga do Assassino", "description": "Uma adaga silenciosa e mortal.", "long_description": "", "category": "Arma", "subcategory": "Adaga", "rarity": "Incomum", "level_required": 3, "value": 120, "weight": 0.8, "stackable": false, "max_stack": 1, "tags": ["adaga","furtivo"],
+    "equipment": { "slot": "Arma", "two_handed": false, "damage": { "min": 6, "max": 10, "type": "Físico" }, "armor": 0, "stat_modifiers": { "crit_chance": 12, "accuracy": 5, "evasion": 5 }, "resistances": {}, "special_effects": [ { "type": "Sangramento", "value": 3, "duration": 3, "chance": 30, "trigger": "Ao acertar" } ] },
+    "consumable": null },
+
+  { "id": "item_machado_de_guerra_orc", "name": "Machado de Guerra Orc", "description": "Um machado pesado e brutal, forjado em ferro negro.", "long_description": "Os orcs forjam estas armas em fornos de carvão negro, temperadas com sangue de inimigos caídos.", "category": "Arma", "subcategory": "Machado", "rarity": "Raro", "level_required": 7, "value": 320, "weight": 6.5, "stackable": false, "max_stack": 1, "tags": ["machado","orc","brutal"],
+    "equipment": { "slot": "Arma", "two_handed": true, "damage": { "min": 16, "max": 24, "type": "Físico" }, "armor": 0, "stat_modifiers": { "attack_physical": 10, "strength": 5, "crit_damage": 20 }, "resistances": {}, "special_effects": [ { "type": "Sangramento", "value": 5, "duration": 3, "chance": 40, "trigger": "Ao acertar" } ] },
+    "consumable": null },
+
+  { "id": "item_arco_curto_de_caca", "name": "Arco Curto de Caça", "description": "Arco leve, ideal para batedores.", "long_description": "", "category": "Arma", "subcategory": "Arco", "rarity": "Incomum", "level_required": 3, "value": 100, "weight": 1.8, "stackable": false, "max_stack": 1, "tags": ["arco","caca"],
+    "equipment": { "slot": "Arma", "two_handed": true, "damage": { "min": 7, "max": 11, "type": "Físico" }, "armor": 0, "stat_modifiers": { "accuracy": 10, "dexterity": 4, "initiative": 3 }, "resistances": {}, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_arco_longo_elfico", "name": "Arco Longo Élfico", "description": "Feito de madeira viva élfica.", "long_description": "", "category": "Arma", "subcategory": "Arco", "rarity": "Raro", "level_required": 8, "value": 400, "weight": 2.0, "stackable": false, "max_stack": 1, "tags": ["arco","elfico"],
+    "equipment": { "slot": "Arma", "two_handed": true, "damage": { "min": 13, "max": 18, "type": "Físico" }, "armor": 0, "stat_modifiers": { "accuracy": 15, "crit_chance": 8, "dexterity": 6 }, "resistances": {}, "special_effects": [ { "type": "Sangramento", "value": 3, "duration": 3, "chance": 25, "trigger": "Ao acertar" } ] },
+    "consumable": null },
+
+  { "id": "item_cajado_do_aprendiz", "name": "Cajado do Aprendiz", "description": "Um cajado simples de madeira nodosa.", "long_description": "", "category": "Arma", "subcategory": "Cajado", "rarity": "Incomum", "level_required": 3, "value": 90, "weight": 2.5, "stackable": false, "max_stack": 1, "tags": ["cajado","mago"],
+    "equipment": { "slot": "Arma", "two_handed": true, "damage": { "min": 4, "max": 6, "type": "Arcano" }, "armor": 0, "stat_modifiers": { "attack_magical": 6, "intelligence": 5, "mana": 30 }, "resistances": {}, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_cajado_arcano", "name": "Cajado Arcano", "description": "Pulsa com energia mágica pura.", "long_description": "", "category": "Arma", "subcategory": "Cajado", "rarity": "Raro", "level_required": 8, "value": 450, "weight": 3.0, "stackable": false, "max_stack": 1, "tags": ["cajado","arcano","mago"],
+    "equipment": { "slot": "Arma", "two_handed": true, "damage": { "min": 8, "max": 14, "type": "Arcano" }, "armor": 0, "stat_modifiers": { "attack_magical": 14, "intelligence": 8, "mana": 70 }, "resistances": {}, "special_effects": [ { "type": "Regeneração Mana", "value": 3, "duration": 5, "chance": 30, "trigger": "Ao equipar" } ] },
+    "consumable": null },
+
+  { "id": "item_maca_sagrada", "name": "Maça Sagrada", "description": "Uma maça abençoada por um clérigo.", "long_description": "", "category": "Arma", "subcategory": "Maça", "rarity": "Raro", "level_required": 8, "value": 420, "weight": 4.0, "stackable": false, "max_stack": 1, "tags": ["maca","sagrado"],
+    "equipment": { "slot": "Arma", "two_handed": false, "damage": { "min": 12, "max": 16, "type": "Sagrado" }, "armor": 0, "stat_modifiers": { "attack_physical": 6, "wisdom": 6 }, "resistances": { "holy": 15 }, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_adaga_vampirica", "name": "Adaga Vampírica", "description": "Bebe a vida de suas vítimas.", "long_description": "", "category": "Arma", "subcategory": "Adaga", "rarity": "Raro", "level_required": 10, "value": 600, "weight": 1.0, "stackable": false, "max_stack": 1, "tags": ["adaga","vampiro"],
+    "equipment": { "slot": "Arma", "two_handed": false, "damage": { "min": 10, "max": 15, "type": "Sombrio" }, "armor": 0, "stat_modifiers": { "lifesteal": 25, "dexterity": 6, "crit_chance": 8 }, "resistances": { "dark": 20, "holy": -15 }, "special_effects": [ { "type": "Sangramento", "value": 4, "duration": 3, "chance": 35, "trigger": "Ao acertar" } ] },
+    "consumable": null },
+
+  { "id": "item_cajado_do_lich", "name": "Cajado do Lich", "description": "Um cajado de osso negro pulsando energia necrótica.", "long_description": "Forjado no coração de uma cripta esquecida, o cajado é alimentado pelas almas dos incautos que o tocam.", "category": "Arma", "subcategory": "Cajado", "rarity": "Épico", "level_required": 18, "value": 2500, "weight": 3.5, "stackable": false, "max_stack": 1, "tags": ["cajado","lich","necromancia"],
+    "equipment": { "slot": "Arma", "two_handed": true, "damage": { "min": 20, "max": 32, "type": "Sombrio" }, "armor": 0, "stat_modifiers": { "attack_magical": 25, "intelligence": 15, "mana": 150, "lifesteal": 15 }, "resistances": { "dark": 40, "holy": -30, "poison": 30 }, "special_effects": [ { "type": "Maldição", "value": 5, "duration": 4, "chance": 30, "trigger": "Ao acertar" }, { "type": "Regeneração Mana", "value": 5, "duration": 5, "chance": 40, "trigger": "Ao equipar" } ] },
+    "consumable": null },
+
+  { "id": "item_garras_de_dragao", "name": "Garras de Dragão", "description": "Garras afiadas arrancadas de um dragão caído.", "long_description": "", "category": "Arma", "subcategory": "Adaga", "rarity": "Épico", "level_required": 20, "value": 3200, "weight": 2.0, "stackable": false, "max_stack": 1, "tags": ["garras","dragao","fogo"],
+    "equipment": { "slot": "Arma", "two_handed": false, "damage": { "min": 25, "max": 38, "type": "Fogo" }, "armor": 0, "stat_modifiers": { "attack_physical": 15, "strength": 8, "crit_chance": 12, "crit_damage": 30 }, "resistances": { "fire": 40 }, "special_effects": [ { "type": "Queimadura", "value": 8, "duration": 4, "chance": 50, "trigger": "Ao acertar" } ] },
+    "consumable": null },
+
+  { "id": "item_martelo_do_tita", "name": "Martelo do Titã", "description": "Um martelo colossal capaz de rachar montanhas.", "long_description": "", "category": "Arma", "subcategory": "Martelo", "rarity": "Lendário", "level_required": 25, "value": 8000, "weight": 12.0, "stackable": false, "max_stack": 1, "tags": ["martelo","tita","lendario"],
+    "equipment": { "slot": "Arma", "two_handed": true, "damage": { "min": 40, "max": 60, "type": "Físico" }, "armor": 0, "stat_modifiers": { "attack_physical": 25, "strength": 15, "hp": 80, "crit_damage": 40 }, "resistances": {}, "special_effects": [ { "type": "Atordoamento", "value": 0, "duration": 1, "chance": 25, "trigger": "Ao acertar" } ] },
+    "consumable": null },
+
+  { "id": "item_lança_da_fenix", "name": "Lança da Fênix", "description": "Arde com a chama eterna de uma fênix.", "long_description": "", "category": "Arma", "subcategory": "Lança", "rarity": "Lendário", "level_required": 28, "value": 9500, "weight": 4.5, "stackable": false, "max_stack": 1, "tags": ["lanca","fenix","fogo"],
+    "equipment": { "slot": "Arma", "two_handed": false, "damage": { "min": 35, "max": 55, "type": "Fogo" }, "armor": 0, "stat_modifiers": { "attack_physical": 15, "attack_magical": 15, "vitality": 10, "hp": 60 }, "resistances": { "fire": 60 }, "special_effects": [ { "type": "Queimadura", "value": 10, "duration": 4, "chance": 60, "trigger": "Ao acertar" }, { "type": "Regeneração HP", "value": 10, "duration": 5, "chance": 40, "trigger": "Quando HP < 50%" } ] },
+    "consumable": null },
+
+  { "id": "item_armadura_de_couro", "name": "Armadura de Couro", "description": "Uma proteção simples e leve.", "long_description": "", "category": "Armadura", "subcategory": "Peitoral", "rarity": "Comum", "level_required": 1, "value": 25, "weight": 3.0, "stackable": false, "max_stack": 1, "tags": ["couro","leve"],
+    "equipment": { "slot": "Peito", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 4, "stat_modifiers": { "defense_physical": 3, "evasion": 2 }, "resistances": {}, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_tunica_do_aprendiz", "name": "Túnica do Aprendiz", "description": "Uma túnica simples de tecido encantado.", "long_description": "", "category": "Armadura", "subcategory": "Peitoral", "rarity": "Comum", "level_required": 2, "value": 40, "weight": 1.5, "stackable": false, "max_stack": 1, "tags": ["tunica","mago"],
+    "equipment": { "slot": "Peito", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 2, "stat_modifiers": { "defense_magical": 4, "intelligence": 3, "mana": 20 }, "resistances": {}, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_cota_de_malha", "name": "Cota de Malha", "description": "Anéis de ferro entrelaçados.", "long_description": "", "category": "Armadura", "subcategory": "Peitoral", "rarity": "Incomum", "level_required": 4, "value": 120, "weight": 8.0, "stackable": false, "max_stack": 1, "tags": ["malha","ferro"],
+    "equipment": { "slot": "Peito", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 8, "stat_modifiers": { "defense_physical": 6, "hp": 15, "initiative": -2 }, "resistances": {}, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_manto_do_mago", "name": "Manto do Mago", "description": "Um manto azul bordado com runas.", "long_description": "", "category": "Armadura", "subcategory": "Capa", "rarity": "Incomum", "level_required": 5, "value": 180, "weight": 1.0, "stackable": false, "max_stack": 1, "tags": ["manto","mago","capa"],
+    "equipment": { "slot": "Capa", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 1, "stat_modifiers": { "defense_magical": 8, "intelligence": 5, "mana": 40 }, "resistances": { "fire": 10, "ice": 10, "lightning": 10 }, "special_effects": [ { "type": "Regeneração Mana", "value": 2, "duration": 5, "chance": 30, "trigger": "Ao equipar" } ] },
+    "consumable": null },
+
+  { "id": "item_peitoral_de_placas", "name": "Peitoral de Placas", "description": "Armadura de placas reforçada.", "long_description": "", "category": "Armadura", "subcategory": "Peitoral", "rarity": "Raro", "level_required": 8, "value": 500, "weight": 15.0, "stackable": false, "max_stack": 1, "tags": ["placas","pesado"],
+    "equipment": { "slot": "Peito", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 16, "stat_modifiers": { "defense_physical": 12, "hp": 40, "initiative": -5 }, "resistances": { "fire": 5, "ice": 5 }, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_couraca_de_ossos", "name": "Couraça de Ossos", "description": "Feita de ossos de inimigos caídos.", "long_description": "", "category": "Armadura", "subcategory": "Peitoral", "rarity": "Raro", "level_required": 10, "value": 550, "weight": 7.0, "stackable": false, "max_stack": 1, "tags": ["ossos","morto-vivo"],
+    "equipment": { "slot": "Peito", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 12, "stat_modifiers": { "defense_physical": 8, "vitality": 6, "hp": 50 }, "resistances": { "dark": 25, "ice": 15, "holy": -20, "poison": 30 }, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_escamas_de_dragao", "name": "Escamas de Dragão", "description": "Armadura forjada com escamas de dragão.", "long_description": "", "category": "Armadura", "subcategory": "Peitoral", "rarity": "Épico", "level_required": 20, "value": 3000, "weight": 12.0, "stackable": false, "max_stack": 1, "tags": ["escamas","dragao","fogo"],
+    "equipment": { "slot": "Peito", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 22, "stat_modifiers": { "defense_physical": 15, "defense_magical": 12, "hp": 80, "vitality": 8 }, "resistances": { "fire": 60, "ice": -10 }, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_armadura_do_lich", "name": "Armadura do Lich", "description": "Uma armadura imbuída de necromancia.", "long_description": "", "category": "Armadura", "subcategory": "Peitoral", "rarity": "Épico", "level_required": 18, "value": 2800, "weight": 6.0, "stackable": false, "max_stack": 1, "tags": ["lich","necromancia"],
+    "equipment": { "slot": "Peito", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 15, "stat_modifiers": { "defense_physical": 10, "defense_magical": 20, "intelligence": 12, "mana": 100 }, "resistances": { "dark": 50, "holy": -30, "poison": 50, "ice": 25 }, "special_effects": [ { "type": "Regeneração Mana", "value": 5, "duration": 5, "chance": 50, "trigger": "Ao equipar" } ] },
+    "consumable": null },
+
+  { "id": "item_pele_de_golem", "name": "Pele de Golem", "description": "Uma carapaça de pedra viva que se adapta ao portador.", "long_description": "", "category": "Armadura", "subcategory": "Peitoral", "rarity": "Lendário", "level_required": 25, "value": 7000, "weight": 20.0, "stackable": false, "max_stack": 1, "tags": ["golem","pedra"],
+    "equipment": { "slot": "Peito", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 35, "stat_modifiers": { "defense_physical": 25, "defense_magical": 20, "hp": 120, "vitality": 12, "initiative": -8 }, "resistances": { "fire": 30, "ice": 30, "lightning": -20, "poison": 100 }, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_anel_de_prata", "name": "Anel de Prata", "description": "Um anel simples de prata polida.", "long_description": "", "category": "Acessório", "subcategory": "Anel", "rarity": "Comum", "level_required": 1, "value": 20, "weight": 0.1, "stackable": false, "max_stack": 1, "tags": ["anel","prata"],
+    "equipment": { "slot": "Anel", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 0, "stat_modifiers": { "luck": 2 }, "resistances": {}, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_anel_de_ouro", "name": "Anel de Ouro", "description": "Um anel de ouro puro gravado com símbolos.", "long_description": "", "category": "Acessório", "subcategory": "Anel", "rarity": "Incomum", "level_required": 4, "value": 150, "weight": 0.15, "stackable": false, "max_stack": 1, "tags": ["anel","ouro"],
+    "equipment": { "slot": "Anel", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 0, "stat_modifiers": { "luck": 5, "wisdom": 4 }, "resistances": { "holy": 5 }, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_amuleto_da_sorte", "name": "Amuleto da Sorte", "description": "Um amuleto que atrai boa fortuna.", "long_description": "", "category": "Acessório", "subcategory": "Amuleto", "rarity": "Incomum", "level_required": 5, "value": 200, "weight": 0.2, "stackable": false, "max_stack": 1, "tags": ["amuleto","sorte"],
+    "equipment": { "slot": "Amuleto", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 0, "stat_modifiers": { "luck": 8, "crit_chance": 5, "evasion": 3 }, "resistances": {}, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_amuleto_da_vitalidade", "name": "Amuleto da Vitalidade", "description": "Pulsa com energia vital.", "long_description": "", "category": "Acessório", "subcategory": "Amuleto", "rarity": "Incomum", "level_required": 5, "value": 220, "weight": 0.2, "stackable": false, "max_stack": 1, "tags": ["amuleto","vitalidade"],
+    "equipment": { "slot": "Amuleto", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 0, "stat_modifiers": { "hp": 40, "vitality": 5 }, "resistances": {}, "special_effects": [ { "type": "Regeneração HP", "value": 3, "duration": 5, "chance": 30, "trigger": "Ao equipar" } ] },
+    "consumable": null },
+
+  { "id": "item_talisma_de_protecao", "name": "Talismã de Proteção", "description": "Um talismã que repele o mal.", "long_description": "", "category": "Acessório", "subcategory": "Talismã", "rarity": "Raro", "level_required": 10, "value": 650, "weight": 0.3, "stackable": false, "max_stack": 1, "tags": ["talisma","protecao"],
+    "equipment": { "slot": "Amuleto", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 5, "stat_modifiers": { "defense_physical": 6, "defense_magical": 6, "hp": 30 }, "resistances": { "fire": 15, "ice": 15, "lightning": 15, "poison": 15 }, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_anel_do_arquimago", "name": "Anel do Arquimago", "description": "Anel lendário dos mestres arcanos.", "long_description": "", "category": "Acessório", "subcategory": "Anel", "rarity": "Épico", "level_required": 20, "value": 3000, "weight": 0.1, "stackable": false, "max_stack": 1, "tags": ["anel","mago","arcano"],
+    "equipment": { "slot": "Anel", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 0, "stat_modifiers": { "intelligence": 15, "attack_magical": 12, "mana": 120, "crit_chance": 6 }, "resistances": { "fire": 10, "ice": 10, "lightning": 10 }, "special_effects": [ { "type": "Regeneração Mana", "value": 4, "duration": 5, "chance": 50, "trigger": "Ao equipar" } ] },
+    "consumable": null },
+
+  { "id": "item_coroa_do_rei_esqueleto", "name": "Coroa do Rei Esqueleto", "description": "A coroa de um monarca morto há muito tempo.", "long_description": "", "category": "Acessório", "subcategory": "Amuleto", "rarity": "Épico", "level_required": 18, "value": 2800, "weight": 0.5, "stackable": false, "max_stack": 1, "tags": ["coroa","morto-vivo","necromancia"],
+    "equipment": { "slot": "Amuleto", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 3, "stat_modifiers": { "intelligence": 10, "vitality": 8, "hp": 60, "mana": 80 }, "resistances": { "dark": 40, "holy": -25, "poison": 50, "ice": 20 }, "special_effects": [] },
+    "consumable": null },
+
+  { "id": "item_coracao_do_dragao", "name": "Coração do Dragão", "description": "Um coração de dragão petrificado que ainda pulsa.", "long_description": "", "category": "Acessório", "subcategory": "Talismã", "rarity": "Lendário", "level_required": 28, "value": 10000, "weight": 0.8, "stackable": false, "max_stack": 1, "tags": ["dragao","coracao","lendario"],
+    "equipment": { "slot": "Amuleto", "two_handed": false, "damage": { "min": 0, "max": 0, "type": "Nenhum" }, "armor": 8, "stat_modifiers": { "hp": 150, "strength": 12, "vitality": 12, "attack_physical": 10, "attack_magical": 10 }, "resistances": { "fire": 70, "ice": 30, "lightning": 30 }, "special_effects": [ { "type": "Regeneração HP", "value": 15, "duration": 6, "chance": 60, "trigger": "Quando HP < 50%" } ] },
+    "consumable": null },
+
+  { "id": "item_pocao_de_cura_menor", "name": "Poção de Cura Menor", "description": "Um frasco de líquido vermelho.", "long_description": "", "category": "Consumível", "subcategory": "Poção", "rarity": "Comum", "level_required": 1, "value": 25, "weight": 0.3, "stackable": true, "max_stack": 10, "tags": ["pocao","cura"],
+    "equipment": null,
+    "consumable": { "consume_type": "Instantâneo", "target": "Si Mesmo", "effects": [ { "type": "Regeneração HP", "value": 40, "duration": 0, "chance": 100, "trigger": "Ao usar" } ] } },
+
+  { "id": "item_pocao_de_cura_maior", "name": "Poção de Cura Maior", "description": "Um frasco de líquido vermelho brilhante.", "long_description": "", "category": "Consumível", "subcategory": "Poção", "rarity": "Incomum", "level_required": 5, "value": 100, "weight": 0.4, "stackable": true, "max_stack": 10, "tags": ["pocao","cura"],
+    "equipment": null,
+    "consumable": { "consume_type": "Instantâneo", "target": "Si Mesmo", "effects": [ { "type": "Regeneração HP", "value": 120, "duration": 0, "chance": 100, "trigger": "Ao usar" } ] } },
+
+  { "id": "item_pocao_de_mana", "name": "Poção de Mana", "description": "Um frasco de líquido azul cintilante.", "long_description": "", "category": "Consumível", "subcategory": "Poção", "rarity": "Comum", "level_required": 1, "value": 30, "weight": 0.3, "stackable": true, "max_stack": 10, "tags": ["pocao","mana"],
+    "equipment": null,
+    "consumable": { "consume_type": "Instantâneo", "target": "Si Mesmo", "effects": [ { "type": "Regeneração Mana", "value": 40, "duration": 0, "chance": 100, "trigger": "Ao usar" } ] } },
+
+  { "id": "item_antidoto", "name": "Antídoto", "description": "Um frasco de ervas amargas.", "long_description": "", "category": "Consumível", "subcategory": "Antídoto", "rarity": "Comum", "level_required": 1, "value": 20, "weight": 0.2, "stackable": true, "max_stack": 10, "tags": ["antidoto"],
+    "equipment": null,
+    "consumable": { "consume_type": "Instantâneo", "target": "Si Mesmo", "effects": [ { "type": "Bênção", "value": 20, "duration": 3, "chance": 100, "trigger": "Ao usar" } ] } },
+
+  { "id": "item_elixir_da_forca", "name": "Elixir da Força", "description": "Um elixir que fortalece os músculos.", "long_description": "", "category": "Consumível", "subcategory": "Elixir", "rarity": "Raro", "level_required": 5, "value": 250, "weight": 0.3, "stackable": true, "max_stack": 5, "tags": ["elixir","forca"],
+    "equipment": null,
+    "consumable": { "consume_type": "Duração", "target": "Si Mesmo", "effects": [ { "type": "Bufo de Ataque", "value": 30, "duration": 5, "chance": 100, "trigger": "Ao usar" } ] } },
+
+  { "id": "item_bomba_de_fogo", "name": "Bomba de Fogo", "description": "Um frasco explosivo.", "long_description": "", "category": "Consumível", "subcategory": "Bomba", "rarity": "Incomum", "level_required": 3, "value": 60, "weight": 0.5, "stackable": true, "max_stack": 10, "tags": ["bomba","fogo"],
+    "equipment": null,
+    "consumable": { "consume_type": "Instantâneo", "target": "Área", "effects": [ { "type": "Queimadura", "value": 15, "duration": 3, "chance": 80, "trigger": "Ao usar" } ] } },
+
+  { "id": "item_pergaminho_bola_de_fogo", "name": "Pergaminho de Bola de Fogo", "description": "Um pergaminho contendo a magia de Bola de Fogo.", "long_description": "", "category": "Consumível", "subcategory": "Pergaminho", "rarity": "Incomum", "level_required": 5, "value": 150, "weight": 0.1, "stackable": true, "max_stack": 5, "tags": ["pergaminho","fogo"],
+    "equipment": null,
+    "consumable": { "consume_type": "Instantâneo", "target": "Inimigo Único", "effects": [ { "type": "Queimadura", "value": 25, "duration": 3, "chance": 100, "trigger": "Ao usar" } ] } },
+
+  { "id": "item_pergaminho_cura_em_area", "name": "Pergaminho de Cura em Área", "description": "Um pergaminho sagrado que cura os aliados.", "long_description": "", "category": "Consumível", "subcategory": "Pergaminho", "rarity": "Raro", "level_required": 8, "value": 350, "weight": 0.1, "stackable": true, "max_stack": 5, "tags": ["pergaminho","cura","sagrado"],
+    "equipment": null,
+    "consumable": { "consume_type": "Instantâneo", "target": "Todos os Aliados", "effects": [ { "type": "Regeneração HP", "value": 80, "duration": 0, "chance": 100, "trigger": "Ao usar" } ] } },
+
+  { "id": "item_pocao_do_tita", "name": "Poção do Titã", "description": "Um elixir lendário que concede poder colossal.", "long_description": "", "category": "Consumível", "subcategory": "Elixir", "rarity": "Épico", "level_required": 20, "value": 1200, "weight": 0.4, "stackable": true, "max_stack": 3, "tags": ["elixir","tita","lendario"],
+    "equipment": null,
+    "consumable": { "consume_type": "Duração", "target": "Si Mesmo", "effects": [ { "type": "Bufo de Ataque", "value": 60, "duration": 5, "chance": 100, "trigger": "Ao usar" }, { "type": "Bufo de Defesa", "value": 40, "duration": 5, "chance": 100, "trigger": "Ao usar" } ] } }
+]

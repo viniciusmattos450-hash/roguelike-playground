@@ -1,0 +1,112 @@
+[
+  { "id": "suffix_da_forca", "name": "da Força", "kind": "Sufixo", "rarity_min": "Comum", "applies_to": ["Arma","Armadura","Acessório"], "description": "Aumenta a força bruta do portador.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "strength": 5, "attack_physical": 3 },
+    "resistances": {}, "special_effects": [] },
+
+  { "id": "suffix_da_destreza", "name": "da Destreza", "kind": "Sufixo", "rarity_min": "Comum", "applies_to": ["Arma","Armadura","Acessório"], "description": "Movimentos mais ágeis.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "dexterity": 5, "evasion": 3, "initiative": 3 },
+    "resistances": {}, "special_effects": [] },
+
+  { "id": "suffix_da_inteligencia", "name": "da Inteligência", "kind": "Sufixo", "rarity_min": "Comum", "applies_to": ["Arma","Armadura","Acessório"], "description": "Aumenta o poder arcano.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "intelligence": 5, "attack_magical": 3 },
+    "resistances": {}, "special_effects": [] },
+
+  { "id": "suffix_da_sabedoria", "name": "da Sabedoria", "kind": "Sufixo", "rarity_min": "Incomum", "applies_to": ["Armadura","Acessório"], "description": "Concede clareza e fé.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "wisdom": 6, "defense_magical": 4 },
+    "resistances": { "holy": 10 }, "special_effects": [] },
+
+  { "id": "suffix_da_vitalidade", "name": "da Vitalidade", "kind": "Sufixo", "rarity_min": "Comum", "applies_to": ["Armadura","Acessório"], "description": "Aumenta a resistência física.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "vitality": 6, "hp": 25 },
+    "resistances": {}, "special_effects": [] },
+
+  { "id": "suffix_da_sorte", "name": "da Sorte", "kind": "Sufixo", "rarity_min": "Incomum", "applies_to": ["Acessório"], "description": "A sorte sorri para o portador.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "luck": 10, "crit_chance": 5 },
+    "resistances": {}, "special_effects": [] },
+
+  { "id": "suffix_do_dragao", "name": "do Dragão", "kind": "Sufixo", "rarity_min": "Épico", "applies_to": ["Arma","Armadura"], "description": "Forjado com escamas de dragão.",
+    "damage_bonus": { "min": 5, "max": 9, "type": "Fogo" },
+    "stat_modifiers": { "strength": 6, "vitality": 5, "attack_physical": 5 },
+    "resistances": { "fire": 30, "ice": -10 },
+    "special_effects": [ { "type": "Queimadura", "value": 5, "duration": 3, "chance": 35, "trigger": "Ao acertar" } ] },
+
+  { "id": "suffix_do_lobo", "name": "do Lobo", "kind": "Sufixo", "rarity_min": "Incomum", "applies_to": ["Arma","Armadura"], "description": "Inspirado na ferocidade dos lobos.",
+    "damage_bonus": { "min": 2, "max": 5, "type": "Físico" },
+    "stat_modifiers": { "strength": 4, "dexterity": 4, "initiative": 4 },
+    "resistances": {}, "special_effects": [] },
+
+  { "id": "suffix_da_serpente", "name": "da Serpente", "kind": "Sufixo", "rarity_min": "Raro", "applies_to": ["Arma","Acessório"], "description": "Coberto por escamas peçonhentas.",
+    "damage_bonus": { "min": 3, "max": 6, "type": "Veneno" },
+    "stat_modifiers": { "dexterity": 5, "evasion": 4 },
+    "resistances": { "poison": 25 },
+    "special_effects": [ { "type": "Veneno", "value": 5, "duration": 4, "chance": 40, "trigger": "Ao acertar" } ] },
+
+  { "id": "suffix_do_urso", "name": "do Urso", "kind": "Sufixo", "rarity_min": "Incomum", "applies_to": ["Armadura"], "description": "Couro grosso e resistente.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "strength": 4, "vitality": 5, "defense_physical": 5, "hp": 30 },
+    "resistances": {}, "special_effects": [] },
+
+  { "id": "suffix_do_corvo", "name": "do Corvo", "kind": "Sufixo", "rarity_min": "Raro", "applies_to": ["Arma","Acessório"], "description": "Símbolo do mensageiro sombrio.",
+    "damage_bonus": { "min": 3, "max": 6, "type": "Sombrio" },
+    "stat_modifiers": { "intelligence": 5, "evasion": 6, "crit_chance": 4 },
+    "resistances": { "dark": 15, "holy": -10 },
+    "special_effects": [] },
+
+  { "id": "suffix_da_fenix", "name": "da Fênix", "kind": "Sufixo", "rarity_min": "Lendário", "applies_to": ["Arma","Armadura","Acessório"], "description": "Renasce das cinzas.",
+    "damage_bonus": { "min": 8, "max": 14, "type": "Fogo" },
+    "stat_modifiers": { "hp": 60, "vitality": 8, "attack_magical": 6 },
+    "resistances": { "fire": 50 },
+    "special_effects": [ { "type": "Regeneração HP", "value": 15, "duration": 6, "chance": 40, "trigger": "Quando HP < 50%" } ] },
+
+  { "id": "suffix_do_tita", "name": "do Titã", "kind": "Sufixo", "rarity_min": "Lendário", "applies_to": ["Arma","Armadura"], "description": "Força colossal dos titãs antigos.",
+    "damage_bonus": { "min": 10, "max": 18, "type": "Físico" },
+    "stat_modifiers": { "strength": 12, "vitality": 10, "attack_physical": 10, "hp": 80 },
+    "resistances": { "fire": 15, "ice": 15, "lightning": 15 },
+    "special_effects": [] },
+
+  { "id": "suffix_do_lich", "name": "do Lich", "kind": "Sufixo", "rarity_min": "Épico", "applies_to": ["Arma","Armadura"], "description": "Imbuído de magia necromântica.",
+    "damage_bonus": { "min": 6, "max": 11, "type": "Sombrio" },
+    "stat_modifiers": { "intelligence": 10, "attack_magical": 8, "mana": 60 },
+    "resistances": { "dark": 40, "holy": -25, "ice": 15, "poison": 30 },
+    "special_effects": [ { "type": "Drenar Vida", "value": 20, "duration": 3, "chance": 25, "trigger": "Ao acertar" } ] },
+
+  { "id": "suffix_do_vampiro", "name": "do Vampiro", "kind": "Sufixo", "rarity_min": "Épico", "applies_to": ["Arma"], "description": "Sedento por sangue.",
+    "damage_bonus": { "min": 5, "max": 9, "type": "Físico" },
+    "stat_modifiers": { "lifesteal": 25, "dexterity": 6, "initiative": 5 },
+    "resistances": { "dark": 25, "holy": -20 },
+    "special_effects": [ { "type": "Sangramento", "value": 4, "duration": 4, "chance": 40, "trigger": "Ao acertar" } ] },
+
+  { "id": "suffix_do_gigante", "name": "do Gigante", "kind": "Sufixo", "rarity_min": "Raro", "applies_to": ["Arma","Armadura"], "description": "Feito para as mãos de gigantes.",
+    "damage_bonus": { "min": 5, "max": 8, "type": "Físico" },
+    "stat_modifiers": { "strength": 8, "vitality": 6, "hp": 40 },
+    "resistances": {}, "special_effects": [] },
+
+  { "id": "suffix_do_golem", "name": "do Golem", "kind": "Sufixo", "rarity_min": "Raro", "applies_to": ["Armadura"], "description": "Endurecido como pedra viva.",
+    "damage_bonus": { "min": 0, "max": 0, "type": "Nenhum" },
+    "stat_modifiers": { "defense_physical": 15, "defense_magical": 10, "hp": 60, "initiative": -3 },
+    "resistances": { "fire": 20, "ice": 20, "lightning": -15, "poison": 50 },
+    "special_effects": [] },
+
+  { "id": "suffix_do_demonio", "name": "do Demônio", "kind": "Sufixo", "rarity_min": "Épico", "applies_to": ["Arma","Armadura","Acessório"], "description": "Pacto com as forças infernais.",
+    "damage_bonus": { "min": 6, "max": 10, "type": "Fogo" },
+    "stat_modifiers": { "attack_physical": 6, "attack_magical": 6, "crit_chance": 5 },
+    "resistances": { "fire": 40, "ice": -15, "holy": -30, "dark": 25 },
+    "special_effects": [ { "type": "Queimadura", "value": 6, "duration": 3, "chance": 35, "trigger": "Ao acertar" } ] },
+
+  { "id": "suffix_da_tempestade", "name": "da Tempestade", "kind": "Sufixo", "rarity_min": "Raro", "applies_to": ["Arma","Acessório"], "description": "O trovão responde ao portador.",
+    "damage_bonus": { "min": 4, "max": 8, "type": "Elétrico" },
+    "stat_modifiers": { "initiative": 8, "accuracy": 8, "dexterity": 5 },
+    "resistances": { "lightning": 30 },
+    "special_effects": [ { "type": "Paralisia", "value": 0, "duration": 1, "chance": 20, "trigger": "Ao acertar" } ] },
+
+  { "id": "suffix_do_arquimago", "name": "do Arquimago", "kind": "Sufixo", "rarity_min": "Épico", "applies_to": ["Arma","Acessório"], "description": "Canaliza o poder arcano absoluto.",
+    "damage_bonus": { "min": 5, "max": 10, "type": "Arcano" },
+    "stat_modifiers": { "intelligence": 12, "attack_magical": 10, "mana": 80 },
+    "resistances": { "fire": 15, "ice": 15, "lightning": 15 },
+    "special_effects": [ { "type": "Regeneração Mana", "value": 4, "duration": 5, "chance": 40, "trigger": "Ao equipar" } ] }
+]

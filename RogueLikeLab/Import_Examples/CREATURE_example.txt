@@ -1,0 +1,530 @@
+[
+  {
+    "id": "unit_rato_gigante",
+    "name": "Rato Gigante",
+    "race": "Animal",
+    "class": "Fera",
+    "level": 1,
+    "description": "Um roedor do tamanho de um cão, comum em esgotos e porões abandonados. Ataca em bandos.",
+    "resources": { "hp": 18, "stamina": 10, "mana": 0, "hp_regen": 0, "mana_regen": 0, "stamina_regen": 1 },
+    "combat": {
+      "attack_physical": 5, "attack_magical": 0, "defense_physical": 2, "defense_magical": 1,
+      "speed": 12, "accuracy": 85, "evasion": 10, "crit_chance": 3, "crit_damage": 130,
+      "block": 0, "lifesteal": 0, "initiative": 12
+    },
+    "attributes": { "strength": 4, "dexterity": 10, "intelligence": 1, "wisdom": 2, "vitality": 5, "luck": 3 },
+    "resistances": { "fire": -10, "ice": 0, "lightning": -5, "poison": 20, "holy": 0, "dark": 0 },
+    "skills": ["Mordida Feroz", "Mordida Venenosa"]
+  },
+  {
+    "id": "unit_slime_verde",
+    "name": "Slime Verde",
+    "race": "Amorfo",
+    "class": "Criatura",
+    "level": 1,
+    "description": "Uma massa gelatinosa e ácida que se move lentamente. Divide-se quando ferido.",
+    "resources": { "hp": 25, "stamina": 5, "mana": 0, "hp_regen": 2, "mana_regen": 0, "stamina_regen": 0 },
+    "combat": {
+      "attack_physical": 4, "attack_magical": 0, "defense_physical": 4, "defense_magical": 4,
+      "speed": 6, "accuracy": 75, "evasion": 2, "crit_chance": 0, "crit_damage": 100,
+      "block": 0, "lifesteal": 0, "initiative": 5
+    },
+    "attributes": { "strength": 5, "dexterity": 3, "intelligence": 1, "wisdom": 1, "vitality": 8, "luck": 1 },
+    "resistances": { "fire": -25, "ice": 10, "lightning": -10, "poison": 50, "holy": 0, "dark": 0 },
+    "skills": ["Cuspe Ácido", "Praga Infecciosa", "Explosão Ácida"]
+  },
+  {
+    "id": "unit_goblin_batedor",
+    "name": "Goblin Batedor",
+    "race": "Goblin",
+    "class": "Ladino",
+    "level": 2,
+    "description": "Pequeno, ágil e covarde. Prefere atacar em grupos e fugir quando está perdendo.",
+    "resources": { "hp": 30, "stamina": 25, "mana": 0, "hp_regen": 1, "mana_regen": 0, "stamina_regen": 3 },
+    "combat": {
+      "attack_physical": 8, "attack_magical": 0, "defense_physical": 3, "defense_magical": 2,
+      "speed": 14, "accuracy": 90, "evasion": 15, "crit_chance": 8, "crit_damage": 150,
+      "block": 0, "lifesteal": 0, "initiative": 14
+    },
+    "attributes": { "strength": 6, "dexterity": 14, "intelligence": 6, "wisdom": 4, "vitality": 6, "luck": 8 },
+    "resistances": { "fire": 0, "ice": 0, "lightning": 0, "poison": 5, "holy": 0, "dark": 0 },
+    "skills": ["Golpe de Espada", "Ataque Furtivo", "Ataque Duplo", "Esquiva Ágil"]
+  },
+  {
+    "id": "unit_kobold",
+    "name": "Kobold",
+    "race": "Draconato",
+    "class": "Guerreiro",
+    "level": 3,
+    "description": "Pequeno reptiliano descendente distante de dragões. Trabalha em minas e emboscadas.",
+    "resources": { "hp": 40, "stamina": 30, "mana": 10, "hp_regen": 1, "mana_regen": 0, "stamina_regen": 3 },
+    "combat": {
+      "attack_physical": 10, "attack_magical": 3, "defense_physical": 6, "defense_magical": 4,
+      "speed": 11, "accuracy": 88, "evasion": 12, "crit_chance": 6, "crit_damage": 140,
+      "block": 3, "lifesteal": 0, "initiative": 11
+    },
+    "attributes": { "strength": 8, "dexterity": 12, "intelligence": 7, "wisdom": 5, "vitality": 8, "luck": 5 },
+    "resistances": { "fire": 15, "ice": 0, "lightning": 0, "poison": 10, "holy": 0, "dark": 0 },
+    "skills": ["Golpe de Espada", "Bola de Fogo", "Postura Defensiva"]
+  },
+  {
+    "id": "unit_lobo_selvagem",
+    "name": "Lobo Selvagem",
+    "race": "Animal",
+    "class": "Fera",
+    "level": 3,
+    "description": "Predador veloz que caça em matilha. Morde a jugular e derruba a presa.",
+    "resources": { "hp": 45, "stamina": 40, "mana": 0, "hp_regen": 1, "mana_regen": 0, "stamina_regen": 5 },
+    "combat": {
+      "attack_physical": 14, "attack_magical": 0, "defense_physical": 5, "defense_magical": 3,
+      "speed": 18, "accuracy": 92, "evasion": 18, "crit_chance": 10, "crit_damage": 160,
+      "block": 0, "lifesteal": 0, "initiative": 18
+    },
+    "attributes": { "strength": 12, "dexterity": 16, "intelligence": 3, "wisdom": 5, "vitality": 10, "luck": 6 },
+    "resistances": { "fire": -5, "ice": 5, "lightning": 0, "poison": 0, "holy": 0, "dark": 0 },
+    "skills": ["Mordida Feroz", "Investida Selvagem", "Uivo Intimidador", "Rajada Tripla"]
+  },
+  {
+    "id": "unit_esqueleto_guerreiro",
+    "name": "Esqueleto Guerreiro",
+    "race": "Morto-Vivo",
+    "class": "Guerreiro",
+    "level": 4,
+    "description": "Ossos animados por magia profana, empunhando uma espada enferrujada. Não sente dor.",
+    "resources": { "hp": 55, "stamina": 30, "mana": 0, "hp_regen": 0, "mana_regen": 0, "stamina_regen": 2 },
+    "combat": {
+      "attack_physical": 15, "attack_magical": 0, "defense_physical": 8, "defense_magical": 3,
+      "speed": 10, "accuracy": 85, "evasion": 5, "crit_chance": 5, "crit_damage": 130,
+      "block": 10, "lifesteal": 0, "initiative": 8
+    },
+    "attributes": { "strength": 12, "dexterity": 10, "intelligence": 3, "wisdom": 3, "vitality": 12, "luck": 2 },
+    "resistances": { "fire": -10, "ice": 25, "lightning": 0, "poison": 100, "holy": -25, "dark": 50 },
+    "skills": ["Golpe de Espada", "Golpe Espectral", "Toque Gélido"]
+  },
+  {
+    "id": "unit_bandido",
+    "name": "Bandido",
+    "race": "Humano",
+    "class": "Ladino",
+    "level": 4,
+    "description": "Fora-da-lei que vive de saquear viajantes nas estradas. Sempre acompanhado de comparsas.",
+    "resources": { "hp": 60, "stamina": 45, "mana": 0, "hp_regen": 2, "mana_regen": 0, "stamina_regen": 5 },
+    "combat": {
+      "attack_physical": 16, "attack_magical": 0, "defense_physical": 7, "defense_magical": 5,
+      "speed": 13, "accuracy": 92, "evasion": 12, "crit_chance": 12, "crit_damage": 160,
+      "block": 2, "lifesteal": 0, "initiative": 13
+    },
+    "attributes": { "strength": 12, "dexterity": 14, "intelligence": 9, "wisdom": 8, "vitality": 11, "luck": 10 },
+    "resistances": { "fire": 0, "ice": 0, "lightning": 0, "poison": 0, "holy": 0, "dark": 0 },
+    "skills": ["Golpe de Espada", "Ataque Furtivo", "Espada Cortante", "Ataque Duplo"]
+  },
+  {
+    "id": "unit_aranha_gigante",
+    "name": "Aranha Gigante",
+    "race": "Aracnídeo",
+    "class": "Fera",
+    "level": 5,
+    "description": "Uma aranha do tamanho de um cavalo, com veneno paralisante e teias pegajosas.",
+    "resources": { "hp": 65, "stamina": 40, "mana": 20, "hp_regen": 2, "mana_regen": 1, "stamina_regen": 3 },
+    "combat": {
+      "attack_physical": 18, "attack_magical": 5, "defense_physical": 6, "defense_magical": 6,
+      "speed": 15, "accuracy": 90, "evasion": 22, "crit_chance": 8, "crit_damage": 150,
+      "block": 0, "lifesteal": 0, "initiative": 15
+    },
+    "attributes": { "strength": 14, "dexterity": 18, "intelligence": 3, "wisdom": 5, "vitality": 13, "luck": 4 },
+    "resistances": { "fire": -15, "ice": 0, "lightning": 5, "poison": 100, "holy": 0, "dark": 0 },
+    "skills": ["Mordida Venenosa", "Teia Pegajosa", "Nuvem Venenosa", "Cuspe Ácido"]
+  },
+  {
+    "id": "unit_zumbi",
+    "name": "Zumbi",
+    "race": "Morto-Vivo",
+    "class": "Criatura",
+    "level": 5,
+    "description": "Cadáver reanimado que se move lentamente, mas causa feridas infecciosas.",
+    "resources": { "hp": 90, "stamina": 20, "mana": 0, "hp_regen": 0, "mana_regen": 0, "stamina_regen": 0 },
+    "combat": {
+      "attack_physical": 16, "attack_magical": 0, "defense_physical": 8, "defense_magical": 5,
+      "speed": 5, "accuracy": 70, "evasion": 0, "crit_chance": 0, "crit_damage": 100,
+      "block": 0, "lifesteal": 0, "initiative": 3
+    },
+    "attributes": { "strength": 14, "dexterity": 5, "intelligence": 1, "wisdom": 1, "vitality": 18, "luck": 1 },
+    "resistances": { "fire": -20, "ice": 30, "lightning": 0, "poison": 100, "holy": -30, "dark": 50 },
+    "skills": ["Mordida Feroz", "Praga Infecciosa", "Nuvem Venenosa"]
+  },
+  {
+    "id": "unit_orc_bruto",
+    "name": "Orc Bruto",
+    "race": "Orc",
+    "class": "Guerreiro",
+    "level": 7,
+    "description": "Um orc musculoso que luta com um machado de duas mãos. Famoso pela brutalidade.",
+    "resources": { "hp": 140, "stamina": 70, "mana": 0, "hp_regen": 3, "mana_regen": 0, "stamina_regen": 6 },
+    "combat": {
+      "attack_physical": 28, "attack_magical": 0, "defense_physical": 14, "defense_magical": 6,
+      "speed": 9, "accuracy": 82, "evasion": 5, "crit_chance": 12, "crit_damage": 180,
+      "block": 10, "lifesteal": 0, "initiative": 8
+    },
+    "attributes": { "strength": 22, "dexterity": 9, "intelligence": 5, "wisdom": 5, "vitality": 20, "luck": 4 },
+    "resistances": { "fire": 0, "ice": 0, "lightning": 0, "poison": 10, "holy": 0, "dark": 0 },
+    "skills": ["Machado Giratório", "Grito de Guerra", "Fúria Sangrenta", "Espada Cortante"]
+  },
+  {
+    "id": "unit_urso_coruja",
+    "name": "Urso-Coruja",
+    "race": "Bestial",
+    "class": "Fera",
+    "level": 8,
+    "description": "Uma criatura híbrida de urso e coruja, agressiva e territorial, protetora da floresta.",
+    "resources": { "hp": 165, "stamina": 80, "mana": 0, "hp_regen": 4, "mana_regen": 0, "stamina_regen": 7 },
+    "combat": {
+      "attack_physical": 32, "attack_magical": 0, "defense_physical": 16, "defense_magical": 8,
+      "speed": 13, "accuracy": 88, "evasion": 10, "crit_chance": 15, "crit_damage": 190,
+      "block": 8, "lifesteal": 0, "initiative": 12
+    },
+    "attributes": { "strength": 24, "dexterity": 14, "intelligence": 4, "wisdom": 8, "vitality": 22, "luck": 6 },
+    "resistances": { "fire": 0, "ice": 10, "lightning": 0, "poison": 5, "holy": 5, "dark": 0 },
+    "skills": ["Mordida Feroz", "Investida Selvagem", "Rajada Tripla", "Onda Sônica"]
+  },
+  {
+    "id": "unit_ogro",
+    "name": "Ogro",
+    "race": "Gigante",
+    "class": "Bruto",
+    "level": 9,
+    "description": "Um gigante estúpido e violento que esmaga inimigos com um porrete gigantesco.",
+    "resources": { "hp": 220, "stamina": 90, "mana": 0, "hp_regen": 5, "mana_regen": 0, "stamina_regen": 6 },
+    "combat": {
+      "attack_physical": 40, "attack_magical": 0, "defense_physical": 18, "defense_magical": 6,
+      "speed": 7, "accuracy": 75, "evasion": 2, "crit_chance": 10, "crit_damage": 200,
+      "block": 5, "lifesteal": 0, "initiative": 6
+    },
+    "attributes": { "strength": 30, "dexterity": 7, "intelligence": 3, "wisdom": 3, "vitality": 26, "luck": 3 },
+    "resistances": { "fire": 0, "ice": -5, "lightning": 0, "poison": 15, "holy": 0, "dark": 0 },
+    "skills": ["Soco Esmagador", "Arremesso de Pedra", "Fúria Sangrenta", "Onda de Choque"]
+  },
+  {
+    "id": "unit_cavaleiro_negro",
+    "name": "Cavaleiro Negro",
+    "race": "Humano",
+    "class": "Cavaleiro Sombrio",
+    "level": 11,
+    "description": "Um cavaleiro caído em desgraça, envolto em armadura negra e servindo as forças das trevas.",
+    "resources": { "hp": 260, "stamina": 120, "mana": 60, "hp_regen": 5, "mana_regen": 3, "stamina_regen": 8 },
+    "combat": {
+      "attack_physical": 45, "attack_magical": 20, "defense_physical": 28, "defense_magical": 20,
+      "speed": 12, "accuracy": 90, "evasion": 8, "crit_chance": 15, "crit_damage": 200,
+      "block": 25, "lifesteal": 5, "initiative": 12
+    },
+    "attributes": { "strength": 30, "dexterity": 16, "intelligence": 14, "wisdom": 12, "vitality": 28, "luck": 8 },
+    "resistances": { "fire": 10, "ice": 10, "lightning": 0, "poison": 20, "holy": -20, "dark": 60 },
+    "skills": ["Espada Cortante", "Postura Defensiva", "Maldição Sombria", "Rajada Tripla"]
+  },
+  {
+    "id": "unit_troll",
+    "name": "Troll",
+    "race": "Gigante",
+    "class": "Predador",
+    "level": 12,
+    "description": "Uma criatura monstruosa de pele grossa que se regenera rapidamente dos ferimentos.",
+    "resources": { "hp": 340, "stamina": 110, "mana": 0, "hp_regen": 20, "mana_regen": 0, "stamina_regen": 8 },
+    "combat": {
+      "attack_physical": 52, "attack_magical": 0, "defense_physical": 22, "defense_magical": 12,
+      "speed": 11, "accuracy": 82, "evasion": 5, "crit_chance": 15, "crit_damage": 210,
+      "block": 0, "lifesteal": 0, "initiative": 10
+    },
+    "attributes": { "strength": 34, "dexterity": 12, "intelligence": 5, "wisdom": 6, "vitality": 32, "luck": 4 },
+    "resistances": { "fire": -25, "ice": 10, "lightning": 0, "poison": 30, "holy": 0, "dark": 0 },
+    "skills": ["Regeneração Troll", "Soco Esmagador", "Onda de Choque", "Fúria Sangrenta"]
+  },
+  {
+    "id": "unit_golem_de_pedra",
+    "name": "Golem de Pedra",
+    "race": "Construto",
+    "class": "Guardião",
+    "level": 13,
+    "description": "Uma estátua animada por magia antiga, criada para proteger templos e tumbas.",
+    "resources": { "hp": 420, "stamina": 200, "mana": 40, "hp_regen": 2, "mana_regen": 0, "stamina_regen": 5 },
+    "combat": {
+      "attack_physical": 48, "attack_magical": 0, "defense_physical": 45, "defense_magical": 35,
+      "speed": 5, "accuracy": 80, "evasion": 0, "crit_chance": 5, "crit_damage": 150,
+      "block": 30, "lifesteal": 0, "initiative": 4
+    },
+    "attributes": { "strength": 35, "dexterity": 5, "intelligence": 3, "wisdom": 8, "vitality": 40, "luck": 1 },
+    "resistances": { "fire": 20, "ice": 20, "lightning": -15, "poison": 100, "holy": 0, "dark": 10 },
+    "skills": ["Pele de Pedra", "Onda de Choque", "Soco Esmagador", "Pisotear"]
+  },
+  {
+    "id": "unit_mago_negro",
+    "name": "Mago Negro",
+    "race": "Humano",
+    "class": "Mago",
+    "level": 14,
+    "description": "Um feiticeiro que trocou a alma por poder proibido. Lança feitiços devastadores.",
+    "resources": { "hp": 180, "stamina": 60, "mana": 300, "hp_regen": 3, "mana_regen": 15, "stamina_regen": 3 },
+    "combat": {
+      "attack_physical": 15, "attack_magical": 75, "defense_physical": 12, "defense_magical": 30,
+      "speed": 13, "accuracy": 95, "evasion": 10, "crit_chance": 18, "crit_damage": 220,
+      "block": 0, "lifesteal": 10, "initiative": 14
+    },
+    "attributes": { "strength": 10, "dexterity": 14, "intelligence": 32, "wisdom": 20, "vitality": 16, "luck": 12 },
+    "resistances": { "fire": 20, "ice": 20, "lightning": 20, "poison": 15, "holy": -20, "dark": 50 },
+    "skills": ["Bola de Fogo", "Raio", "Mísseis Mágicos", "Raio Arcano", "Maldição Sombria"]
+  },
+  {
+    "id": "unit_wyvern",
+    "name": "Wyvern",
+    "race": "Dragão",
+    "class": "Fera Alada",
+    "level": 16,
+    "description": "Um dragão menor alado com cauda venenosa. Mais selvagem que inteligente.",
+    "resources": { "hp": 480, "stamina": 150, "mana": 80, "hp_regen": 6, "mana_regen": 3, "stamina_regen": 8 },
+    "combat": {
+      "attack_physical": 70, "attack_magical": 30, "defense_physical": 28, "defense_magical": 25,
+      "speed": 22, "accuracy": 92, "evasion": 20, "crit_chance": 20, "crit_damage": 220,
+      "block": 0, "lifesteal": 0, "initiative": 20
+    },
+    "attributes": { "strength": 36, "dexterity": 24, "intelligence": 8, "wisdom": 10, "vitality": 34, "luck": 8 },
+    "resistances": { "fire": 20, "ice": -10, "lightning": 10, "poison": 50, "holy": 0, "dark": 0 },
+    "skills": ["Cauda Venenosa", "Voo Rasante", "Bafo de Fogo", "Mordida Venenosa"]
+  },
+  {
+    "id": "unit_vampiro_nobre",
+    "name": "Vampiro Nobre",
+    "race": "Morto-Vivo",
+    "class": "Nobre Sombrio",
+    "level": 18,
+    "description": "Um aristocrata amaldiçoado que governa das sombras. Seduz e drena a vida das vítimas.",
+    "resources": { "hp": 420, "stamina": 140, "mana": 200, "hp_regen": 8, "mana_regen": 10, "stamina_regen": 8 },
+    "combat": {
+      "attack_physical": 65, "attack_magical": 55, "defense_physical": 30, "defense_magical": 35,
+      "speed": 20, "accuracy": 94, "evasion": 22, "crit_chance": 22, "crit_damage": 230,
+      "block": 5, "lifesteal": 30, "initiative": 18
+    },
+    "attributes": { "strength": 30, "dexterity": 28, "intelligence": 26, "wisdom": 22, "vitality": 32, "luck": 15 },
+    "resistances": { "fire": -10, "ice": 15, "lightning": 10, "poison": 50, "holy": -40, "dark": 70 },
+    "skills": ["Mordida Vampírica", "Toque Vampírico", "Forma de Névoa", "Drenar Vida"]
+  },
+  {
+    "id": "unit_lich",
+    "name": "Lich",
+    "race": "Morto-Vivo",
+    "class": "Arquimago",
+    "level": 20,
+    "description": "Um mago que transcendeu a morte ao selar sua alma em uma filactéria. Domina magias arcanas supremas.",
+    "resources": { "hp": 350, "stamina": 80, "mana": 500, "hp_regen": 4, "mana_regen": 25, "stamina_regen": 4 },
+    "combat": {
+      "attack_physical": 25, "attack_magical": 120, "defense_physical": 20, "defense_magical": 50,
+      "speed": 14, "accuracy": 96, "evasion": 12, "crit_chance": 22, "crit_damage": 240,
+      "block": 0, "lifesteal": 15, "initiative": 16
+    },
+    "attributes": { "strength": 12, "dexterity": 14, "intelligence": 45, "wisdom": 35, "vitality": 24, "luck": 10 },
+    "resistances": { "fire": 15, "ice": 30, "lightning": 20, "poison": 100, "holy": -35, "dark": 80 },
+    "skills": ["Onda de Morte", "Maldição Sombria", "Invocar Esqueleto", "Praga Infecciosa", "Raio Arcano"]
+  },
+  {
+    "id": "unit_gigante_de_gelo",
+    "name": "Gigante de Gelo",
+    "race": "Gigante",
+    "class": "Guerreiro",
+    "level": 21,
+    "description": "Um colosso de gelo eterno das montanhas do norte. Seu hálito congela tudo ao redor.",
+    "resources": { "hp": 700, "stamina": 200, "mana": 120, "hp_regen": 8, "mana_regen": 4, "stamina_regen": 8 },
+    "combat": {
+      "attack_physical": 95, "attack_magical": 40, "defense_physical": 45, "defense_magical": 35,
+      "speed": 10, "accuracy": 88, "evasion": 5, "crit_chance": 15, "crit_damage": 220,
+      "block": 20, "lifesteal": 0, "initiative": 10
+    },
+    "attributes": { "strength": 48, "dexterity": 12, "intelligence": 10, "wisdom": 14, "vitality": 50, "luck": 5 },
+    "resistances": { "fire": -40, "ice": 100, "lightning": 10, "poison": 30, "holy": 0, "dark": 0 },
+    "skills": ["Bafo Glacial", "Preso em Gelo", "Esmagar", "Pisotear"]
+  },
+  {
+    "id": "unit_demonio_menor",
+    "name": "Demônio Menor",
+    "race": "Demônio",
+    "class": "Guerreiro Infernal",
+    "level": 22,
+    "description": "Um soldado das legiões infernais, envolto em chamas. Serve senhores demoníacos.",
+    "resources": { "hp": 560, "stamina": 160, "mana": 220, "hp_regen": 10, "mana_regen": 8, "stamina_regen": 8 },
+    "combat": {
+      "attack_physical": 85, "attack_magical": 70, "defense_physical": 38, "defense_magical": 42,
+      "speed": 16, "accuracy": 94, "evasion": 12, "crit_chance": 20, "crit_damage": 230,
+      "block": 10, "lifesteal": 10, "initiative": 15
+    },
+    "attributes": { "strength": 40, "dexterity": 22, "intelligence": 24, "wisdom": 18, "vitality": 38, "luck": 8 },
+    "resistances": { "fire": 100, "ice": -20, "lightning": 30, "poison": 50, "holy": -50, "dark": 60 },
+    "skills": ["Brasa Ardente", "Chicote Infernal", "Pacto Sombrio", "Bola de Fogo"]
+  },
+  {
+    "id": "unit_beholder",
+    "name": "Beholder",
+    "race": "Aberração",
+    "class": "Olho Tirano",
+    "level": 24,
+    "description": "Uma esfera flutuante de olhos e bocas, capaz de lançar raios mágicos com cada tentáculo ocular.",
+    "resources": { "hp": 600, "stamina": 100, "mana": 600, "hp_regen": 8, "mana_regen": 20, "stamina_regen": 5 },
+    "combat": {
+      "attack_physical": 30, "attack_magical": 130, "defense_physical": 40, "defense_magical": 60,
+      "speed": 8, "accuracy": 98, "evasion": 5, "crit_chance": 18, "crit_damage": 240,
+      "block": 0, "lifesteal": 0, "initiative": 12
+    },
+    "attributes": { "strength": 18, "dexterity": 10, "intelligence": 48, "wisdom": 40, "vitality": 36, "luck": 14 },
+    "resistances": { "fire": 30, "ice": 30, "lightning": 30, "poison": 30, "holy": 10, "dark": 40 },
+    "skills": ["Raio Ocular", "Olhar Petrificante", "Maldição Sombria", "Raio Arcano"]
+  },
+  {
+    "id": "unit_dragao_vermelho",
+    "name": "Dragão Vermelho",
+    "race": "Dragão",
+    "class": "Tirano Alado",
+    "level": 28,
+    "description": "Um dragão cuspidor de fogo, orgulhoso e ganancioso. Guardião de tesouros incontáveis.",
+    "resources": { "hp": 1200, "stamina": 300, "mana": 400, "hp_regen": 15, "mana_regen": 10, "stamina_regen": 10 },
+    "combat": {
+      "attack_physical": 140, "attack_magical": 100, "defense_physical": 60, "defense_magical": 55,
+      "speed": 18, "accuracy": 95, "evasion": 10, "crit_chance": 25, "crit_damage": 250,
+      "block": 15, "lifesteal": 0, "initiative": 18
+    },
+    "attributes": { "strength": 55, "dexterity": 22, "intelligence": 30, "wisdom": 26, "vitality": 60, "luck": 10 },
+    "resistances": { "fire": 100, "ice": -30, "lightning": 20, "poison": 40, "holy": 0, "dark": 20 },
+    "skills": ["Bafo de Fogo", "Tempestade de Fogo", "Voo Rasante", "Presença Aterrorizante"]
+  },
+  {
+    "id": "unit_dragao_anciao",
+    "name": "Dragão Ancião",
+    "race": "Dragão",
+    "class": "Senhor dos Céus",
+    "level": 35,
+    "description": "Um dos primeiros dragões, com milênios de sabedoria e poder. Sua presença faz tremer montanhas.",
+    "resources": { "hp": 2500, "stamina": 500, "mana": 900, "hp_regen": 25, "mana_regen": 20, "stamina_regen": 15 },
+    "combat": {
+      "attack_physical": 220, "attack_magical": 180, "defense_physical": 90, "defense_magical": 85,
+      "speed": 22, "accuracy": 98, "evasion": 15, "crit_chance": 30, "crit_damage": 280,
+      "block": 25, "lifesteal": 0, "initiative": 22
+    },
+    "attributes": { "strength": 80, "dexterity": 30, "intelligence": 55, "wisdom": 50, "vitality": 90, "luck": 20 },
+    "resistances": { "fire": 100, "ice": 50, "lightning": 50, "poison": 60, "holy": 30, "dark": 40 },
+    "skills": [
+      "Bafo de Fogo",
+      "Tempestade de Fogo",
+      "Voo Rasante",
+      "Presença Aterrorizante",
+      "Bafo Glacial",
+      "Raio Arcano",
+      "Onda de Morte",
+      "Maldição Sombria"
+    ]
+  },
+  {
+    "id": "unit_esqueleto_arqueiro",
+    "name": "Esqueleto Arqueiro",
+    "race": "Morto-Vivo",
+    "class": "Arqueiro",
+    "level": 3,
+    "description": "Esqueleto equipado com arco curto. Ataca à distância e recua quando ameaçado.",
+    "resources": { "hp": 35, "stamina": 30, "mana": 0, "hp_regen": 0, "mana_regen": 0, "stamina_regen": 3 },
+    "combat": {
+      "attack_physical": 9, "attack_magical": 0, "defense_physical": 5, "defense_magical": 2,
+      "speed": 12, "accuracy": 92, "evasion": 8, "crit_chance": 8, "crit_damage": 140,
+      "block": 0, "lifesteal": 0, "initiative": 11
+    },
+    "attributes": { "strength": 8, "dexterity": 14, "intelligence": 3, "wisdom": 3, "vitality": 8, "luck": 3 },
+    "resistances": { "fire": -10, "ice": 25, "lightning": 0, "poison": 100, "holy": -25, "dark": 50 },
+    "skills": ["Rajada Tripla", "Ataque Duplo", "Esquiva Ágil"]
+  },
+  {
+    "id": "unit_esqueleto_mago",
+    "name": "Esqueleto Mago",
+    "race": "Morto-Vivo",
+    "class": "Mago",
+    "level": 6,
+    "description": "Restos de um conjurador, ainda capaz de lançar magias arcanas.",
+    "resources": { "hp": 40, "stamina": 20, "mana": 120, "hp_regen": 0, "mana_regen": 4, "stamina_regen": 2 },
+    "combat": {
+      "attack_physical": 5, "attack_magical": 28, "defense_physical": 4, "defense_magical": 14,
+      "speed": 10, "accuracy": 90, "evasion": 6, "crit_chance": 10, "crit_damage": 170,
+      "block": 0, "lifesteal": 0, "initiative": 9
+    },
+    "attributes": { "strength": 6, "dexterity": 8, "intelligence": 20, "wisdom": 12, "vitality": 8, "luck": 5 },
+    "resistances": { "fire": -10, "ice": 25, "lightning": 0, "poison": 100, "holy": -25, "dark": 60 },
+    "skills": ["Mísseis Mágicos", "Toque Gélido", "Raio Arcano"]
+  },
+  {
+    "id": "unit_zumbi_faminto",
+    "name": "Zumbi Faminto",
+    "race": "Morto-Vivo",
+    "class": "Criatura",
+    "level": 3,
+    "description": "Zumbi mais rápido e agressivo que o comum, movido por fome eterna.",
+    "resources": { "hp": 55, "stamina": 25, "mana": 0, "hp_regen": 0, "mana_regen": 0, "stamina_regen": 2 },
+    "combat": {
+      "attack_physical": 12, "attack_magical": 0, "defense_physical": 5, "defense_magical": 3,
+      "speed": 8, "accuracy": 75, "evasion": 2, "crit_chance": 3, "crit_damage": 120,
+      "block": 0, "lifesteal": 0, "initiative": 6
+    },
+    "attributes": { "strength": 12, "dexterity": 6, "intelligence": 1, "wisdom": 1, "vitality": 14, "luck": 2 },
+    "resistances": { "fire": -20, "ice": 30, "lightning": 0, "poison": 100, "holy": -30, "dark": 50 },
+    "skills": ["Mordida Feroz", "Fúria Sangrenta"]
+  },
+  {
+    "id": "unit_imp",
+    "name": "Imp",
+    "race": "Demônio",
+    "class": "Diabrete",
+    "level": 5,
+    "description": "Pequeno demônio travesso, veloz e incendiário. Serve como batedor dos infernos.",
+    "resources": { "hp": 30, "stamina": 25, "mana": 40, "hp_regen": 2, "mana_regen": 3, "stamina_regen": 3 },
+    "combat": {
+      "attack_physical": 8, "attack_magical": 12, "defense_physical": 4, "defense_magical": 8,
+      "speed": 18, "accuracy": 90, "evasion": 20, "crit_chance": 12, "crit_damage": 170,
+      "block": 0, "lifesteal": 0, "initiative": 16
+    },
+    "attributes": { "strength": 6, "dexterity": 16, "intelligence": 12, "wisdom": 6, "vitality": 6, "luck": 10 },
+    "resistances": { "fire": 100, "ice": -20, "lightning": 20, "poison": 30, "holy": -50, "dark": 40 },
+    "skills": ["Brasa Ardente", "Mísseis Mágicos", "Esquiva Ágil"]
+  },
+  {
+    "id": "unit_sombra_menor",
+    "name": "Sombra Menor",
+    "race": "Morto-Vivo",
+    "class": "Espírito",
+    "level": 8,
+    "description": "Um fragmento de alma penada, feito de trevas. Difícil de acertar.",
+    "resources": { "hp": 60, "stamina": 40, "mana": 80, "hp_regen": 2, "mana_regen": 4, "stamina_regen": 4 },
+    "combat": {
+      "attack_physical": 14, "attack_magical": 18, "defense_physical": 8, "defense_magical": 16,
+      "speed": 14, "accuracy": 94, "evasion": 28, "crit_chance": 12, "crit_damage": 180,
+      "block": 0, "lifesteal": 15, "initiative": 15
+    },
+    "attributes": { "strength": 10, "dexterity": 16, "intelligence": 14, "wisdom": 12, "vitality": 14, "luck": 8 },
+    "resistances": { "fire": -15, "ice": 20, "lightning": 0, "poison": 100, "holy": -40, "dark": 80 },
+    "skills": ["Golpe Espectral", "Toque Gélido", "Drenar Vida"]
+  },
+  {
+    "id": "unit_lich",
+    "name": "Lich",
+    "race": "Morto-Vivo",
+    "class": "Arquimago",
+    "level": 20,
+    "description": "Um mago que transcendeu a morte ao selar sua alma em uma filactéria. Domina magias arcanas supremas.",
+    "resources": { "hp": 350, "stamina": 80, "mana": 500, "hp_regen": 4, "mana_regen": 25, "stamina_regen": 4 },
+    "combat": {
+      "attack_physical": 25, "attack_magical": 120, "defense_physical": 20, "defense_magical": 50,
+      "speed": 14, "accuracy": 96, "evasion": 12, "crit_chance": 22, "crit_damage": 240,
+      "block": 0, "lifesteal": 15, "initiative": 16
+    },
+    "attributes": { "strength": 12, "dexterity": 14, "intelligence": 45, "wisdom": 35, "vitality": 24, "luck": 10 },
+    "resistances": { "fire": 15, "ice": 30, "lightning": 20, "poison": 100, "holy": -35, "dark": 80 },
+    "skills": [
+      "Onda de Morte",
+      "Maldição Sombria",
+      "Invocar Esqueleto",
+      "Invocar Esqueleto Arqueiro",
+      "Invocar Esqueleto Mago",
+      "Invocar Sombra",
+      "Praga Infecciosa",
+      "Raio Arcano"
+    ]
+  }
+]
