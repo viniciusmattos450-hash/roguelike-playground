@@ -7,13 +7,6 @@ Modos (TAB cicla): Mapa · Tiles · Passabilidade · Eventos
 Controles:
 - TAB cicla modos · WASD câmera (SHIFT rápido) · Scroll zoom
 - Ctrl+Z/Y undo/redo · G grade · S salvar · ESC sair
-
-Cliques:
-- LMB no painel esquerdo   → paletas, árvore de mapas, tipos
-- LMB no painel direito    → botões, campos
-- LMB no canvas            → pintar / colocar / selecionar
-- RMB no painel esquerdo   → menus de contexto
-- RMB no canvas            → apagar / bloquear / menu de evento
 """
 
 import os, json
@@ -68,7 +61,6 @@ BTN_TEXT      = (235, 225, 205)
 CANVAS_BG     = (16, 14, 12)
 EMPTY_CELL    = (42, 38, 34)
 
-# passability
 PASS_OK       = (110, 220, 110, 130)
 PASS_BLOCK    = (220, 80, 80, 130)
 PASS_ABOVE    = (120, 180, 240, 130)
@@ -181,7 +173,6 @@ class TextField:
         border = ACCENT_BRIGHT if self.focused else ACCENT_DARK
         pygame.draw.rect(surf, border, self.rect, 1, border_radius=3)
         ts = FONT_S.render(self.value, True, TEXT)
-        # clipar o texto se for maior que o campo
         clip_old = surf.get_clip()
         surf.set_clip(self.rect.inflate(-8, -4))
         surf.blit(ts, (self.rect.x + 6, self.rect.y + 6))
@@ -192,7 +183,7 @@ class TextField:
         surf.set_clip(clip_old)
 
 # ============================================================================
-# InputDialog — usado para renomear mapa
+# InputDialog
 # ============================================================================
 class InputDialog:
     def __init__(self):
@@ -603,7 +594,6 @@ class TileMap:
         for entry in d.get("passability", []):
             if len(entry) >= 3:
                 x, y, v = entry
-                # compat com formato antigo
                 if isinstance(v, bool): v = "ok" if v else "block"
                 m.passability[(x, y)] = v
         for evd in d.get("events", []):
@@ -721,7 +711,7 @@ class MapEditorApp:
         self.hover_cell = None
 
         # passability
-        self.pass_mode = "ok"      # ok | block | above | clear
+        self.pass_mode = "ok"
 
         self.dragging_paint = False
         self.dragging_pass = None
@@ -746,10 +736,9 @@ class MapEditorApp:
         self.dragging_map_name = None
 
         # hits recolhidos no draw
-        self._right_hits = []       # [(rect, callback_or_field)]
-        self._left_hits = []        # [(rect, callback)]
-        self._top_hits = []         # [(rect, callback)]
-        self._canvas_click_areas = []
+        self._right_hits = []       # [(rect, cb)]
+        self._left_hits  = []       # [(rect, cb, kind_or_None)]
+        self._top_hits   = []       # [(rect, cb)]
 
         self.show_grid = True
         self._sync_fields_from_map()
@@ -883,11 +872,9 @@ class MapEditorApp:
         self.last_right_panel = "event"
         self.fields["ev_id"].value = str(ev.id)
         self.fields["ev_name"].value = str(ev.data.get("name", ""))
-        # limpa
         for i in range(1, 7):
             self.fields[f"ev_k{i}"].value = ""
             self.fields[f"ev_v{i}"].value = ""
-        # preenche pulando "name" (já tratado)
         items = [(k, v) for k, v in ev.data.items() if k != "name"]
         for i, (k, v) in enumerate(items):
             if i >= 6: break
@@ -1186,7 +1173,7 @@ class MapEditorApp:
         self.fields["et_image"].value = ""
         self._apply_event_type_fields(); self._msg("Sprite removido.", TEXT_DIM)
 
-    # --- eventos (instâncias) ---
+    # --- eventos ---
     def _dup_event(self, ev):
         m = self.project.active_map()
         if not m: return
@@ -1217,7 +1204,6 @@ class MapEditorApp:
             if e.type == pygame.QUIT:
                 self.running = False; return
 
-            # diálogos modais (ordem: rename > save > ctx_menu)
             if self.rename_dialog.active:
                 self.rename_dialog.handle_event(e); continue
             if self.save_dialog.active:
@@ -1230,7 +1216,6 @@ class MapEditorApp:
                 if cb: cb()
                 continue
 
-            # campo focado
             if self.focused_field:
                 if e.type == pygame.KEYDOWN:
                     if self.focused_field.handle_key(e):
@@ -1313,15 +1298,15 @@ class MapEditorApp:
     # Dispatch
     # ------------------------------------------------------------------
     def _on_left_down(self, pos):
-        # 1) top bar (rects do último frame)
+        # 1) top bar
         for rect, cb in self._top_hits:
             if rect.collidepoint(pos): cb(); return
-        # 2) painel esquerdo (rects do último frame)
-        for rect, cb in self._left_hits:
+        # 2) painel esquerdo
+        for item in self._left_hits:
+            rect, cb = item[0], item[1]
             if rect.collidepoint(pos): cb(); return
-        # 3) painel direito (campos primeiro, depois botões)
+        # 3) painel direito
         if self._in_right_panel(pos):
-            # campos do modo
             prefixes = self.FIELD_PREFIX_BY_MODE.get(self.mode, ())
             for key, f in self.fields.items():
                 if not f.active_this_frame: continue
@@ -1333,7 +1318,6 @@ class MapEditorApp:
                     for k2, f2 in self.fields.items():
                         if f2 is not f: f2.focused = False
                     return
-            # botões
             for rect, cb in self._right_hits:
                 if rect.collidepoint(pos): cb(); return
             return
@@ -1341,14 +1325,11 @@ class MapEditorApp:
         self._handle_canvas_left(pos)
 
     def _on_right_down(self, pos):
-        # ctx menu no painel esquerdo
         if self._in_left_panel(pos):
             if self._handle_left_context_menu(pos): return
-        # canvas
         self._handle_canvas_right(pos)
 
     def _on_left_up(self, pos):
-        # drag-and-drop de mapa
         if self.dragging_map_name:
             for rect, name in self._map_list_hits_for_drag():
                 if rect.collidepoint(pos) and name != self.dragging_map_name:
@@ -1372,45 +1353,41 @@ class MapEditorApp:
         self.dragging_pass = None
 
     def _map_list_hits_for_drag(self):
-        # retorna (rect, name) dos mapas — usar _left_hits com payload name
-        # como já temos o rect no hit, retornamos apenas os que guardam name
         out = []
         for item in self._left_hits:
-            if len(item) == 3 and item[2] == "map":
+            if len(item) >= 3 and item[2] == "map":
                 out.append((item[0], item[1]))
         return out
 
     # ------------------------------------------------------------------
-    # Clicks: top bar / painel esquerdo
+    # Context menu (RMB painel esquerdo)
     # ------------------------------------------------------------------
     def _handle_left_context_menu(self, pos):
-        # árvore de mapas
         for item in self._left_hits:
-            if len(item) == 3 and item[2] == "map":
-                rect, name, _ = item
-                if rect.collidepoint(pos):
-                    items = [
-                        ("Renomear…", lambda n=name: self._open_rename_dialog(n)),
-                        ("Deletar", lambda n=name: self._del_map(n)),
-                    ]
-                    others = [n for n in self.project.maps if n != name]
-                    if others:
-                        sub = [(f"→ {p}", (lambda c=name, p=p: self._move_map_to(c, p)))
-                               for p in others[:10]]
-                        items.append(("Mover para…",
-                                      lambda s=sub, p=pos: self.ctx_menu.open(
-                                          (min(p[0]+180, WIDTH-220), p[1]), s)))
-                    self.ctx_menu.open(pos, items); return True
-        # tipos de evento
-        for item in self._left_hits:
-            if len(item) == 3 and item[2] == "event_type":
-                rect, tag, _ = item
-                if rect.collidepoint(pos):
-                    et = self.project.event_types.get(tag)
-                    if et and not et.is_preset:
-                        self.ctx_menu.open(pos, [("Deletar tipo",
-                            lambda t=tag: self._del_event_type_tag(t))])
-                    return True
+            if len(item) < 3: continue
+            rect, payload, kind = item
+            if not rect.collidepoint(pos): continue
+            if kind == "map":
+                name = payload
+                items = [
+                    ("Renomear…", lambda n=name: self._open_rename_dialog(n)),
+                    ("Deletar", lambda n=name: self._del_map(n)),
+                ]
+                others = [n for n in self.project.maps if n != name]
+                if others:
+                    sub = [(f"→ {p}", (lambda c=name, p=p: self._move_map_to(c, p)))
+                           for p in others[:10]]
+                    items.append(("Mover para…",
+                                  lambda s=sub, p=pos: self.ctx_menu.open(
+                                      (min(p[0]+180, WIDTH-220), p[1]), s)))
+                self.ctx_menu.open(pos, items); return True
+            if kind == "event_type":
+                tag = payload
+                et = self.project.event_types.get(tag)
+                if et and not et.is_preset:
+                    self.ctx_menu.open(pos, [("Deletar tipo",
+                        lambda t=tag: self._del_event_type_tag(t))])
+                return True
         return False
 
     # ------------------------------------------------------------------
@@ -1543,7 +1520,6 @@ class MapEditorApp:
     # ------------------------------------------------------------------
     def draw(self):
         screen.fill(BG)
-        # zera os hits
         self._right_hits = []
         self._left_hits = []
         self._top_hits = []
@@ -1633,7 +1609,7 @@ class MapEditorApp:
                 pygame.draw.rect(screen, bg, rect, border_radius=3)
                 pygame.draw.rect(screen, ACCENT_DARK, rect, 1, border_radius=3)
                 draw_text(screen, cat, cx + 6, y + 4, FONT_XS, TEXT)
-                self._left_hits.append((rect, (lambda c=cat: self._set_category(c))))
+                self._left_hits.append((rect, (lambda c=cat: self._set_category(c)), None))
                 cx += tw + 4
             y += 26
             draw_text(screen, "TILES", x, y, FONT_XS, ACCENT); y += 16
@@ -1652,7 +1628,7 @@ class MapEditorApp:
                 pygame.draw.rect(screen, border, rect,
                                  2 if tid == self.selected_tile_id else 1,
                                  border_radius=3)
-                self._left_hits.append((rect, (lambda tt=tid: self._set_tile(tt))))
+                self._left_hits.append((rect, (lambda tt=tid: self._set_tile(tt)), None))
                 cx += tw + 4
                 if cx + tw > x + w + 2: cx = x; cy += tw + 4
 
@@ -1670,7 +1646,7 @@ class MapEditorApp:
                 pygame.draw.rect(screen, border, rect,
                                  2 if tid == self.selected_tile_id else 1,
                                  border_radius=3)
-                self._left_hits.append((rect, (lambda tt=tid: self._set_tile(tt))))
+                self._left_hits.append((rect, (lambda tt=tid: self._set_tile(tt)), None))
                 cx += tw + 4
                 if cx + tw > x + w + 2: cx = x; cy += tw + 4
 
@@ -1696,7 +1672,6 @@ class MapEditorApp:
             draw_text(screen, "RMB num evento: menu", x, y, FONT_XS, TEXT_DIM); y += 14
             draw_text(screen, "RMB num tipo custom: deletar", x, y, FONT_XS, TEXT_DIM)
 
-        # botões rodapé esquerdo
         y = HEIGHT - BOTTOM_H - 34
         bw = (w - 8) // 3
         if self.mode == self.MODE_MAP:
@@ -1704,21 +1679,25 @@ class MapEditorApp:
             r3 = pygame.Rect(x + 2*(bw+4), y, bw, 28)
             draw_button(screen, r1, "+ Mapa", FONT_XS); draw_button(screen, r2, "Dup", FONT_XS)
             draw_button(screen, r3, "Del", FONT_XS)
-            self._left_hits += [(r1, lambda: self._new_map(None)),
-                                (r2, self._dup_map), (r3, self._del_map)]
+            self._left_hits += [(r1, lambda: self._new_map(None), None),
+                                (r2, self._dup_map, None),
+                                (r3, self._del_map, None)]
         elif self.mode == self.MODE_TILES:
             r1 = pygame.Rect(x, y, bw, 28); r2 = pygame.Rect(x + bw + 4, y, bw, 28)
             r3 = pygame.Rect(x + 2*(bw+4), y, bw, 28)
             draw_button(screen, r1, "+ Tile", FONT_XS); draw_button(screen, r2, "Dup", FONT_XS)
             draw_button(screen, r3, "Del", FONT_XS)
-            self._left_hits += [(r1, self._new_tile), (r2, self._dup_tile), (r3, self._del_tile)]
+            self._left_hits += [(r1, self._new_tile, None),
+                                (r2, self._dup_tile, None),
+                                (r3, self._del_tile, None)]
         elif self.mode == self.MODE_EVENTS:
             r1 = pygame.Rect(x, y, bw, 28); r2 = pygame.Rect(x + bw + 4, y, bw, 28)
             r3 = pygame.Rect(x + 2*(bw+4), y, bw, 28)
             draw_button(screen, r1, "+ Tipo", FONT_XS); draw_button(screen, r2, "Dup Tipo", FONT_XS)
             draw_button(screen, r3, "Del Tipo", FONT_XS)
-            self._left_hits += [(r1, self._new_event_type), (r2, self._dup_event_type),
-                                (r3, self._del_event_type)]
+            self._left_hits += [(r1, self._new_event_type, None),
+                                (r2, self._dup_event_type, None),
+                                (r3, self._del_event_type, None)]
 
     def _set_category(self, cat): self.selected_category = cat
     def _set_tile(self, tid):
@@ -1752,7 +1731,6 @@ class MapEditorApp:
             pygame.draw.rect(screen, ACCENT_DARK, rect, 1, border_radius=3)
             prefix = "▾ " if self.project.children_of(name) else "  "
             draw_text(screen, prefix + name[:22], x + 6, y + 4, FONT_XS, TEXT)
-            # guarda hits: clique esquerdo seleciona+inicia drag
             self._left_hits.append((rect, (lambda n=name: self._left_click_map(n)), "map"))
             y += 22
             children = self.project.children_of(name)
@@ -1791,12 +1769,10 @@ class MapEditorApp:
         self.fields["map_w"].set_position(x, y, half)
         self.fields["map_h"].set_position(x + half + 6, y, half); y += 42
 
-        # aplica
         rect = pygame.Rect(x, y, w, 28)
         draw_button(screen, rect, "Aplicar nome/tamanho", FONT_XS, primary=True)
         self._right_hits.append((rect, self._apply_map_fields)); y += 34
 
-        # quick size
         draw_text(screen, "Tamanho rápido:", x, y, FONT_XS, TEXT_DIM); y += 14
         half2 = w - 78
         self.fields["quick_size"].set_position(x, y, half2)
@@ -1805,7 +1781,6 @@ class MapEditorApp:
         self._right_hits.append((rect2, self._apply_quick_size))
         y += 42
 
-        # quick resize
         draw_text(screen, "Ajuste fino:", x, y, FONT_XS, TEXT_DIM); y += 14
         half = (w - 6) // 2
         r1 = pygame.Rect(x, y, half, 24); r2 = pygame.Rect(x + half + 6, y, half, 24)
@@ -1821,7 +1796,6 @@ class MapEditorApp:
         self._right_hits.append((r4, lambda: self._quick_resize(0, 1)))
         y += 32
 
-        # layers
         draw_text(screen, "CAMADAS", x, y, FONT_XS, ACCENT); y += 16
         bw = (w - 3*6) // 4
         labels = ["1 Base","2 Det","3 Ext","4 Top"]
@@ -1832,7 +1806,6 @@ class MapEditorApp:
             self._right_hits.append((rect, (lambda ii=i: self._set_layer(ii))))
         y += 34
 
-        # tools
         draw_text(screen, "FERRAMENTAS", x, y, FONT_XS, ACCENT); y += 16
         tools = [("Brush (B)", TOOL_BRUSH), ("Eraser (E)", TOOL_ERASER),
                  ("Fill (F)", TOOL_FILL), ("Retâng. (R)", TOOL_RECT),
@@ -1845,7 +1818,6 @@ class MapEditorApp:
             self._right_hits.append((rect, (lambda k=key: self._set_tool(k))))
         y += 3*26 + 10
 
-        # preview tile
         draw_text(screen, "TILE SELECIONADO", x, y, FONT_XS, ACCENT); y += 16
         tid = self.selected_tile_id
         t = self.project.tileset.get(tid) if tid else None
@@ -1972,7 +1944,6 @@ class MapEditorApp:
         self.fields["et_label"].set_position(x, y, w); y += 42
         self.fields["et_color"].set_position(x, y, w); y += 42
         self.fields["et_image"].set_position(x, y, w); y += 42
-        # botões
         bw2 = (w - 8) // 2
         r_apply = pygame.Rect(x, y, w, 30)
         draw_button(screen, r_apply, "Aplicar", FONT_XS, primary=True)
@@ -2007,20 +1978,17 @@ class MapEditorApp:
         draw_text(screen, f"Posição no mapa: ({ev.x},{ev.y})",
                   x, y, FONT_XS, TEXT_DIM); y += 20
 
-        # ID + nome
         half = (w - 6) // 2
         self.fields["ev_id"].set_position(x, y, half)
         self.fields["ev_name"].set_position(x + half + 6, y, half); y += 42
 
         draw_text(screen, "PROPRIEDADES (chave = valor)", x, y, FONT_XS, ACCENT); y += 14
-        # 6 pares
         for i in range(1, 7):
             half2 = (w - 6) // 2
             self.fields[f"ev_k{i}"].set_position(x, y, half2)
             self.fields[f"ev_v{i}"].set_position(x + half2 + 6, y, half2)
             y += 42
 
-        # botões
         r_apply = pygame.Rect(x, y, w, 30)
         draw_button(screen, r_apply, "Aplicar alterações", FONT_XS, primary=True)
         self._right_hits.append((r_apply, self._apply_event_fields)); y += 34
