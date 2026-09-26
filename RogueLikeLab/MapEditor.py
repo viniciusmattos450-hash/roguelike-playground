@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 MapEditor.py — Editor de tile maps estilo RPG Maker.
-
-Modos (TAB cicla): Mapa · Tiles · Passabilidade · Eventos
-
-Controles:
-- TAB cicla modos · WASD câmera (SHIFT rápido) · Scroll zoom
-- Ctrl+Z/Y undo/redo · G grade · S salvar · ESC sair
 """
 
 import os, json
@@ -710,7 +704,6 @@ class MapEditorApp:
         self.selected_category = "Todos"
         self.hover_cell = None
 
-        # passability
         self.pass_mode = "ok"
 
         self.dragging_paint = False
@@ -735,10 +728,9 @@ class MapEditorApp:
 
         self.dragging_map_name = None
 
-        # hits recolhidos no draw
-        self._right_hits = []       # [(rect, cb)]
-        self._left_hits  = []       # [(rect, cb, kind_or_None)]
-        self._top_hits   = []       # [(rect, cb)]
+        self._right_hits = []
+        self._left_hits  = []
+        self._top_hits   = []
 
         self.show_grid = True
         self._sync_fields_from_map()
@@ -1298,14 +1290,11 @@ class MapEditorApp:
     # Dispatch
     # ------------------------------------------------------------------
     def _on_left_down(self, pos):
-        # 1) top bar
         for rect, cb in self._top_hits:
             if rect.collidepoint(pos): cb(); return
-        # 2) painel esquerdo
         for item in self._left_hits:
             rect, cb = item[0], item[1]
             if rect.collidepoint(pos): cb(); return
-        # 3) painel direito
         if self._in_right_panel(pos):
             prefixes = self.FIELD_PREFIX_BY_MODE.get(self.mode, ())
             for key, f in self.fields.items():
@@ -1321,7 +1310,6 @@ class MapEditorApp:
             for rect, cb in self._right_hits:
                 if rect.collidepoint(pos): cb(); return
             return
-        # 4) canvas
         self._handle_canvas_left(pos)
 
     def _on_right_down(self, pos):
@@ -1761,6 +1749,11 @@ class MapEditorApp:
             self._draw_right_pass(x, y, w)
         elif self.mode == self.MODE_EVENTS:
             self._draw_right_events(x, y, w)
+
+        # desenha TODOS os campos ativos (o que estava faltando!)
+        for key, f in self.fields.items():
+            if f.active_this_frame:
+                f.draw(screen)
 
     def _draw_right_map(self, x, y, w):
         draw_text(screen, "MAPA (tamanho e nome)", x, y, FONT_XS, ACCENT); y += 16
