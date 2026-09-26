@@ -1,15 +1,25 @@
 # -*- coding: utf-8 -*-
 """
-MapEditor.py v5.1 — Editor de tile maps estilo RPG Maker.
+MapEditor.py v8 — Cada tile tem uma pasta com sprites separados.
 
-Correções desta versão:
-- Clique num mapa da árvore NÃO dispara mais drag por acidente (threshold 6px).
-- HUD de debug (F1 esconde).
-- Clique no canvas calcula célula direto do clique.
-- Feedback visual (flash) ao pintar.
+Estrutura:
+    exports/tiles/
+        base_texture.png       (checkerboard claro, gerado)
+        side_left_texture.png  (checkerboard escuro, gerado)
+        side_right_texture.png (checkerboard médio, gerado)
+        <tile_id>/
+            top.png
+            side_left.png
+            side_right.png
+
+- Editor: botões "Escolher…"/"X" por slot
+- Isométrico:
+    ground (height=0) → top.png mascarado em diamante
+    wall  (height≥1)  → side_left.png + side_right.png (paralelogramos) + top.png (diamante no topo)
+- Trocar arquivos na pasta fora do editor atualiza ao vivo (mtime)
 """
 
-import os, json
+import os, json, math, subprocess, sys
 import pygame
 
 # ============================================================================
@@ -30,13 +40,65 @@ DEFAULT_LAYERS = 4
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Map Editor v5.1")
+pygame.display.set_caption("Map Editor v8")
 clock = pygame.time.Clock()
 
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 EXPORTS_DIR = os.path.join(BASE_DIR, "exports", "maps")
+TILES_DIR   = os.path.join(BASE_DIR, "exports", "tiles")
 os.makedirs(EXPORTS_DIR, exist_ok=True)
+os.makedirs(TILES_DIR, exist_ok=True)
 AUTOSAVE_PATH = os.path.join(EXPORTS_DIR, "_autosave.json")
+
+BASE_TEXTURE       = os.path.join(TILES_DIR, "base_texture.png")
+SIDE_LEFT_TEXTURE  = os.path.join(TILES_DIR, "side_left_texture.png")
+SIDE_RIGHT_TEXTURE = os.path.join(TILES_DIR, "side_right_texture.png")
+
+TILE_SLOTS = ("top", "side_left", "side_right")
+
+# ============================================================================
+# Geração de texturas base
+# ============================================================================
+def _make_checker(size=64, c1=200, c2=160, border=90, path=None):
+    if path and os.path.isfile(path): return
+    surf = pygame.Surface((size, size), pygame.SRCALPHA)
+    for y in range(size):
+        for x in range(size):
+            c = c1 if ((x // 8 + y // 8) % 2 == 0) else c2
+            surf.set_at((x, y), (c, c, c, 255))
+    pygame.draw.rect(surf, (border, border, border, 255), (0, 0, size, size), 1)
+    if path:
+        try: pygame.image.save(surf, path)
+        except Exception: pass
+
+def ensure_base_textures():
+    _make_checker(64, 200, 160, 90,  BASE_TEXTURE)
+    _make_checker(64, 110, 80,  60,  SIDE_LEFT_TEXTURE)
+    _make_checker(64, 150, 120, 70,  SIDE_RIGHT_TEXTURE)
+
+def ensure_default_tile_folders():
+    """Cria pastas padrão. Não sobrescreve arquivos existentes."""
+    for tid, slots in [
+        ("ground", ("top",)),
+        ("wall",   ("top", "side_left", "side_right")),
+        ("tree",   ("top", "side_left", "side_right")),
+        ("water",  ("top",)),
+    ]:
+        folder = os.path.join(TILES_DIR, tid)
+        os.makedirs(folder, exist_ok=True)
+        for slot in slots:
+            p = os.path.join(folder, f"{slot}.png")
+            if os.path.isfile(p): continue
+            src_file = {"top": BASE_TEXTURE,
+                        "side_left": SIDE_LEFT_TEXTURE,
+                        "side_right": SIDE_RIGHT_TEXTURE}[slot]
+            try:
+                img = pygame.image.load(src_file)
+                pygame.image.save(img, p)
+            except Exception: pass
+
+ensure_base_textures()
+ensure_default_tile_folders()
 
 # ============================================================================
 # Cores
@@ -82,10 +144,7 @@ EVENT_KIND_COLORS = {
     "other":        (200, 200, 200),
 }
 EVENT_KIND_GLYPHS = {
-    "player_spawn": "P",
-    "trigger":      "T",
-    "teleport":     "!",
-    "other":        "?",
+    "player_spawn": "P", "trigger": "T", "teleport": "!", "other": "?",
 }
 TRIGGER_WHENS = [
     ("on_start",            "onStart"),
@@ -159,6 +218,20 @@ def parse_hex_color(s, default=(150, 150, 150)):
     return default
 
 def color_to_hex(c): return "%02x%02x%02x" % tuple(c[:3])
+
+def darken(color, factor):
+    return tuple(max(0, min(255, int(c * factor))) for c in color[:3])
+
+def open_folder(path):
+    try:
+        if sys.platform.startswith("win"):
+            os.startfile(path)  # noqa
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", path])
+        else:
+            subprocess.Popen(["xdg-open", path])
+    except Exception:
+        pass
 
 # ============================================================================
 # TextField
@@ -445,41 +518,105 @@ class ContextMenu:
             draw_text(surf, label, r.x + 10, r.y + 5, FONT_M, TEXT)
 
 # ============================================================================
-# Tile
+# Tile — pasta com slots de sprite
 # ============================================================================
 class Tile:
     def __init__(self, tid, name, color=(128,128,128),
-                 walkable=True, category="Geral", image_path=None,
-                 height=0, blocks_sight=False):
+                 walkable=True, category="Geral", height=0,
+                 blocks_sight=False, folder=None):
         self.id = tid; self.name = name
         self.color = tuple(color); self.walkable = walkable
-        self.category = category; self.image_path = image_path
+        self.category = category
         self.height = int(height)
         self.blocks_sight = bool(blocks_sight)
-        self._img_cache = {}
-    def get_surface(self, size):
-        if not self.image_path: return None
-        if size in self._img_cache: return self._img_cache[size]
+        self.folder = folder or os.path.join(TILES_DIR, tid)
+        try: os.makedirs(self.folder, exist_ok=True)
+        except Exception: pass
+        self._cache = {}     # (slot, size) -> Surface|None
+        self._mtimes = {}    # slot -> mtime
+
+    # --- paths ---
+    def slot_path(self, slot):
+        return os.path.join(self.folder, f"{slot}.png")
+    def has_slot(self, slot):
+        return os.path.isfile(self.slot_path(slot))
+
+    # --- sprites ---
+    def get_sprite(self, slot, size):
+        """Retorna Surface escalada ou None. Detecta mudanças via mtime."""
+        p = self.slot_path(slot)
+        if not os.path.isfile(p): return None
+        try: mtime = os.path.getmtime(p)
+        except Exception: return None
+        if self._mtimes.get(slot) != mtime:
+            for k in list(self._cache.keys()):
+                if k[0] == slot: del self._cache[k]
+            self._mtimes[slot] = mtime
+        if isinstance(size, int): size = (size, size)
+        key = (slot, size)
+        if key in self._cache: return self._cache[key]
         try:
-            if not os.path.isfile(self.image_path):
-                self._img_cache[size] = None; return None
-            img = pygame.image.load(self.image_path).convert_alpha()
-            scaled = pygame.transform.smoothscale(img, (size, size))
-            self._img_cache[size] = scaled; return scaled
+            img = pygame.image.load(p).convert_alpha()
+            scaled = pygame.transform.smoothscale(img, size)
+            self._cache[key] = scaled
+            return scaled
         except Exception:
-            self._img_cache[size] = None; return None
-    def clear_cache(self): self._img_cache = {}
+            self._cache[key] = None
+            return None
+
+    def get_any_sprite(self, size):
+        """Para preview: prefere top, cai pra side_left/right, depois None."""
+        for slot in ("top", "side_left", "side_right"):
+            s = self.get_sprite(slot, size)
+            if s: return s
+        return None
+
+    def clear_cache(self):
+        self._cache = {}
+        self._mtimes = {}
+
+    def set_slot_from_file(self, slot, src_path):
+        try:
+            os.makedirs(self.folder, exist_ok=True)
+            img = pygame.image.load(src_path).convert_alpha()
+            pygame.image.save(img, self.slot_path(slot))
+            self.clear_cache()
+            return True
+        except Exception:
+            return False
+
+    def remove_slot(self, slot):
+        p = self.slot_path(slot)
+        if os.path.isfile(p):
+            try: os.remove(p)
+            except Exception: pass
+        self.clear_cache()
+
+    # --- serialização ---
     def to_dict(self):
         return {"id": self.id, "name": self.name,
                 "color": list(self.color), "walkable": self.walkable,
-                "category": self.category, "image_path": self.image_path,
+                "category": self.category,
                 "height": self.height, "blocks_sight": self.blocks_sight}
+
     @classmethod
     def from_dict(cls, d):
-        return cls(d["id"], d["name"], tuple(d.get("color", (128,128,128))),
-                   d.get("walkable", True), d.get("category", "Geral"),
-                   d.get("image_path"),
-                   d.get("height", 0), d.get("blocks_sight", False))
+        t = cls(d["id"], d["name"], tuple(d.get("color", (128,128,128))),
+                d.get("walkable", True), d.get("category", "Geral"),
+                height=d.get("height", 0),
+                blocks_sight=d.get("blocks_sight", False))
+        # migração de versões antigas (image_path → pasta/top.png)
+        legacy = d.get("image_path")
+        if legacy and os.path.isfile(legacy):
+            top_p = t.slot_path("top")
+            if not os.path.isfile(top_p):
+                try:
+                    img = pygame.image.load(legacy).convert_alpha()
+                    pygame.image.save(img, top_p)
+                    t.clear_cache()
+                except Exception:
+                    pass
+        return t
 
 # ============================================================================
 # TileSet
@@ -518,27 +655,16 @@ class TileSet:
 def default_tileset():
     ts = TileSet()
     data = [
-        ("grass","Grama",(90,140,80),True,"Terreno",0,False),
-        ("grass_dark","Grama escura",(66,105,60),True,"Terreno",0,False),
-        ("dirt","Terra",(140,100,70),True,"Terreno",0,False),
-        ("sand","Areia",(220,200,130),True,"Terreno",0,False),
-        ("snow","Neve",(230,230,240),True,"Terreno",0,False),
-        ("stone_floor","Piso de pedra",(130,125,115),True,"Piso",0,False),
-        ("wood_floor","Piso de madeira",(150,110,75),True,"Piso",0,False),
-        ("water","Água",(60,90,160),False,"Terreno",0,False),
-        ("lava","Lava",(210,90,40),False,"Terreno",0,False),
-        ("tree","Árvore",(35,70,35),False,"Natureza",2,True),
-        ("bush","Arbusto",(55,100,55),True,"Natureza",1,False),
-        ("rock","Rocha",(100,95,88),False,"Natureza",1,True),
-        ("flower_red","Flor vermelha",(200,80,80),True,"Detalhes",0,False),
-        ("flower_yellow","Flor amarela",(220,200,80),True,"Detalhes",0,False),
-        ("path_stone","Caminho de pedra",(170,160,140),True,"Detalhes",0,False),
-        ("wall_stone","Parede de pedra",(75,70,65),False,"Estruturas",1,True),
-        ("wall_wood","Parede madeira",(120,85,55),False,"Estruturas",1,True),
-        ("door","Porta",(170,120,70),True,"Estruturas",1,False),
+        ("ground", "Ground", True,  "Terreno",   0, False),
+        ("wall",   "Wall",   False, "Estruturas", 1, True),
+        ("tree",   "Tree",   False, "Natureza",    2, True),
+        ("water",  "Water",  False, "Terreno",     0, False),
     ]
-    for tid, name, col, walk, cat, h, bs in data:
-        ts.add(Tile(tid, name, col, walk, cat, height=h, blocks_sight=bs))
+    for tid, name, walk, cat, h, bs in data:
+        t = Tile(tid, name, color=(150, 150, 150), walkable=walk,
+                 category=cat, height=h, blocks_sight=bs,
+                 folder=os.path.join(TILES_DIR, tid))
+        ts.add(t)
     return ts
 
 # ============================================================================
@@ -703,10 +829,7 @@ class Project:
         m = TileMap("mapa_inicial", 30, 20)
         for y in range(20):
             for x in range(30):
-                if x < 8: m.set_layer(x, y, 0, "grass")
-                elif x < 15: m.set_layer(x, y, 0, "grass_dark")
-                elif x < 22: m.set_layer(x, y, 0, "dirt")
-                else: m.set_layer(x, y, 0, "stone_floor")
+                m.set_layer(x, y, 0, "ground")
         self.maps[m.name] = m
         self.active_map_name = m.name
     def active_map(self): return self.maps.get(self.active_map_name)
@@ -779,6 +902,7 @@ class MapEditorApp:
         self.mode = self.MODE_MAP
         self.tool = TOOL_BRUSH
         self.active_layer = 0
+        self.view_iso = False
 
         self.cell = 32.0
         self.cam = [0.0, 0.0]
@@ -788,7 +912,6 @@ class MapEditorApp:
                                  if self.project.tileset.order else None)
         self.selected_category = "Todos"
         self.hover_cell = None
-
         self.pass_mode = "ok"
 
         self.dragging_paint = False
@@ -813,7 +936,7 @@ class MapEditorApp:
         self.editing_event = None
 
         self.dragging_map_name = None
-        self.pending_map_click = None    # (nome, pos_inicial)
+        self.pending_map_click = None
 
         self._right_hits = []
         self._left_hits  = []
@@ -821,7 +944,6 @@ class MapEditorApp:
 
         self.show_grid = True
         self.debug_hud = True
-
         self.paint_flashes = []
 
         self._sync_fields_from_map()
@@ -838,7 +960,7 @@ class MapEditorApp:
             self.fields[k] = TextField(k, lbl, "", max_len=32)
         self.fields["quick_size"] = TextField("quick_size", "Rápido (ex: 5x5)", "", max_len=16)
         for k, lbl in [("tile_name","Nome"),("tile_category","Categoria"),
-                       ("tile_color","Cor (hex)"),("tile_image","Imagem"),
+                       ("tile_color","Cor (fallback)"),
                        ("tile_height","Altura 3D (int)")]:
             self.fields[k] = TextField(k, lbl, "", max_len=200)
         self.fields["ev_id"]   = TextField("ev_id",   "ID (int)", "", max_len=16)
@@ -874,28 +996,81 @@ class MapEditorApp:
         return 0 <= pos[0] < LEFT_W and TOP_H <= pos[1] < HEIGHT - BOTTOM_H
     def _in_top_bar(self, pos): return pos[1] < TOP_H
 
+    # --- iso helpers ---
+    def _iso_tw(self): return self.cell * 2
+    def _iso_th(self): return self.cell
+    def _iso_wall_unit(self): return self.cell * 1.25
+
+    def _toggle_view(self):
+        self.view_iso = not self.view_iso
+        self._recenter(); self._clamp_cam()
+        self._msg("Vista: " + ("Isométrico" if self.view_iso else "Top-down"), ACCENT)
+
     def _recenter(self):
         m = self.project.active_map()
         if not m: return
-        self.cam[0] = m.w * self.cell / 2 - CANVAS_W / 2
-        self.cam[1] = m.h * self.cell / 2 - CANVAS_H / 2
+        if self.view_iso:
+            tw = self._iso_tw(); th = self._iso_th()
+            min_x = -m.h * tw / 2
+            max_x = m.w * tw / 2
+            min_y = -th * 2
+            max_y = (m.w + m.h) * th / 2 + th
+            self.cam[0] = (min_x + max_x) / 2
+            self.cam[1] = (min_y + max_y) / 2
+        else:
+            self.cam[0] = m.w * self.cell / 2 - CANVAS_W / 2
+            self.cam[1] = m.h * self.cell / 2 - CANVAS_H / 2
 
     def _clamp_cam(self):
         m = self.project.active_map()
         if not m: return
-        ww = m.w * self.cell; wh = m.h * self.cell
-        self.cam[0] = clamp(self.cam[0], -CANVAS_W*0.5, ww - CANVAS_W*0.5)
-        self.cam[1] = clamp(self.cam[1], -CANVAS_H*0.5, wh - CANVAS_H*0.5)
+        if self.view_iso:
+            tw = self._iso_tw(); th = self._iso_th()
+            min_x = -m.h * tw / 2 - CANVAS_W * 0.5
+            max_x = m.w * tw / 2 + CANVAS_W * 0.5
+            min_y = -th * 5 - CANVAS_H * 0.5
+            max_y = (m.w + m.h) * th / 2 + th * 2 + CANVAS_H * 0.5
+            self.cam[0] = clamp(self.cam[0], min_x, max_x)
+            self.cam[1] = clamp(self.cam[1], min_y, max_y)
+        else:
+            ww = m.w * self.cell; wh = m.h * self.cell
+            self.cam[0] = clamp(self.cam[0], -CANVAS_W*0.5, ww - CANVAS_W*0.5)
+            self.cam[1] = clamp(self.cam[1], -CANVAS_H*0.5, wh - CANVAS_H*0.5)
 
     def _screen_to_world(self, sx, sy):
-        return (sx - CANVAS_X + self.cam[0], sy - CANVAS_Y + self.cam[1])
+        if self.view_iso:
+            cx = CANVAS_X + CANVAS_W / 2
+            cy = CANVAS_Y + CANVAS_H / 2
+            return (sx - cx + self.cam[0], sy - cy + self.cam[1])
+        else:
+            return (sx - CANVAS_X + self.cam[0], sy - CANVAS_Y + self.cam[1])
+
+    def _world_to_screen(self, wx, wy):
+        if self.view_iso:
+            cx = CANVAS_X + CANVAS_W / 2
+            cy = CANVAS_Y + CANVAS_H / 2
+            return (cx + (wx - self.cam[0]), cy + (wy - self.cam[1]))
+        else:
+            return (CANVAS_X + (wx - self.cam[0]),
+                    CANVAS_Y + (wy - self.cam[1]))
 
     def _cell_from_pos(self, pos):
-        wx, wy = self._screen_to_world(pos[0], pos[1])
-        gx = int(wx // self.cell); gy = int(wy // self.cell)
         m = self.project.active_map()
-        if m and m.in_bounds(gx, gy): return (gx, gy)
-        return None
+        if not m: return None
+        wx, wy = self._screen_to_world(pos[0], pos[1])
+        if self.view_iso:
+            tw = self._iso_tw(); th = self._iso_th()
+            gx_f = wx / tw + wy / th
+            gy_f = wy / th - wx / tw
+            gx = int(math.floor(gx_f))
+            gy = int(math.floor(gy_f))
+            if 0 <= gx < m.w and 0 <= gy < m.h:
+                return (gx, gy)
+            return None
+        else:
+            gx = int(wx // self.cell); gy = int(wy // self.cell)
+            if m.in_bounds(gx, gy): return (gx, gy)
+            return None
 
     # --- undo/redo ---
     def _snapshot(self):
@@ -979,13 +1154,11 @@ class MapEditorApp:
         self.fields["tile_name"].value = t.name
         self.fields["tile_category"].value = t.category
         self.fields["tile_color"].value = color_to_hex(t.color)
-        self.fields["tile_image"].value = t.image_path or ""
         self.fields["tile_height"].value = str(t.height)
 
     def _sync_fields_from_event(self, ev):
         self.editing_event = ev
-        if not ev:
-            return
+        if not ev: return
         self.fields["ev_id"].value = str(ev.id)
         self.fields["ev_name"].value = ev.name
         self.fields["ev_tag"].value = ev.tag
@@ -1013,9 +1186,6 @@ class MapEditorApp:
         t.name = self.fields["tile_name"].value.strip() or t.id
         t.category = self.fields["tile_category"].value.strip() or "Geral"
         t.color = parse_hex_color(self.fields["tile_color"].value, t.color)
-        img = self.fields["tile_image"].value.strip()
-        if img != (t.image_path or ""):
-            t.image_path = img or None; t.clear_cache()
         try:
             t.height = int(self.fields["tile_height"].value or 0)
         except Exception:
@@ -1040,7 +1210,7 @@ class MapEditorApp:
             for child in self.project.maps.values():
                 if child.parent == old_name: child.parent = m.name
             self.project.active_map_name = m.name
-        self._mark_dirty(); self._sync_fields_from_map()
+        self._mark_dirty(); self._sync_fields_from_map(); self._recenter()
 
     def _apply_event_fields(self):
         ev = self.editing_event
@@ -1081,7 +1251,7 @@ class MapEditorApp:
         if not m: return
         s = self.fields["quick_size"].value.strip().lower()
         if "x" not in s:
-            self._msg("Formato inválido. Use algo como 10x25", DANGER); return
+            self._msg("Formato inválido.", DANGER); return
         try:
             a, b = s.split("x")
             nw = clamp(int(a), 4, 300); nh = clamp(int(b), 4, 300)
@@ -1089,7 +1259,7 @@ class MapEditorApp:
             self._msg("Formato inválido.", DANGER); return
         if (nw, nh) != (m.w, m.h):
             self._push_undo(); m.resize(nw, nh)
-            self._mark_dirty(); self._sync_fields_from_map()
+            self._mark_dirty(); self._sync_fields_from_map(); self._recenter()
             self._msg(f"Redimensionado: {nw}x{nh}", SUCCESS)
 
     def _apply_current_field_group(self):
@@ -1222,7 +1392,16 @@ class MapEditorApp:
     # --- tiles ---
     def _new_tile(self):
         tid = self.project.tileset.unique_id("tile")
-        self.project.tileset.add(Tile(tid, "Novo tile", (150,150,150), True, "Geral"))
+        folder = os.path.join(TILES_DIR, tid)
+        t = Tile(tid, "Novo tile", (150,150,150), True, "Geral",
+                 height=0, folder=folder)
+        # copia base pra top
+        try:
+            img = pygame.image.load(BASE_TEXTURE)
+            pygame.image.save(img, t.slot_path("top"))
+            t.clear_cache()
+        except Exception: pass
+        self.project.tileset.add(t)
         self.selected_tile_id = tid
         self._sync_fields_from_tile(); self._mark_dirty()
         self._msg(f"Tile criado: {tid}", ACCENT)
@@ -1233,7 +1412,16 @@ class MapEditorApp:
         if not t: return
         new_id = self.project.tileset.unique_id(t.id)
         nt = Tile(new_id, t.name+" copy", t.color, t.walkable, t.category,
-                  t.image_path, t.height, t.blocks_sight)
+                  t.height, t.blocks_sight)
+        # copia sprites
+        for slot in TILE_SLOTS:
+            src = t.slot_path(slot)
+            if os.path.isfile(src):
+                try:
+                    img = pygame.image.load(src)
+                    pygame.image.save(img, nt.slot_path(slot))
+                except Exception: pass
+        nt.clear_cache()
         self.project.tileset.add(nt)
         self.selected_tile_id = new_id
         self._sync_fields_from_tile(); self._mark_dirty()
@@ -1264,14 +1452,32 @@ class MapEditorApp:
             t.blocks_sight = not t.blocks_sight
             self._mark_dirty()
             self._msg(f"{t.id}: blocks_sight={t.blocks_sight}", ACCENT)
-    def _pick_tile_image(self):
+
+    def _pick_slot_image(self, slot):
         path = pick_image_file()
         if not path: return
-        self.fields["tile_image"].value = path
-        self._apply_tile_fields(); self._msg("Sprite carregado.", SUCCESS)
-    def _clear_tile_image(self):
-        self.fields["tile_image"].value = ""
-        self._apply_tile_fields(); self._msg("Sprite removido.", TEXT_DIM)
+        t = self.project.tileset.get(self.selected_tile_id)
+        if not t: return
+        if t.set_slot_from_file(slot, path):
+            self._mark_dirty()
+            self._msg(f"{slot}.png salvo", SUCCESS)
+        else:
+            self._msg(f"Erro ao salvar {slot}.png", DANGER)
+
+    def _remove_slot_image(self, slot):
+        t = self.project.tileset.get(self.selected_tile_id)
+        if not t: return
+        t.remove_slot(slot)
+        self._mark_dirty()
+        self._msg(f"{slot} removido", TEXT_DIM)
+
+    def _open_tile_folder(self):
+        t = self.project.tileset.get(self.selected_tile_id)
+        if not t: return
+        try: os.makedirs(t.folder, exist_ok=True)
+        except Exception: pass
+        open_folder(t.folder)
+        self._msg(f"Abrindo: {os.path.basename(t.folder)}/", ACCENT)
 
     # --- eventos ---
     def _on_event_kind_change(self, new_kind):
@@ -1373,6 +1579,7 @@ class MapEditorApp:
                     if self.mode == self.MODE_TILES: self._sync_fields_from_tile()
                 if e.key == pygame.K_g: self.show_grid = not self.show_grid
                 if e.key == pygame.K_F1: self.debug_hud = not self.debug_hud
+                if e.key == pygame.K_i: self._toggle_view()
                 if e.key == pygame.K_z and (e.mod & pygame.KMOD_CTRL): self._do_undo()
                 if e.key == pygame.K_y and (e.mod & pygame.KMOD_CTRL): self._do_redo()
                 if self.mode == self.MODE_MAP:
@@ -1401,11 +1608,26 @@ class MapEditorApp:
         old = self.cell
         new = clamp(old * (1.15 ** delta), 8.0, 96.0)
         if abs(new - old) < 0.01: return
-        wx = (mouse_pos[0] - CANVAS_X + self.cam[0]) / self.cell
-        wy = (mouse_pos[1] - CANVAS_Y + self.cam[1]) / self.cell
-        self.cell = new
-        self.cam[0] = wx * new - (mouse_pos[0] - CANVAS_X)
-        self.cam[1] = wy * new - (mouse_pos[1] - CANVAS_Y)
+        mx, my = mouse_pos
+        if self.view_iso:
+            wx, wy = self._screen_to_world(mx, my)
+            tw_old = old * 2; th_old = old
+            gx_f = wx / tw_old + wy / th_old
+            gy_f = wy / th_old - wx / tw_old
+            self.cell = new
+            tw = new * 2; th = new
+            new_wx = (gx_f - gy_f) * tw / 2
+            new_wy = (gx_f + gy_f) * th / 2
+            cx = CANVAS_X + CANVAS_W / 2
+            cy = CANVAS_Y + CANVAS_H / 2
+            self.cam[0] = new_wx - (mx - cx)
+            self.cam[1] = new_wy - (my - cy)
+        else:
+            wx_cell = (mx - CANVAS_X + self.cam[0]) / old
+            wy_cell = (my - CANVAS_Y + self.cam[1]) / old
+            self.cell = new
+            self.cam[0] = wx_cell * new - (mx - CANVAS_X)
+            self.cam[1] = wy_cell * new - (my - CANVAS_Y)
         self._clamp_cam()
 
     def _on_motion(self, pos):
@@ -1461,19 +1683,15 @@ class MapEditorApp:
         self._handle_canvas_right(pos)
 
     def _on_left_up(self, pos):
-        # Drag-and-drop de mapas com threshold
         if self.pending_map_click:
             name, start = self.pending_map_click
             dx = pos[0] - start[0]; dy = pos[1] - start[1]
             dist = (dx*dx + dy*dy) ** 0.5
             if dist > 6:
-                # arrasto de verdade → tenta reparentar
                 for rect, target in self._map_list_hits_for_drag():
                     if rect.collidepoint(pos) and target != name:
-                        self._move_map_to(name, target)
-                        break
+                        self._move_map_to(name, target); break
             else:
-                # foi só um clique → troca o mapa ativo
                 self._switch_map(name)
             self.pending_map_click = None
         self.dragging_map_name = None
@@ -1621,7 +1839,7 @@ class MapEditorApp:
         nw = clamp(m.w + dw, 4, 300); nh = clamp(m.h + dh, 4, 300)
         if (nw, nh) != (m.w, m.h):
             self._push_undo(); m.resize(nw, nh); self._mark_dirty()
-            self._sync_fields_from_map()
+            self._sync_fields_from_map(); self._recenter()
             self._msg(f"{nw}x{nh}", ACCENT)
     def _clear_all_passability(self):
         m = self.project.active_map()
@@ -1695,6 +1913,7 @@ class MapEditorApp:
         m = self.project.active_map()
         lines = [
             f"mode: {self.mode}",
+            f"view: {'ISO' if self.view_iso else 'TOP'}",
             f"tool: {self.tool}",
             f"layer: {self.active_layer + 1}/{m.num_layers if m else '?'}",
             f"tile: {self.selected_tile_id}",
@@ -1702,12 +1921,11 @@ class MapEditorApp:
             f"cell: {int(self.cell)}px",
             f"cam: ({int(self.cam[0])},{int(self.cam[1])})",
             f"painting: {self.dragging_paint}",
-            f"[F1] esconde HUD",
+            f"[F1] HUD  ·  [I] vista",
         ]
         bx = CANVAS_X + CANVAS_W - 220
         by = CANVAS_Y + 6
-        bw = 212
-        bh = len(lines) * 14 + 8
+        bw = 212; bh = len(lines) * 14 + 8
         bg = pygame.Surface((bw, bh), pygame.SRCALPHA)
         bg.fill((0, 0, 0, 175))
         screen.blit(bg, (bx, by))
@@ -1727,7 +1945,13 @@ class MapEditorApp:
             draw_button(screen, rect, label, FONT_M, active=(self.mode == mode))
             self._top_hits.append((rect, (lambda mm=mode: self._switch_mode(mm))))
             x += tw + 4
-        x = 480
+        x += 8
+        vw = 130
+        rect = pygame.Rect(x, 6, vw, TOP_H-12)
+        label = "Vista: Isométrico" if self.view_iso else "Vista: Top-down"
+        draw_button(screen, rect, label, FONT_S, active=self.view_iso)
+        self._top_hits.append((rect, self._toggle_view))
+        x += vw + 10
         for label, cb in [("Novo mapa", lambda: self._new_map(None)),
                           ("Salvar como…", self._open_save_dialog),
                           ("Carregar…", self._load_project_dialog)]:
@@ -1741,7 +1965,7 @@ class MapEditorApp:
             draw_button(screen, rect, label, FONT_S)
             self._top_hits.append((rect, cb))
             x += 66
-        draw_text(screen, "MAP EDITOR v5.1", WIDTH - 170, 13, FONT_L, ACCENT_BRIGHT)
+        draw_text(screen, "MAP EDITOR v8", WIDTH - 150, 13, FONT_L, ACCENT_BRIGHT)
 
     def _switch_mode(self, mode):
         self.mode = mode
@@ -1794,7 +2018,7 @@ class MapEditorApp:
                 if self.selected_category != "Todos" and t.category != self.selected_category:
                     continue
                 rect = pygame.Rect(cx, cy, tw, tw)
-                img = t.get_surface(tw - 4)
+                img = t.get_sprite("top", (tw - 4, tw - 4))
                 if img: screen.blit(img, (cx+2, cy+2))
                 else: pygame.draw.rect(screen, t.color, (cx+2, cy+2, tw-4, tw-4))
                 if tid == self.selected_tile_id:
@@ -1812,7 +2036,7 @@ class MapEditorApp:
                 t = self.project.tileset.get(tid)
                 if not t: continue
                 rect = pygame.Rect(cx, cy, tw, tw)
-                img = t.get_surface(tw-4)
+                img = t.get_sprite("top", (tw-4, tw-4))
                 if img: screen.blit(img, (cx+2, cy+2))
                 else: pygame.draw.rect(screen, t.color, (cx+2, cy+2, tw-4, tw-4))
                 if tid == self.selected_tile_id:
@@ -1908,8 +2132,6 @@ class MapEditorApp:
         return y
 
     def _left_click_map(self, name):
-        # Não muda nem faz drag ainda. Só guarda a intenção.
-        # A decisão (clique vs. drag) é feita no release.
         self.pending_map_click = (name, pygame.mouse.get_pos())
 
     def _draw_right_panel(self):
@@ -1989,7 +2211,7 @@ class MapEditorApp:
         tid = self.selected_tile_id
         t = self.project.tileset.get(tid) if tid else None
         if t:
-            img = t.get_surface(60)
+            img = t.get_sprite("top", (60, 60))
             if img: screen.blit(img, (x+2, y+2))
             else: pygame.draw.rect(screen, t.color, (x+2, y+2, 60, 60))
             pygame.draw.rect(screen, ACCENT_DARK, (x, y, 64, 64), 2)
@@ -2007,7 +2229,7 @@ class MapEditorApp:
         tid = self.selected_tile_id
         t = self.project.tileset.get(tid) if tid else None
         if t:
-            img = t.get_surface(76)
+            img = t.get_sprite("top", (76, 76))
             if img: screen.blit(img, (x+2, y+2))
             else: pygame.draw.rect(screen, t.color, (x+2, y+2, 76, 76))
             pygame.draw.rect(screen, ACCENT_DARK, (x, y, 80, 80), 2)
@@ -2022,24 +2244,55 @@ class MapEditorApp:
         hlf = (w - 6) // 2
         self.fields["tile_color"].set_position(x, y, hlf)
         self.fields["tile_height"].set_position(x + hlf + 6, y, hlf); y += 42
-        self.fields["tile_image"].set_position(x, y, w); y += 42
 
+        # --- slots ---
+        draw_text(screen, "SPRITES DO TILE  (top / side_left / side_right)",
+                  x, y, FONT_XS, ACCENT); y += 18
+        slot_names_pt = {"top": "Top", "side_left": "Left", "side_right": "Right"}
+        for slot in TILE_SLOTS:
+            row = pygame.Rect(x, y, w, 28)
+            pygame.draw.rect(screen, (30, 26, 22), row, border_radius=3)
+            pygame.draw.rect(screen, ACCENT_DARK, row, 1, border_radius=3)
+            # mini preview
+            mini = pygame.Rect(x + 3, y + 3, 22, 22)
+            img = t.get_sprite(slot, (20, 20)) if t else None
+            if img: screen.blit(img, (mini.x + 1, mini.y + 1))
+            else:
+                pygame.draw.rect(screen, (50, 44, 38), mini)
+                draw_text(screen, "—", mini.x + 7, mini.y + 3, FONT_XS, TEXT_DIM)
+            pygame.draw.rect(screen, ACCENT_DARK, mini, 1)
+            # label
+            draw_text(screen, slot_names_pt[slot], x + 32, y + 7, FONT_S, TEXT)
+            # botões: Escolher / X
+            bw2 = 80
+            r_pick = pygame.Rect(x + w - bw2*2 - 6, y + 2, bw2, 24)
+            r_del  = pygame.Rect(x + w - bw2 + 2 - 12, y + 2, 20, 24)
+            draw_button(screen, r_pick, "Escolher…", FONT_XS)
+            draw_button(screen, r_del, "X", FONT_XS, danger=True)
+            self._right_hits.append((r_pick, (lambda s=slot: self._pick_slot_image(s))))
+            self._right_hits.append((r_del, (lambda s=slot: self._remove_slot_image(s))))
+            y += 32
+
+        # botão abrir pasta
+        r_open = pygame.Rect(x, y, w, 26)
+        draw_button(screen, r_open, "Abrir pasta do tile", FONT_XS)
+        self._right_hits.append((r_open, self._open_tile_folder))
+        y += 32
+
+        # outros botões
         rects = [
-            ("Aplicar", self._apply_tile_fields, True, False),
+            ("Aplicar propriedades", self._apply_tile_fields, True, False),
             ("Walkable (toggle)", self._toggle_walkable, False, False),
             ("Blocks sight (toggle)", self._toggle_blocks_sight, False, False),
-            ("Buscar imagem…", self._pick_tile_image, False, False),
-            ("Remover imagem", self._clear_tile_image, False, False),
             ("+ Novo tile", self._new_tile, False, False),
             ("Duplicar", self._dup_tile, False, False),
             ("Excluir", self._del_tile, False, True),
         ]
-        yy = y
         for label, cb, primary, danger in rects:
-            r = pygame.Rect(x, yy, w, 30)
+            r = pygame.Rect(x, y, w, 28)
             draw_button(screen, r, label, FONT_XS, primary=primary, danger=danger)
             self._right_hits.append((r, cb))
-            yy += 34
+            y += 32
 
     def _draw_right_pass(self, x, y, w):
         draw_text(screen, "MODO DE PINTURA", x, y, FONT_XS, ACCENT); y += 16
@@ -2101,9 +2354,7 @@ class MapEditorApp:
         draw_text(screen, f"posição: ({ev.x},{ev.y})", x + 32, y + 8,
                   FONT_XS, TEXT_DIM)
         y += 32
-
         self.dropdowns["ev_kind"].set_position(x, y, w); y += 44
-
         hlf = (w - 6) // 2
         self.fields["ev_name"].set_position(x, y, hlf)
         self.fields["ev_id"].set_position(x + hlf + 6, y, hlf); y += 42
@@ -2125,8 +2376,7 @@ class MapEditorApp:
             self._right_hits.append((r, (lambda p=(x, y+40): self._select_target_map(p))))
             y += 42
 
-        draw_text(screen, "PROPRIEDADES CUSTOM (chave = valor)",
-                  x, y, FONT_XS, ACCENT); y += 14
+        draw_text(screen, "PROPRIEDADES CUSTOM", x, y, FONT_XS, ACCENT); y += 14
         for i in range(1, 7):
             hlf2 = (w - 6) // 2
             self.fields[f"ev_k{i}"].set_position(x, y, hlf2)
@@ -2140,6 +2390,9 @@ class MapEditorApp:
         draw_button(screen, r_del, "Deletar evento", FONT_XS, danger=True)
         self._right_hits.append((r_del, (lambda e=ev: self._del_event(e)))); y += 34
 
+    # ================================================================
+    # Canvas
+    # ================================================================
     def _draw_canvas(self):
         clip = self._canvas_rect()
         old = screen.get_clip()
@@ -2148,46 +2401,61 @@ class MapEditorApp:
 
         m = self.project.active_map()
         if m:
-            self._draw_map_layers(m)
-            if self.mode == self.MODE_PASS: self._draw_passability(m)
-            if self.mode == self.MODE_EVENTS: self._draw_events(m)
-
-        if self.paint_flashes:
-            cs = int(round(self.cell))
-            for fx, fy, tleft in self.paint_flashes:
-                rx = int(CANVAS_X + fx * self.cell - self.cam[0])
-                ry = int(CANVAS_Y + fy * self.cell - self.cam[1])
-                a = int(200 * (tleft / 0.35))
-                s = pygame.Surface((cs, cs), pygame.SRCALPHA)
-                s.fill((255, 240, 120, a))
-                screen.blit(s, (rx, ry))
-
-        if self.hover_cell and self.mode in (self.MODE_MAP, self.MODE_PASS,
-                                             self.MODE_EVENTS):
-            cs = int(round(self.cell))
-            wx, wy = self.hover_cell
-            x = int(wx * self.cell - self.cam[0]) + CANVAS_X
-            y = int(wy * self.cell - self.cam[1]) + CANVAS_Y
-            if self.mode == self.MODE_MAP and self.tool == TOOL_RECT \
-                    and self.rect_start and self.rect_end:
-                x1, y1 = self.rect_start; x2, y2 = self.rect_end
-                xa, xb = sorted((x1, x2)); ya, yb = sorted((y1, y2))
-                rx1 = int(xa * self.cell - self.cam[0]) + CANVAS_X
-                ry1 = int(ya * self.cell - self.cam[1]) + CANVAS_Y
-                rw = int((xb - xa + 1) * self.cell)
-                rh = int((yb - ya + 1) * self.cell)
-                s = pygame.Surface((rw, rh), pygame.SRCALPHA)
-                s.fill((255, 220, 100, 80)); screen.blit(s, (rx1, ry1))
-                pygame.draw.rect(screen, HIGHLIGHT, (rx1, ry1, rw, rh), 2)
+            if self.view_iso:
+                self._draw_map_layers_iso(m)
+                if self.mode == self.MODE_PASS: self._draw_passability_iso(m)
+                if self.mode == self.MODE_EVENTS: self._draw_events_iso(m)
+                self._draw_paint_flashes_iso()
+                self._draw_iso_rect_preview()
+                self._draw_hover_iso()
             else:
-                border_col = HIGHLIGHT
-                if self.mode == self.MODE_PASS: border_col = SUCCESS
-                if self.mode == self.MODE_EVENTS:
-                    border_col = EVENT_KIND_COLORS.get(self.current_event_kind, HIGHLIGHT)
-                pygame.draw.rect(screen, border_col, (x, y, cs, cs), 2)
+                self._draw_map_layers(m)
+                if self.mode == self.MODE_PASS: self._draw_passability(m)
+                if self.mode == self.MODE_EVENTS: self._draw_events(m)
+                self._draw_paint_flashes_td()
+                self._draw_hover_td()
 
         screen.set_clip(old)
         pygame.draw.rect(screen, PANEL_BORDER, clip, 2)
+
+    # ================================================================
+    # Top-down
+    # ================================================================
+    def _draw_paint_flashes_td(self):
+        if not self.paint_flashes: return
+        cs = int(round(self.cell))
+        for fx, fy, tleft in self.paint_flashes:
+            rx = int(CANVAS_X + fx * self.cell - self.cam[0])
+            ry = int(CANVAS_Y + fy * self.cell - self.cam[1])
+            a = int(200 * (tleft / 0.35))
+            s = pygame.Surface((cs, cs), pygame.SRCALPHA)
+            s.fill((255, 240, 120, a))
+            screen.blit(s, (rx, ry))
+
+    def _draw_hover_td(self):
+        if not self.hover_cell: return
+        if self.mode not in (self.MODE_MAP, self.MODE_PASS, self.MODE_EVENTS): return
+        cs = int(round(self.cell))
+        wx, wy = self.hover_cell
+        x = int(wx * self.cell - self.cam[0]) + CANVAS_X
+        y = int(wy * self.cell - self.cam[1]) + CANVAS_Y
+        if self.mode == self.MODE_MAP and self.tool == TOOL_RECT \
+                and self.rect_start and self.rect_end:
+            x1, y1 = self.rect_start; x2, y2 = self.rect_end
+            xa, xb = sorted((x1, x2)); ya, yb = sorted((y1, y2))
+            rx1 = int(xa * self.cell - self.cam[0]) + CANVAS_X
+            ry1 = int(ya * self.cell - self.cam[1]) + CANVAS_Y
+            rw = int((xb - xa + 1) * self.cell)
+            rh = int((yb - ya + 1) * self.cell)
+            s = pygame.Surface((rw, rh), pygame.SRCALPHA)
+            s.fill((255, 220, 100, 80)); screen.blit(s, (rx1, ry1))
+            pygame.draw.rect(screen, HIGHLIGHT, (rx1, ry1, rw, rh), 2)
+        else:
+            border_col = HIGHLIGHT
+            if self.mode == self.MODE_PASS: border_col = SUCCESS
+            if self.mode == self.MODE_EVENTS:
+                border_col = EVENT_KIND_COLORS.get(self.current_event_kind, HIGHLIGHT)
+            pygame.draw.rect(screen, border_col, (x, y, cs, cs), 2)
 
     def _draw_map_layers(self, m):
         cs = self.cell; cs_i = int(round(cs))
@@ -2209,7 +2477,7 @@ class MapEditorApp:
                     t = self.project.tileset.get(tid)
                     if t is None: continue
                     rx = int(ox + x * cs); ry = int(oy + y * cs)
-                    img = t.get_surface(cs_i + 1)
+                    img = t.get_sprite("top", (cs_i+1, cs_i+1))
                     if img: screen.blit(img, (rx, ry))
                     else: pygame.draw.rect(screen, t.color, (rx, ry, cs_i+1, cs_i+1))
         if self.show_grid and cs >= 10:
@@ -2286,22 +2554,254 @@ class MapEditorApp:
                 screen.blit(idbg, (rx + cs_i - idtxt.get_width() - 4, ry + 2))
                 screen.blit(idtxt, (rx + cs_i - idtxt.get_width() - 2, ry + 2))
 
+    # ================================================================
+    # Isométrico — máscaras
+    # ================================================================
+    def _draw_iso_diamond_flat(self, cx, cy, color, alpha=255):
+        tw = self._iso_tw(); th = self._iso_th()
+        hw = tw / 2; hh = th / 2
+        pts = [(cx, cy - hh), (cx + hw, cy), (cx, cy + hh), (cx - hw, cy)]
+        if alpha >= 255:
+            pygame.draw.polygon(screen, color[:3], pts)
+        else:
+            minx = int(cx - hw) - 2; miny = int(cy - hh) - 2
+            w = int(tw) + 6; h = int(th) + 6
+            surf = pygame.Surface((w, h), pygame.SRCALPHA)
+            lp = [(hw, 0), (tw, hh), (hw, th), (0, hh)]
+            lp = [(int(p[0]) + 3, int(p[1]) + 3) for p in lp]
+            pygame.draw.polygon(surf, (color[0], color[1], color[2], alpha), lp)
+            screen.blit(surf, (minx, miny))
+
+    def _draw_iso_diamond_textured(self, cx, cy, img):
+        tw = int(self._iso_tw()); th = int(self._iso_th())
+        hw = tw // 2; hh = th // 2
+        mask = pygame.Surface((tw, th), pygame.SRCALPHA)
+        pts = [(hw, 0), (tw, hh), (hw, th), (0, hh)]
+        pygame.draw.polygon(mask, (255, 255, 255, 255), pts)
+        tex = img.copy()
+        tex.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        screen.blit(tex, (int(cx - hw), int(cy - hh)))
+
+    def _draw_iso_left_face_textured(self, cx, cy, height, img):
+        tw = self._iso_tw(); th = self._iso_th()
+        hw = int(tw // 2); hh = int(th // 2); h = int(height)
+        bw = hw; bh = h + hh
+        mask = pygame.Surface((bw, bh), pygame.SRCALPHA)
+        pts = [(0, 0), (hw, hh), (hw, h + hh), (0, h)]
+        pygame.draw.polygon(mask, (255, 255, 255, 255), pts)
+        tex = img.copy()
+        tex.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        screen.blit(tex, (int(cx - hw), int(cy - h)))
+
+    def _draw_iso_right_face_textured(self, cx, cy, height, img):
+        tw = self._iso_tw(); th = self._iso_th()
+        hw = int(tw // 2); hh = int(th // 2); h = int(height)
+        bw = hw; bh = h + hh
+        mask = pygame.Surface((bw, bh), pygame.SRCALPHA)
+        pts = [(0, hh), (hw, 0), (hw, h), (0, h + hh)]
+        pygame.draw.polygon(mask, (255, 255, 255, 255), pts)
+        tex = img.copy()
+        tex.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        screen.blit(tex, (int(cx), int(cy - h)))
+
+    def _draw_iso_wall_solid(self, cx, cy, height, color):
+        tw = self._iso_tw(); th = self._iso_th()
+        hw = tw / 2; hh = th / 2
+        top_y = cy - height
+        b_lft = (cx - hw, cy); b_bot = (cx, cy + hh); b_rgt = (cx + hw, cy)
+        t_top = (cx, top_y - hh); t_rgt = (cx + hw, top_y)
+        t_bot = (cx, top_y + hh); t_lft = (cx - hw, top_y)
+        pygame.draw.polygon(screen, darken(color, 0.5), [b_lft, b_bot, t_bot, t_lft])
+        pygame.draw.polygon(screen, darken(color, 0.75), [b_bot, b_rgt, t_rgt, t_bot])
+        pygame.draw.polygon(screen, tuple(color[:3]), [t_top, t_rgt, t_bot, t_lft])
+
+    def _draw_iso_tile(self, t, cx, cy, height_px):
+        tw = self._iso_tw(); th = self._iso_th()
+        if height_px <= 0:
+            # ground
+            top = t.get_sprite("top", (int(tw), int(th)))
+            if top:
+                self._draw_iso_diamond_textured(cx, cy, top)
+            else:
+                self._draw_iso_diamond_flat(cx, cy, t.color)
+            return
+
+        hw = int(tw // 2); hh = int(th // 2); h = int(height_px)
+
+        # left face
+        left = t.get_sprite("side_left", (hw, h + hh))
+        if left:
+            self._draw_iso_left_face_textured(cx, cy, h, left)
+        else:
+            b_lft = (cx - hw, cy); b_bot = (cx, cy + hh)
+            t_lft = (cx - hw, cy - h); t_bot = (cx, cy + hh - h)
+            pygame.draw.polygon(screen, darken(t.color, 0.5),
+                                [b_lft, b_bot, t_bot, t_lft])
+
+        # right face
+        right = t.get_sprite("side_right", (hw, h + hh))
+        if right:
+            self._draw_iso_right_face_textured(cx, cy, h, right)
+        else:
+            b_bot = (cx, cy + hh); b_rgt = (cx + hw, cy)
+            t_rgt = (cx + hw, cy - h); t_bot = (cx, cy + hh - h)
+            pygame.draw.polygon(screen, darken(t.color, 0.75),
+                                [b_bot, b_rgt, t_rgt, t_bot])
+
+        # top face
+        top = t.get_sprite("top", (int(tw), int(th)))
+        if top:
+            self._draw_iso_diamond_textured(cx, cy - h, top)
+        else:
+            self._draw_iso_diamond_flat(cx, cy - h, tuple(t.color))
+
+    def _draw_map_layers_iso(self, m):
+        tw = self._iso_tw(); th = self._iso_th()
+        wall_unit = self._iso_wall_unit()
+        for depth in range(m.w + m.h - 1):
+            gx_start = max(0, depth - m.h + 1)
+            gx_end = min(m.w - 1, depth)
+            for gx in range(gx_start, gx_end + 1):
+                gy = depth - gx
+                if not (0 <= gy < m.h): continue
+                wx = (gx - gy) * tw / 2
+                wy = (gx + gy) * th / 2
+                cx, cy = self._world_to_screen(wx, wy + th / 2)
+                cx = int(cx); cy = int(cy)
+                if cx + tw < CANVAS_X or cx - tw > CANVAS_X + CANVAS_W: continue
+                if cy + th * 2 < CANVAS_Y or cy - wall_unit * 12 > CANVAS_Y + CANVAS_H:
+                    continue
+                for layer in range(m.num_layers):
+                    tid = m.data[gy][gx][layer]
+                    if tid is None: continue
+                    t = self.project.tileset.get(tid)
+                    if t is None: continue
+                    self._draw_iso_tile(t, cx, cy, wall_unit * t.height)
+                if self.show_grid and self.cell >= 10:
+                    hw = tw / 2; hh = th / 2
+                    pts = [(cx, cy - hh), (cx + hw, cy),
+                           (cx, cy + hh), (cx - hw, cy)]
+                    pygame.draw.polygon(screen, (0, 0, 0), pts, 1)
+
+    def _draw_passability_iso(self, m):
+        tw = self._iso_tw(); th = self._iso_th()
+        for gy in range(m.h):
+            for gx in range(m.w):
+                base = m.tile_walkable_default(gx, gy, self.project.tileset) \
+                    if not m.is_empty(gx, gy) else None
+                override = m.passability.get((gx, gy))
+                if override == "ok" or override is True: col = PASS_OK
+                elif override == "block" or override is False: col = PASS_BLOCK
+                elif override == "above": col = PASS_ABOVE
+                elif override is None:
+                    if base is True: col = PASS_TILE_OK
+                    elif base is False: col = PASS_TILE_BLK
+                    else: col = None
+                else: col = None
+                if col is None: continue
+                wx = (gx - gy) * tw / 2
+                wy = (gx + gy) * th / 2
+                cx, cy = self._world_to_screen(wx, wy + th / 2)
+                cx = int(cx); cy = int(cy)
+                if cx + tw < CANVAS_X or cx - tw > CANVAS_X + CANVAS_W: continue
+                if cy + th * 2 < CANVAS_Y or cy - th * 2 > CANVAS_Y + CANVAS_H: continue
+                self._draw_iso_diamond_flat(cx, cy, col[:3], alpha=col[3])
+
+    def _draw_events_iso(self, m):
+        tw = self._iso_tw(); th = self._iso_th()
+        for ev in m.events:
+            wx = (ev.x - ev.y) * tw / 2
+            wy = (ev.x + ev.y) * th / 2
+            cx, cy = self._world_to_screen(wx, wy + th / 2)
+            cx = int(cx); cy = int(cy)
+            if cx + tw < CANVAS_X or cx - tw > CANVAS_X + CANVAS_W: continue
+            if cy + th * 2 < CANVAS_Y or cy - th * 2 > CANVAS_Y + CANVAS_H: continue
+            col = EVENT_KIND_COLORS.get(ev.kind, (200, 200, 200))
+            r = max(6, int(self.cell * 0.4))
+            pygame.draw.circle(screen, col, (cx, cy), r)
+            pygame.draw.circle(screen, (20, 15, 10), (cx, cy), r, 2)
+            g = FONT_XS.render(EVENT_KIND_GLYPHS.get(ev.kind, "?"),
+                               True, (20, 15, 10))
+            screen.blit(g, (cx - g.get_width()//2, cy - g.get_height()//2))
+            if r >= 10:
+                idtxt = FONT_XS.render(str(ev.id), True, (255, 255, 255))
+                idbg = pygame.Surface((idtxt.get_width() + 4,
+                                       idtxt.get_height() + 2), pygame.SRCALPHA)
+                idbg.fill((0, 0, 0, 180))
+                screen.blit(idbg, (cx + r - 2, cy - r - 2))
+                screen.blit(idtxt, (cx + r, cy - r))
+
+    def _draw_paint_flashes_iso(self):
+        if not self.paint_flashes: return
+        tw = self._iso_tw(); th = self._iso_th()
+        for fx, fy, tleft in self.paint_flashes:
+            wx = (fx - fy) * tw / 2
+            wy = (fx + fy) * th / 2
+            cx, cy = self._world_to_screen(wx, wy + th / 2)
+            cx = int(cx); cy = int(cy)
+            if cx + tw < CANVAS_X or cx - tw > CANVAS_X + CANVAS_W: continue
+            if cy + th * 2 < CANVAS_Y or cy - th * 2 > CANVAS_Y + CANVAS_H: continue
+            a = int(200 * (tleft / 0.35))
+            self._draw_iso_diamond_flat(cx, cy, (255, 240, 120), alpha=a)
+
+    def _draw_iso_rect_preview(self):
+        if self.mode != self.MODE_MAP: return
+        if self.tool != TOOL_RECT: return
+        if not (self.rect_start and self.rect_end): return
+        tw = self._iso_tw(); th = self._iso_th()
+        x1, y1 = self.rect_start; x2, y2 = self.rect_end
+        xa, xb = min(x1, x2), max(x1, x2)
+        ya, yb = min(y1, y2), max(y1, y2)
+        for gy in range(ya, yb + 1):
+            for gx in range(xa, xb + 1):
+                wx = (gx - gy) * tw / 2
+                wy = (gx + gy) * th / 2
+                cx, cy = self._world_to_screen(wx, wy + th / 2)
+                cx = int(cx); cy = int(cy)
+                self._draw_iso_diamond_flat(cx, cy, (255, 240, 120), alpha=90)
+
+    def _draw_hover_iso(self):
+        if not self.hover_cell: return
+        if self.mode not in (self.MODE_MAP, self.MODE_PASS, self.MODE_EVENTS): return
+        gx, gy = self.hover_cell
+        tw = self._iso_tw(); th = self._iso_th()
+        hw = tw / 2; hh = th / 2
+        wx = (gx - gy) * tw / 2
+        wy = (gx + gy) * th / 2
+        cx, cy = self._world_to_screen(wx, wy + th / 2)
+        cx = int(cx); cy = int(cy)
+        m = self.project.active_map()
+        if self.mode == self.MODE_PASS:
+            walk = m.is_walkable(gx, gy, self.project.tileset)
+            col = SUCCESS if walk else DANGER
+        elif self.mode == self.MODE_EVENTS:
+            col = EVENT_KIND_COLORS.get(self.current_event_kind, HIGHLIGHT)
+        else:
+            col = HIGHLIGHT
+        pts = [(cx, cy - hh), (cx + hw, cy),
+               (cx, cy + hh), (cx - hw, cy)]
+        pygame.draw.polygon(screen, col, pts, 2)
+
+    # ================================================================
+    # Bottom bar / msg
+    # ================================================================
     def _draw_bottom_bar(self):
         r = pygame.Rect(0, HEIGHT - BOTTOM_H, WIDTH, BOTTOM_H)
         pygame.draw.rect(screen, PANEL_DARK, r)
         pygame.draw.line(screen, PANEL_BORDER, (0, HEIGHT-BOTTOM_H),
                          (WIDTH, HEIGHT-BOTTOM_H))
+        m = self.project.active_map()
+        nl = m.num_layers if m else 1
+        vista = "ISO" if self.view_iso else "TOP"
         if self.mode == self.MODE_MAP:
-            m = self.project.active_map()
-            nl = m.num_layers if m else 1
-            hint = (f"Camada {self.active_layer+1}/{nl}  ·  tool: {self.tool}  ·  "
-                    "B/E/F/R/P  ·  Ctrl+Z/Y undo  ·  G grade  ·  F1 debug  ·  TAB muda modo")
+            hint = (f"[{vista}] Camada {self.active_layer+1}/{nl}  ·  tool: {self.tool}  ·  "
+                    "B/E/F/R/P  ·  I vista  ·  Ctrl+Z/Y undo  ·  G grade  ·  F1 debug")
         elif self.mode == self.MODE_TILES:
-            hint = "Edite tiles à direita  ·  Enter nos campos aplica  ·  TAB muda modo"
+            hint = f"[{vista}] Sprites por slot  ·  Abrir pasta p/ substituir arquivos"
         elif self.mode == self.MODE_PASS:
-            hint = "LMB pinta modo ativo  ·  RMB pinta Blocked  ·  Shift+LMB limpa"
+            hint = f"[{vista}] LMB pinta modo ativo  ·  RMB pinta Blocked"
         else:
-            hint = "LMB coloca/seleciona  ·  RMB menu"
+            hint = f"[{vista}] LMB coloca/seleciona  ·  RMB menu"
         draw_text(screen, hint, 10, HEIGHT - BOTTOM_H + 6, FONT_XS, TEXT_DIM)
         if self.autosave_dirty:
             draw_text(screen, "● salvando…", WIDTH - 190, HEIGHT-BOTTOM_H+6,
@@ -2334,10 +2834,11 @@ class MapEditorApp:
 # Main
 # ============================================================================
 if __name__ == "__main__":
-    print("=" * 55)
-    print("MapEditor v5.1")
-    print("· Clique num mapa da árvore NÃO dispara drag por acidente")
-    print("· Threshold de 6px: só vira drag se mover mais que isso")
-    print("· HUD de debug no canto sup. direito (F1 esconde)")
-    print("=" * 55)
+    print("=" * 64)
+    print("MapEditor v8 — Cada tile tem pasta própria com sprites por slot")
+    print(f"· Pasta base: {TILES_DIR}")
+    print("· Cada tile guarda:  top.png  side_left.png  side_right.png")
+    print("· Edite, substitua ou apague esses arquivos direto na pasta")
+    print("· Botão 'Abrir pasta do tile' abre o Explorer na pasta do tile")
+    print("=" * 64)
     MapEditorApp().run()
