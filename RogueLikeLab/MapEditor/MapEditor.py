@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-MapEditor v19 — 4 layers de sprites + posição dinâmica + sliders
+MapEditor v19 — 4 layers + sliders + save/load robusto + auto-scan
 """
 import os, sys, json, math, subprocess
 from collections import deque
@@ -36,6 +36,7 @@ BASE_WALL_H  = 32.0
 CAM_SPEED    = 5.0
 
 MAX_LAYERS = 4
+MAX_SCAN_ADDITIONS = 200
 
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 EXPORTS_DIR = os.path.join(BASE_DIR, "exports", "maps")
@@ -48,6 +49,8 @@ AUTOSAVE_PATH = os.path.join(EXPORTS_DIR, "_autosave.json")
 MAP_FILE_VERSION = 2
 
 TILE_SLOTS = ("top", "side_left", "side_right")
+IMG_EXTS = ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
+
 FORM_FLAT = 'flat'
 FORMS_RAMP  = ['ramp_n', 'ramp_s', 'ramp_e', 'ramp_w']
 FORMS_STAIR = ['stair_n', 'stair_s', 'stair_e', 'stair_w']
@@ -130,6 +133,12 @@ def _atomic_write_json(path, data):
         except Exception: pass
         return False, str(e)
 
+def prettify_name(s):
+    s = os.path.splitext(s)[0]
+    s = s.replace("_", " ").replace("-", " ").strip()
+    if not s: return "Item"
+    return s[0].upper() + s[1:]
+
 # ============================================================
 # TEXTURAS BASE
 # ============================================================
@@ -155,7 +164,7 @@ def ensure_base_textures():
 ensure_base_textures()
 
 # ============================================================
-# HELPERS
+# HELPERS GERAIS
 # ============================================================
 def draw_text(surf, text, x, y, font=FONT_M, color=TEXT, center=False):
     r = font.render(str(text), True, color)
@@ -1424,10 +1433,18 @@ class MapEditorApp:
         self._map_hits = []
         self.pending_map_click = None
 
+        # Caminho do JSON atual + auto-scan
+        self.current_file_path = None
+        self._rescan_timer = 0.0
+        self._rescan_interval = 2.0
+
         self._sync_fields_from_map()
         self._sync_fields_from_tile()
         self._sync_fields_from_sprite()
         self._load_autosave_if_any()
+        # Primeira varredura silenciosa
+        self.rescan_tiles(quiet=True)
+        self.rescan_sprites(quiet=True)
 
     def _init_widgets(self):
         for k, lbl in [("map_name","Nome do mapa"),("map_w","Largura"),
@@ -1487,6 +1504,117 @@ class MapEditorApp:
             "ev_trigger", "Trigger", TRIGGER_KINDS, DEFAULT_TRIGGER,
             on_change=self._on_event_trigger_change)
 
+    # ============================================================
+    # AUTO-SCAN: tiles e sprites das pastas
+    # ============================================================
+    def rescan_tiles(self, quiet=False):
+        added = 0
+        try:
+            entries = os.listdir(TILES_DIR)
+        except Exception:
+            return 0
+        for entry in sorted(entries):
+            if added >= MAX_SCAN_ADDITIONS:
+                break
+            folder = os.path.join(TILES_DIR, entry)
+            if not os.path.isdir(folder):
+                continue
+            tid = entry
+            if tid in self.project.tileset.tiles:
+                continue
+            # Listar imagens na pasta
+            try:
+                imgs = [f for f in os.listdir(folder)
+                        if os.path.splitext(f)[1].lower() in IMG_EXTS]
+            except Exception:
+                continue
+            if not imgs:
+                continue
+            # Ver quais slots estão presentes
+            present_slots = set()
+            for f in imgs:
+                base = os.path.splitext(f)[0].lower()
+                if base in TILE_SLOTS:
+                    present_slots.add(base)
+            # Se nenhum slot reconhecido, promove a primeira imagem para top.png
+            if not present_slots:
+                try:
+                    src = os.path.join(folder, imgs[0])
+                    dst = os.path.join(folder, "top.png")
+                    img = pygame.image.load(src).convert_alpha()
+                    pygame.image.save(img, dst)
+                except Exception as e:
+                    print(f"[Rescan] promove '{imgs[0]}': {e}")
+            # Cria o tile
+            try:
+                t = Tile(tid, prettify_name(tid), DEFAULT_TILE_COL,
+                         True, "Geral", height=0, folder=folder)
+                self.project.tileset.add(t)
+                added += 1
+            except Exception as e:
+                print(f"[Rescan] tile '{tid}': {e}")
+        if added > 0:
+            if self.selected_tile_id is None and self.project.tileset.order:
+                self.selected_tile_id = self.project.tileset.order[0]
+                self._sync_fields_from_tile()
+            if not quiet:
+                self._msg(f"{added} tile(s) detectado(s).", SUCCESS)
+        return added
+
+    def rescan_sprites(self, quiet=False):
+        added = 0
+        try:
+            entries = os.listdir(SPRITES_DIR)
+        except Exception:
+            return 0
+        # Já existentes (por caminho absoluto)
+        existing_paths = set()
+        for sp in self.project.sprites:
+            if sp.path:
+                try: existing_paths.add(os.path.abspath(sp.path))
+                except Exception: pass
+        for f in sorted(entries):
+            if added >= MAX_SCAN_ADDITIONS:
+                break
+            full = os.path.join(SPRITES_DIR, f)
+            if not os.path.isfile(full):
+                continue
+            ext = os.path.splitext(f)[1].lower()
+            if ext not in IMG_EXTS:
+                continue
+            try:
+                ap = os.path.abspath(full)
+            except Exception:
+                ap = full
+            if ap in existing_paths:
+                continue
+            try:
+                sp = CustomSprite(f, full)
+                self.project.add_sprite(sp)
+                added += 1
+            except Exception as e:
+                print(f"[Rescan] sprite '{f}': {e}")
+        if added > 0:
+            if self.selected_sprite_idx is None and self.project.sprites:
+                self.selected_sprite_idx = 0
+                self.active_sprite_idx = 0
+                self._sync_fields_from_sprite()
+            if not quiet:
+                self._msg(f"{added} sprite(s) detectado(s).", SUCCESS)
+        return added
+
+    def rescan_all(self, quiet=False):
+        t = self.rescan_tiles(quiet=True)
+        s = self.rescan_sprites(quiet=True)
+        if (t or s) and not quiet:
+            self._msg(f"Auto-scan: +{t} tile(s), +{s} sprite(s)", SUCCESS)
+        if t or s:
+            self._mark_dirty()
+        return (t, s)
+
+    # ============================================================
+    # SLIDERS / EVENTOS DE UI
+    # ============================================================
     def _on_slider(self, which, value):
         idx = self.selected_sprite_idx
         if idx is None or idx < 0 or idx >= len(self.project.sprites):
@@ -1746,9 +1874,15 @@ class MapEditorApp:
         except Exception as e:
             print(f"[Autosave] serialização falhou: {e}")
             return
+        # Backup interno
         ok, err = _atomic_write_json(AUTOSAVE_PATH, data)
         if not ok:
             print(f"[Autosave] falha: {err}")
+        # Arquivo atual do projeto
+        if self.current_file_path:
+            ok2, err2 = _atomic_write_json(self.current_file_path, data)
+            if not ok2:
+                print(f"[Autosave→file] falha: {err2}")
 
     def _load_autosave_if_any(self):
         if not os.path.isfile(AUTOSAVE_PATH):
@@ -1956,22 +2090,48 @@ class MapEditorApp:
         elif f.key.startswith("map_") or f.key == "num_floors": self._apply_map_fields()
 
     # --------- save/load ---------
-    def _open_save_dialog(self): self.save_dialog.open("meu_projeto")
-
-    def _do_save(self):
-        name = self.save_dialog.text.strip() or "meu_projeto"
-        safe = safe_filename(name, "meu_projeto")
-        fp = os.path.join(EXPORTS_DIR, f"{safe}.json")
+    def _save_project_to_path(self, path):
         try:
             data = self.project.to_dict()
         except Exception as ex:
             self._msg(f"Erro serializando: {ex}", DANGER)
-            return
-        ok, err = _atomic_write_json(fp, data)
+            return False
+        ok, err = _atomic_write_json(path, data)
         if ok:
-            self._msg(f"Salvo: {safe}.json", SUCCESS)
+            self.current_file_path = path
+            self._msg(f"Salvo: {os.path.basename(path)}", SUCCESS)
+            return True
         else:
             self._msg(f"Erro: {err}", DANGER)
+            return False
+
+    def _open_save_as_dialog(self):
+        if HAS_TK:
+            try:
+                root = tk.Tk(); root.withdraw()
+                initial = (self.current_file_path
+                           or os.path.join(EXPORTS_DIR, "meu_projeto.json"))
+                p = filedialog.asksaveasfilename(
+                    title="Salvar projeto como",
+                    initialdir=os.path.dirname(initial),
+                    initialfile=os.path.basename(initial),
+                    defaultextension=".json",
+                    filetypes=[("JSON", "*.json"), ("Todos", "*.*")])
+                root.destroy()
+                if p:
+                    self._save_project_to_path(p)
+            except Exception as ex:
+                self._msg(f"Erro: {ex}", DANGER)
+        else:
+            self.save_dialog.open("meu_projeto")
+
+    def _do_save(self):
+        name = self.save_dialog.text.strip() or "meu_projeto"
+        safe = safe_filename(name, "meu_projeto")
+        if not safe.lower().endswith(".json"):
+            safe += ".json"
+        fp = os.path.join(EXPORTS_DIR, safe)
+        self._save_project_to_path(fp)
 
     def _load_project(self):
         try:
@@ -2001,6 +2161,7 @@ class MapEditorApp:
             self._msg(f"Erro carregando: {e}", DANGER); return
 
         self.project = new_project
+        self.current_file_path = fp
         ts = self.project.tileset
         self.selected_tile_id = ts.order[0] if ts.order else None
         self.selected_sprite_idx = 0 if self.project.sprites else None
@@ -2029,12 +2190,27 @@ class MapEditorApp:
         self.project.active_map_name = name
         self.active_floor = min(self.active_floor, self.project.active_map().num_floors - 1)
         self._sync_fields_from_map(); self._msg(f"Mapa: {name}", ACCENT)
+
     def _new_map(self, parent=None):
         name = self.project.unique_map_name("mapa")
         m = TileMap(name, 24, 20); m.parent = parent
         self.project.add_map(m); self.active_floor = 0
         self._sync_fields_from_map(); self._mark_dirty()
-        self._msg(f"Novo mapa: {name}", ACCENT)
+
+        # Cria JSON automaticamente com o nome do mapa
+        safe = safe_filename(name, "mapa")
+        fp = os.path.join(EXPORTS_DIR, f"{safe}.json")
+        try:
+            data = self.project.to_dict()
+            ok, err = _atomic_write_json(fp, data)
+            if ok:
+                self.current_file_path = fp
+                self._msg(f"Novo mapa: {name} → {safe}.json", SUCCESS)
+            else:
+                self._msg(f"Novo mapa: {name} (erro: {err})", DANGER)
+        except Exception as ex:
+            self._msg(f"Novo mapa: {name} (erro: {ex})", DANGER)
+
     def _del_map(self, name=None):
         name = name or self.project.active_map_name
         if len(self.project.maps) <= 1:
@@ -2046,6 +2222,7 @@ class MapEditorApp:
         self.active_floor = 0
         self._sync_fields_from_map(); self._mark_dirty()
         self._msg(f"Removido: {name}", TEXT_DIM)
+
     def _open_rename(self, name):
         m = self.project.maps.get(name)
         if not m: return
@@ -2061,6 +2238,7 @@ class MapEditorApp:
                 self.project.active_map_name = m.name
             self._mark_dirty(); self._sync_fields_from_map()
         self.rename_dialog.open("RENOMEAR MAPA", "Novo nome:", name, do_rename)
+
     def _move_map_to(self, child, parent):
         if child == parent: return
         cur = parent
@@ -2079,6 +2257,7 @@ class MapEditorApp:
         self.selected_tile_id = tid
         self._sync_fields_from_tile(); self._mark_dirty()
         self._msg(f"Tile criado: {tid}", ACCENT)
+
     def _del_tile(self):
         tid = self.selected_tile_id
         if not tid: return
@@ -2101,6 +2280,7 @@ class MapEditorApp:
         self.selected_tile_id = (self.project.tileset.order[0]
                                  if self.project.tileset.order else None)
         self._sync_fields_from_tile(); self._mark_dirty()
+
     def _pick_slot_image(self, slot):
         path = pick_image_file()
         if not path: return
@@ -2108,10 +2288,12 @@ class MapEditorApp:
         if not t: return
         if t.set_slot_from_file(slot, path):
             self._mark_dirty(); self._msg(f"{slot}.png salvo", SUCCESS)
+
     def _remove_slot_image(self, slot):
         t = self.project.tileset.get(self.selected_tile_id)
         if not t: return
         t.remove_slot(slot); self._mark_dirty()
+
     def _open_tile_folder(self):
         t = self.project.tileset.get(self.selected_tile_id)
         if not t: return
@@ -2137,6 +2319,7 @@ class MapEditorApp:
             self._msg(f"Sprite importado: {name}", SUCCESS)
         except Exception as e:
             self._msg(f"Erro: {e}", DANGER)
+
     def _remove_sprite(self):
         idx = self.selected_sprite_idx
         if idx is None: return
@@ -2146,6 +2329,7 @@ class MapEditorApp:
         self.selected_obj_key = None
         self._sync_fields_from_sprite(); self._mark_dirty()
         self._msg("Sprite removido.", TEXT_DIM)
+
     def _open_sprite_folder(self):
         idx = self.selected_sprite_idx
         if idx is None:
@@ -2607,13 +2791,10 @@ class MapEditorApp:
                 rect = item[0]
                 if not rect.collidepoint(pos):
                     continue
-                # itens da árvore de mapas: (rect, nome_do_mapa, "map")
                 kind = item[2] if len(item) >= 3 else None
                 if kind == "map":
-                    # agenda seleção/movimentação; resolve no mouseup
                     self.pending_map_click = (item[1], pos)
                     return
-                # botão normal: (rect, callback, None)
                 cb = item[1]
                 if callable(cb):
                     cb()
@@ -2622,28 +2803,19 @@ class MapEditorApp:
 
         # --- painel direito ---
         if self._in_right(pos):
-            # sliders primeiro
             for key, sl in self.sliders.items():
-                if not sl.active_this_frame:
-                    continue
+                if not sl.active_this_frame: continue
                 if sl.handle_down(pos):
                     self._active_slider = key
                     return
-            # dropdowns
             for key, dd in self.dropdowns.items():
-                if not dd.active_this_frame:
-                    continue
+                if not dd.active_this_frame: continue
                 if dd.rect.collidepoint(pos):
-                    dd.expanded = True
-                    self.expanded_dropdown = key
-                    return
-            # campos de texto
+                    dd.expanded = True; self.expanded_dropdown = key; return
             prefixes = ["map_", "num_floors", "tile_", "sprite_", "ev_"]
             for key, f in self.fields.items():
-                if not f.active_this_frame:
-                    continue
-                if not any(key.startswith(p) for p in prefixes):
-                    continue
+                if not f.active_this_frame: continue
+                if not any(key.startswith(p) for p in prefixes): continue
                 if f.rect.collidepoint(pos):
                     if self.focused_field and self.focused_field is not f:
                         self._apply_current_field_group()
@@ -2651,20 +2823,16 @@ class MapEditorApp:
                     for k2, f2 in self.fields.items():
                         if f2 is not f: f2.focused = False
                     return
-            # botões do painel direito
             for r, cb in self._right_hits:
                 if r.collidepoint(pos):
-                    if callable(cb):
-                        cb()
+                    if callable(cb): cb()
                     return
             return
 
         # --- canvas ---
-        if not self._in_canvas(pos):
-            return
+        if not self._in_canvas(pos): return
         m = self.project.active_map()
-        if not m:
-            return
+        if not m: return
         tool = self.active_tool
 
         if (self.tab == self.TAB_DETAILS and
@@ -2842,6 +3010,16 @@ class MapEditorApp:
             self.autosave_timer -= dt
             if self.autosave_timer <= 0:
                 self._do_autosave(); self.autosave_dirty = False
+
+        # Auto-scan periódico
+        self._rescan_timer -= dt
+        if self._rescan_timer <= 0:
+            self._rescan_timer = self._rescan_interval
+            t_add, s_add = self.rescan_all(quiet=True)
+            if t_add or s_add:
+                self._mark_dirty()
+                self._msg(f"Auto-scan: +{t_add} tile(s), +{s_add} sprite(s)", SUCCESS)
+
         if self.save_dialog.active or self.rename_dialog.active: return
         if self.focused_field or self.expanded_dropdown: return
 
@@ -2951,15 +3129,16 @@ class MapEditorApp:
             x += tw + 4
         x += 8
         for label, cb in [("Novo", lambda: self._new_map(None)),
-                          ("Salvar", self._open_save_dialog),
+                          ("Salvar Como", self._open_save_as_dialog),
                           ("Carregar", self._load_project)]:
             bw = FONT_S.size(label)[0] + 16
             rect = pygame.Rect(x, 5, bw, TOP_H - 10)
             draw_button(screen, rect, label, FONT_S)
             self._top_hits.append((rect, cb)); x += bw + 3
         for label, cb in [("Undo", self._undo), ("Redo", self._redo),
+                          ("Rescan", lambda: self.rescan_all(quiet=False)),
                           ("DelAuto", self._delete_autosave)]:
-            w = 56 if label == "DelAuto" else 46
+            w = 56 if label in ("DelAuto", "Rescan") else 46
             rect = pygame.Rect(x, 5, w, TOP_H - 10)
             draw_button(screen, rect, label, FONT_S)
             self._top_hits.append((rect, cb)); x += w + 2
@@ -3223,7 +3402,7 @@ class MapEditorApp:
             self._left_hits.append((r3, self._open_sprite_folder, None))
             y += 24
 
-            for line in ["LMB: seleciona / cria.",
+            for line in ["Auto-scan: 2s",
                          "RMB: menu / apaga.",
                          "Sliders no painel direito."]:
                 draw_text(screen, line, x, y, FONT_XS, TEXT_DIM); y += 11
@@ -3832,7 +4011,9 @@ class MapEditorApp:
         am = self.project.active_map()
         nf = am.num_floors - 1 if am else 0
 
-        parts = [f"Aba: {self.TAB_LABELS[self.tab]}"]
+        cur = os.path.basename(self.current_file_path) if self.current_file_path else "—"
+        parts = [f"Arquivo: {cur}"]
+        parts.append(f"Aba: {self.TAB_LABELS[self.tab]}")
         if self.tab == self.TAB_LAYOUT:
             parts.append(f"sub: {self.LMODE_LABELS[self.layout_mode]}")
         elif self.tab == self.TAB_DETAILS:
@@ -3881,6 +4062,6 @@ class MapEditorApp:
 # ============================================================
 if __name__ == "__main__":
     print("=" * 64)
-    print("MapEditor v19 — 4 layers + sliders + save/load robusto")
+    print("MapEditor v19 — auto-scan + save robusto + 4 layers")
     print("=" * 64)
     MapEditorApp().run()
