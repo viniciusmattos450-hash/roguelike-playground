@@ -45,6 +45,8 @@ for d in (EXPORTS_DIR, TILES_DIR, SPRITES_DIR):
     os.makedirs(d, exist_ok=True)
 AUTOSAVE_PATH = os.path.join(EXPORTS_DIR, "_autosave.json")
 
+MAP_FILE_VERSION = 2
+
 TILE_SLOTS = ("top", "side_left", "side_right")
 FORM_FLAT = 'flat'
 FORMS_RAMP  = ['ramp_n', 'ramp_s', 'ramp_e', 'ramp_w']
@@ -102,6 +104,31 @@ FONT_L  = pygame.font.SysFont("georgia,dejavuserif,serif", 15, bold=True)
 FONT_M  = pygame.font.SysFont("georgia,dejavuserif,serif", 12)
 FONT_S  = pygame.font.SysFont("georgia,dejavuserif,serif", 11)
 FONT_XS = pygame.font.SysFont("georgia,dejavuserif,serif", 10)
+
+# ============================================================
+# HELPERS DE ARQUIVO
+# ============================================================
+def make_missing_texture(size=32):
+    surf = pygame.Surface((size, size), pygame.SRCALPHA)
+    for y in range(0, size, 8):
+        for x in range(0, size, 8):
+            c = (255, 0, 255, 255) if ((x//8 + y//8) % 2 == 0) else (30, 30, 30, 255)
+            pygame.draw.rect(surf, c, (x, y, 8, 8))
+    return surf
+
+def _atomic_write_json(path, data):
+    tmp = path + ".tmp"
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, path)
+        return True, None
+    except Exception as e:
+        try:
+            if os.path.exists(tmp): os.remove(tmp)
+        except Exception: pass
+        return False, str(e)
 
 # ============================================================
 # TEXTURAS BASE
@@ -359,9 +386,12 @@ def default_tileset():
 # CUSTOM SPRITE
 # ============================================================
 class CustomSprite:
-    def __init__(self, name, path):
+    def __init__(self, name, path, surface=None):
         self.name = name; self.path = path
-        self.original = load_sprite_surface(path)
+        if surface is not None:
+            self.original = surface
+        else:
+            self.original = load_sprite_surface(path)
         self.scale = 1.0
         self.offset_x = 0.0; self.offset_y = 0.0
         self.anchor_x = 0.5; self.anchor_y = 1.0
@@ -518,6 +548,7 @@ class TileMap:
             k, tid = wall_val(v)
             return [x, y, z, k, tid]
         return {
+            "version": MAP_FILE_VERSION,
             "name": self.name, "w": self.w, "h": self.h,
             "num_floors": self.num_floors, "parent": self.parent,
             "terrain": [[x, y, self.terrain[(x,y)]['tile_id'],
@@ -534,36 +565,94 @@ class TileMap:
 
     @classmethod
     def from_dict(cls, d):
-        m = cls(d["name"], d["w"], d["h"], d.get("num_floors", NUM_FLOORS))
-        m.parent = d.get("parent")
+        if not isinstance(d, dict):
+            raise ValueError("TileMap.from_dict: entrada não é objeto")
+
+        try: name = str(d.get("name", "mapa"))
+        except Exception: name = "mapa"
+        try: w = int(d.get("w", 24))
+        except Exception: w = 24
+        try: h = int(d.get("h", 20))
+        except Exception: h = 20
+        w = max(4, min(400, w)); h = max(4, min(400, h))
+        try: nf = int(d.get("num_floors", NUM_FLOORS))
+        except Exception: nf = NUM_FLOORS
+        nf = max(1, min(64, nf))
+
+        m = cls(name, w, h, nf)
+        try: m.parent = d.get("parent")
+        except Exception: m.parent = None
+
         m.terrain = {}
-        for entry in d.get("terrain", []):
-            if len(entry) >= 3:
-                x, y, tid = entry[0], entry[1], entry[2]
-                h = entry[3] if len(entry) > 3 else 0
+        for entry in (d.get("terrain", []) or []):
+            try:
+                if not isinstance(entry, (list, tuple)) or len(entry) < 3: continue
+                x = int(entry[0]); y = int(entry[1]); tid = entry[2]
+                hh = int(entry[3]) if len(entry) > 3 else 0
                 fm = entry[4] if len(entry) > 4 else FORM_FLAT
-                m.terrain[(x,y)] = {'tile_id': tid, 'h': h, 'form': fm}
-        for y in range(m.h):
-            for x in range(m.w):
-                if (x,y) not in m.terrain:
-                    m.terrain[(x,y)] = default_terrain()
-        m.blocks  = {(e[0],e[1],e[2]): e[3] for e in d.get("blocks", [])}
-        for e in d.get("walls_h", []):
-            if len(e) >= 5: m.walls_h[(e[0],e[1],e[2])] = (e[3], e[4])
-            elif len(e) == 4: m.walls_h[(e[0],e[1],e[2])] = (e[3], None)
-        for e in d.get("walls_v", []):
-            if len(e) >= 5: m.walls_v[(e[0],e[1],e[2])] = (e[3], e[4])
-            elif len(e) == 4: m.walls_v[(e[0],e[1],e[2])] = (e[3], None)
-        for e in d.get("objects", []):
-            if len(e) >= 8:
-                m.objects[(e[0], e[1], e[2], int(e[3]))] = (
-                    e[4], float(e[5]), float(e[6]), float(e[7]))
-            elif len(e) == 4:
-                m.objects[(e[0], e[1], e[2], 0)] = (e[3], 0.0, 0.0, 0.0)
-        for e in d.get("passability", []):
-            if len(e) >= 3: m.passability[(e[0],e[1])] = e[2]
-        for evd in d.get("events", []):
-            m.events.append(GameEvent.from_dict(evd))
+                if not (0 <= x < w and 0 <= y < h): continue
+                m.terrain[(x, y)] = {'tile_id': tid, 'h': hh, 'form': fm}
+            except Exception:
+                continue
+        for y in range(h):
+            for x in range(w):
+                if (x, y) not in m.terrain:
+                    m.terrain[(x, y)] = default_terrain()
+
+        m.blocks = {}
+        for e in (d.get("blocks", []) or []):
+            try:
+                if len(e) < 4: continue
+                m.blocks[(int(e[0]), int(e[1]), int(e[2]))] = e[3]
+            except Exception: continue
+
+        m.walls_h = {}
+        for e in (d.get("walls_h", []) or []):
+            try:
+                if len(e) >= 5:
+                    m.walls_h[(int(e[0]), int(e[1]), int(e[2]))] = (e[3], e[4])
+                elif len(e) == 4:
+                    m.walls_h[(int(e[0]), int(e[1]), int(e[2]))] = (e[3], None)
+            except Exception: continue
+        m.walls_v = {}
+        for e in (d.get("walls_v", []) or []):
+            try:
+                if len(e) >= 5:
+                    m.walls_v[(int(e[0]), int(e[1]), int(e[2]))] = (e[3], e[4])
+                elif len(e) == 4:
+                    m.walls_v[(int(e[0]), int(e[1]), int(e[2]))] = (e[3], None)
+            except Exception: continue
+
+        m.objects = {}
+        for e in (d.get("objects", []) or []):
+            try:
+                if len(e) >= 8:
+                    key = (int(e[0]), int(e[1]), int(e[2]), int(e[3]))
+                    val = (int(e[4]), float(e[5]), float(e[6]), float(e[7]))
+                elif len(e) == 4:
+                    key = (int(e[0]), int(e[1]), int(e[2]), 0)
+                    val = (int(e[3]), 0.0, 0.0, 0.0)
+                else:
+                    continue
+                m.objects[key] = val
+            except Exception:
+                continue
+
+        m.passability = {}
+        for e in (d.get("passability", []) or []):
+            try:
+                if len(e) >= 3:
+                    m.passability[(int(e[0]), int(e[1]))] = e[2]
+            except Exception:
+                continue
+
+        m.events = []
+        for evd in (d.get("events", []) or []):
+            try:
+                m.events.append(GameEvent.from_dict(evd))
+            except Exception as e:
+                print(f"[TileMap] Evento ignorado: {e}")
+
         return m
 
 # ============================================================
@@ -609,6 +698,7 @@ class Project:
 
     def to_dict(self):
         return {
+            "version": MAP_FILE_VERSION,
             "tileset": self.tileset.to_dict(),
             "sprites": [{"name": s.name, "path": s.path, "scale": s.scale,
                          "offset_x": s.offset_x, "offset_y": s.offset_y,
@@ -617,26 +707,59 @@ class Project:
             "maps": {n: m.to_dict() for n,m in self.maps.items()},
             "active_map_name": self.active_map_name,
         }
+
     @classmethod
     def from_dict(cls, d):
+        if not isinstance(d, dict):
+            raise ValueError("Project.from_dict: JSON raiz não é objeto")
+
         p = cls.__new__(cls)
-        p.tileset = TileSet.from_dict(d["tileset"])
+
+        try:
+            tileset_d = d.get("tileset", {}) or {}
+            p.tileset = TileSet.from_dict(tileset_d)
+        except Exception as e:
+            print(f"[Project] Tileset inválido ({e}); usando default.")
+            p.tileset = default_tileset()
+        if not p.tileset.order:
+            p.tileset = default_tileset()
+
         p.sprites = []
-        for sd in d.get("sprites", []):
+        for i, sd in enumerate(d.get("sprites", []) or []):
+            if not isinstance(sd, dict):
+                p.sprites.append(CustomSprite(
+                    f"missing_{i}", "", surface=make_missing_texture()))
+                continue
+            name = sd.get("name", f"sprite_{i}")
+            path = sd.get("path", "")
             try:
-                sp = CustomSprite(sd["name"], sd["path"])
-                sp.scale = sd.get("scale", 1.0)
-                sp.offset_x = sd.get("offset_x", 0.0)
-                sp.offset_y = sd.get("offset_y", 0.0)
-                sp.anchor_x = sd.get("anchor_x", 0.5)
-                sp.anchor_y = sd.get("anchor_y", 1.0)
+                sp = CustomSprite(name, path)
+                sp.scale    = float(sd.get("scale", 1.0))
+                sp.offset_x = float(sd.get("offset_x", 0.0))
+                sp.offset_y = float(sd.get("offset_y", 0.0))
+                sp.anchor_x = float(sd.get("anchor_x", 0.5))
+                sp.anchor_y = float(sd.get("anchor_y", 1.0))
                 p.sprites.append(sp)
-            except Exception: pass
-        p.maps = {n: TileMap.from_dict(md) for n,md in d["maps"].items()}
-        p.active_map_name = d.get("active_map_name")
+            except Exception as e:
+                print(f"[Project] Sprite '{name}' falhou ({e}); placeholder.")
+                sp = CustomSprite(name, path, surface=make_missing_texture())
+                p.sprites.append(sp)
+
+        maps_d = d.get("maps") or {}
+        p.maps = {}
+        if isinstance(maps_d, dict):
+            for key, md in maps_d.items():
+                try:
+                    m = TileMap.from_dict(md)
+                    p.maps[m.name] = m
+                except Exception as e:
+                    print(f"[Project] Mapa '{key}' ignorado ({e})")
+
         if not p.maps:
             m = TileMap("mapa_inicial", 24, 20)
-            p.maps[m.name] = m; p.active_map_name = m.name
+            p.maps[m.name] = m
+
+        p.active_map_name = d.get("active_map_name")
         if p.active_map_name not in p.maps:
             p.active_map_name = next(iter(p.maps))
         return p
@@ -1616,25 +1739,48 @@ class MapEditorApp:
 
     def _mark_dirty(self):
         self.autosave_dirty = True; self.autosave_timer = 0.8
+
     def _do_autosave(self):
         try:
-            with open(AUTOSAVE_PATH, "w", encoding="utf-8") as f:
-                json.dump(self.project.to_dict(), f, ensure_ascii=False)
-        except Exception: pass
+            data = self.project.to_dict()
+        except Exception as e:
+            print(f"[Autosave] serialização falhou: {e}")
+            return
+        ok, err = _atomic_write_json(AUTOSAVE_PATH, data)
+        if not ok:
+            print(f"[Autosave] falha: {err}")
+
     def _load_autosave_if_any(self):
-        if not os.path.isfile(AUTOSAVE_PATH): return
+        if not os.path.isfile(AUTOSAVE_PATH):
+            return
         try:
             with open(AUTOSAVE_PATH, "r", encoding="utf-8") as f:
-                self.project = Project.from_dict(json.load(f))
-            ts = self.project.tileset
-            self.selected_tile_id = ts.order[0] if ts.order else None
-            self.selected_sprite_idx = 0 if self.project.sprites else None
-            self.active_sprite_idx = self.selected_sprite_idx
-            self._sync_fields_from_map()
-            self._sync_fields_from_tile()
-            self._sync_fields_from_sprite()
-            self._msg("Autosave carregado.", TEXT_DIM)
-        except Exception as e: print(f"[Autosave] {e}")
+                raw = json.load(f)
+        except Exception as e:
+            print(f"[Autosave] JSON ilegível ({e}); movendo para .bak")
+            try:
+                os.replace(AUTOSAVE_PATH, AUTOSAVE_PATH + ".bak")
+            except Exception: pass
+            return
+        try:
+            new_project = Project.from_dict(raw)
+        except Exception as e:
+            print(f"[Autosave] from_dict falhou ({e}); movendo para .bak")
+            try:
+                os.replace(AUTOSAVE_PATH, AUTOSAVE_PATH + ".bak")
+            except Exception: pass
+            return
+        self.project = new_project
+        ts = self.project.tileset
+        self.selected_tile_id = ts.order[0] if ts.order else None
+        self.selected_sprite_idx = 0 if self.project.sprites else None
+        self.active_sprite_idx = self.selected_sprite_idx
+        self.selected_obj_key = None
+        self.editing_event = None
+        self._sync_fields_from_map()
+        self._sync_fields_from_tile()
+        self._sync_fields_from_sprite()
+        self._msg("Autosave carregado.", TEXT_DIM)
 
     # --------- sync ---------
     def _sync_fields_from_map(self):
@@ -1811,33 +1957,71 @@ class MapEditorApp:
 
     # --------- save/load ---------
     def _open_save_dialog(self): self.save_dialog.open("meu_projeto")
+
     def _do_save(self):
         name = self.save_dialog.text.strip() or "meu_projeto"
         safe = safe_filename(name, "meu_projeto")
         fp = os.path.join(EXPORTS_DIR, f"{safe}.json")
         try:
-            with open(fp, "w", encoding="utf-8") as f:
-                json.dump(self.project.to_dict(), f, indent=2, ensure_ascii=False)
+            data = self.project.to_dict()
+        except Exception as ex:
+            self._msg(f"Erro serializando: {ex}", DANGER)
+            return
+        ok, err = _atomic_write_json(fp, data)
+        if ok:
             self._msg(f"Salvo: {safe}.json", SUCCESS)
-        except Exception as ex: self._msg(f"Erro: {ex}", DANGER)
+        else:
+            self._msg(f"Erro: {err}", DANGER)
 
     def _load_project(self):
-        files = sorted([f for f in os.listdir(EXPORTS_DIR)
-                        if f.endswith(".json") and not f.startswith("_")])
-        if not files: self._msg("Nenhum projeto salvo.", DANGER); return
-        fp = os.path.join(EXPORTS_DIR, files[-1])
+        try:
+            files = [f for f in os.listdir(EXPORTS_DIR)
+                     if f.endswith(".json") and not f.startswith("_")]
+        except Exception as e:
+            self._msg(f"Erro listando pasta: {e}", DANGER); return
+        if not files:
+            self._msg("Nenhum projeto salvo.", DANGER); return
+
+        try:
+            files.sort(key=lambda f: os.path.getmtime(
+                os.path.join(EXPORTS_DIR, f)), reverse=True)
+        except Exception:
+            files.sort()
+
+        fp = os.path.join(EXPORTS_DIR, files[0])
         try:
             with open(fp, "r", encoding="utf-8") as f:
-                self.project = Project.from_dict(json.load(f))
-            ts = self.project.tileset
-            self.selected_tile_id = ts.order[0] if ts.order else None
-            self.selected_sprite_idx = 0 if self.project.sprites else None
-            self.active_sprite_idx = self.selected_sprite_idx
-            self._sync_fields_from_map()
-            self._sync_fields_from_tile()
-            self._sync_fields_from_sprite()
-            self._msg(f"Carregado: {files[-1]}", SUCCESS)
-        except Exception as ex: self._msg(f"Erro: {ex}", DANGER)
+                raw = json.load(f)
+        except Exception as e:
+            self._msg(f"JSON inválido: {e}", DANGER); return
+
+        try:
+            new_project = Project.from_dict(raw)
+        except Exception as e:
+            self._msg(f"Erro carregando: {e}", DANGER); return
+
+        self.project = new_project
+        ts = self.project.tileset
+        self.selected_tile_id = ts.order[0] if ts.order else None
+        self.selected_sprite_idx = 0 if self.project.sprites else None
+        self.active_sprite_idx = self.selected_sprite_idx
+        self.selected_obj_key = None
+        self.editing_event = None
+        self.active_floor = 0
+        self._sync_fields_from_map()
+        self._sync_fields_from_tile()
+        self._sync_fields_from_sprite()
+        self._msg(f"Carregado: {files[0]}", SUCCESS)
+
+    def _delete_autosave(self):
+        if os.path.isfile(AUTOSAVE_PATH):
+            try:
+                os.remove(AUTOSAVE_PATH)
+                self._msg("Autosave removido.", TEXT_DIM)
+            except Exception as e:
+                self._msg(f"Erro: {e}", DANGER)
+        else:
+            self._msg("Sem autosave.", TEXT_DIM)
 
     # --------- mapas ---------
     def _switch_map(self, name):
@@ -2412,26 +2596,54 @@ class MapEditorApp:
             self._apply_paint_at(pos, erase=(self.active_tool == TOOL_ERASER))
 
     def _on_left_down(self, pos):
+        # --- barra superior ---
         for r, cb in self._top_hits:
-            if r.collidepoint(pos): cb(); return
+            if r.collidepoint(pos):
+                cb(); return
+
+        # --- painel esquerdo ---
         if self._in_left(pos):
             for item in self._left_hits:
-                if item[0].collidepoint(pos): item[1](); return
+                rect = item[0]
+                if not rect.collidepoint(pos):
+                    continue
+                # itens da árvore de mapas: (rect, nome_do_mapa, "map")
+                kind = item[2] if len(item) >= 3 else None
+                if kind == "map":
+                    # agenda seleção/movimentação; resolve no mouseup
+                    self.pending_map_click = (item[1], pos)
+                    return
+                # botão normal: (rect, callback, None)
+                cb = item[1]
+                if callable(cb):
+                    cb()
+                    return
             return
+
+        # --- painel direito ---
         if self._in_right(pos):
+            # sliders primeiro
             for key, sl in self.sliders.items():
-                if not sl.active_this_frame: continue
+                if not sl.active_this_frame:
+                    continue
                 if sl.handle_down(pos):
                     self._active_slider = key
                     return
+            # dropdowns
             for key, dd in self.dropdowns.items():
-                if not dd.active_this_frame: continue
+                if not dd.active_this_frame:
+                    continue
                 if dd.rect.collidepoint(pos):
-                    dd.expanded = True; self.expanded_dropdown = key; return
+                    dd.expanded = True
+                    self.expanded_dropdown = key
+                    return
+            # campos de texto
             prefixes = ["map_", "num_floors", "tile_", "sprite_", "ev_"]
             for key, f in self.fields.items():
-                if not f.active_this_frame: continue
-                if not any(key.startswith(p) for p in prefixes): continue
+                if not f.active_this_frame:
+                    continue
+                if not any(key.startswith(p) for p in prefixes):
+                    continue
                 if f.rect.collidepoint(pos):
                     if self.focused_field and self.focused_field is not f:
                         self._apply_current_field_group()
@@ -2439,13 +2651,20 @@ class MapEditorApp:
                     for k2, f2 in self.fields.items():
                         if f2 is not f: f2.focused = False
                     return
+            # botões do painel direito
             for r, cb in self._right_hits:
-                if r.collidepoint(pos): cb(); return
+                if r.collidepoint(pos):
+                    if callable(cb):
+                        cb()
+                    return
             return
 
-        if not self._in_canvas(pos): return
+        # --- canvas ---
+        if not self._in_canvas(pos):
+            return
         m = self.project.active_map()
-        if not m: return
+        if not m:
+            return
         tool = self.active_tool
 
         if (self.tab == self.TAB_DETAILS and
@@ -2738,10 +2957,12 @@ class MapEditorApp:
             rect = pygame.Rect(x, 5, bw, TOP_H - 10)
             draw_button(screen, rect, label, FONT_S)
             self._top_hits.append((rect, cb)); x += bw + 3
-        for label, cb in [("Undo", self._undo), ("Redo", self._redo)]:
-            rect = pygame.Rect(x, 5, 46, TOP_H - 10)
+        for label, cb in [("Undo", self._undo), ("Redo", self._redo),
+                          ("DelAuto", self._delete_autosave)]:
+            w = 56 if label == "DelAuto" else 46
+            rect = pygame.Rect(x, 5, w, TOP_H - 10)
             draw_button(screen, rect, label, FONT_S)
-            self._top_hits.append((rect, cb)); x += 48
+            self._top_hits.append((rect, cb)); x += w + 2
         rect = pygame.Rect(x, 5, 46, TOP_H - 10)
         draw_button(screen, rect, "Grid", FONT_S, active=self.show_grid)
         self._top_hits.append((rect, lambda: setattr(self, 'show_grid',
@@ -3660,6 +3881,6 @@ class MapEditorApp:
 # ============================================================
 if __name__ == "__main__":
     print("=" * 64)
-    print("MapEditor v19 — 4 layers + sliders dinâmicos")
+    print("MapEditor v19 — 4 layers + sliders + save/load robusto")
     print("=" * 64)
     MapEditorApp().run()
