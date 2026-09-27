@@ -168,6 +168,19 @@ def wall_val(v):
         return (v[0], None)
     return ('wall', None)
 
+def safe_filename(s, fallback="sprite"):
+    s = "".join(c for c in s if c not in '\\/:*?"<>|').strip()
+    return s or fallback
+
+def unique_path_in_dir(folder, base, ext=".png"):
+    p = os.path.join(folder, f"{base}{ext}")
+    if not os.path.isfile(p): return p
+    i = 1
+    while True:
+        p = os.path.join(folder, f"{base}_{i}{ext}")
+        if not os.path.isfile(p): return p
+        i += 1
+
 def pick_image_file():
     if HAS_TK:
         root = tk.Tk(); root.withdraw()
@@ -1472,7 +1485,7 @@ class MapEditorApp:
     def _open_save_dialog(self): self.save_dialog.open("meu_projeto")
     def _do_save(self):
         name = self.save_dialog.text.strip() or "meu_projeto"
-        safe = "".join(c for c in name if c not in '\\/:*?"<>|').strip() or "meu_projeto"
+        safe = safe_filename(name, "meu_projeto")
         fp = os.path.join(EXPORTS_DIR, f"{safe}.json")
         try:
             with open(fp, "w", encoding="utf-8") as f:
@@ -1595,16 +1608,25 @@ class MapEditorApp:
 
     # --------- sprites ---------
     def _import_sprite(self):
+        """Copia o arquivo escolhido para exports/sprites/ e cria a sprite."""
         path = pick_image_file()
         if not path: return
         try:
-            name = os.path.basename(path)
-            sp = CustomSprite(name, path)
+            base = os.path.splitext(os.path.basename(path))[0]
+            base = safe_filename(base, "sprite")
+            dst = unique_path_in_dir(SPRITES_DIR, base, ".png")
+            # Carrega e aplica o processamento de alpha/transparência UMA vez,
+            # salva já processado para reuso futuro (igual tiles fazem).
+            img = load_sprite_surface(path)
+            pygame.image.save(img, dst)
+            name = os.path.basename(dst)
+            sp = CustomSprite(name, dst)
             idx = self.project.add_sprite(sp)
             self.selected_sprite_idx = idx; self.active_sprite_idx = idx
             self._sync_fields_from_sprite(); self._mark_dirty()
             self._msg(f"Sprite importado: {name}", SUCCESS)
-        except Exception as e: self._msg(f"Erro: {e}", DANGER)
+        except Exception as e:
+            self._msg(f"Erro: {e}", DANGER)
     def _remove_sprite(self):
         idx = self.selected_sprite_idx
         if idx is None: return
@@ -1615,10 +1637,12 @@ class MapEditorApp:
         self._msg("Sprite removido.", TEXT_DIM)
     def _open_sprite_folder(self):
         idx = self.selected_sprite_idx
-        if idx is None: return
+        if idx is None:
+            open_folder(SPRITES_DIR); return
         sp = self.project.sprites[idx]
-        folder = os.path.dirname(sp.path)
+        folder = os.path.dirname(sp.path) if sp.path else SPRITES_DIR
         if os.path.isdir(folder): open_folder(folder)
+        else: open_folder(SPRITES_DIR)
 
     def _del_event(self, ev):
         m = self.project.active_map()
@@ -1714,14 +1738,12 @@ class MapEditorApp:
             if key in d:
                 del d[key]; return True
             return False
-        # NOVO: parede sempre recebe a textura do tile selecionado
         new_tid = self.selected_tile_id
         if key not in d:
             d[key] = (self.current_wall_kind, new_tid)
             return True
         cur_kind, cur_tid = wall_val(d[key])
         if cur_kind != self.current_wall_kind or cur_tid != new_tid:
-            # Preserva a textura já pintada se só o tipo mudou e ela existe
             keep_tid = cur_tid if cur_tid else new_tid
             if cur_kind != self.current_wall_kind:
                 d[key] = (self.current_wall_kind, keep_tid)
@@ -2934,6 +2956,8 @@ class MapEditorApp:
                              (cx, cy + hh), (cx - hw, cy)], 2)
 
     def _draw_events_iso(self, m):
+        """Desenha eventos usando EXATAMENTE as propriedades da sprite
+        (escala, offset e âncora) configuradas pelo usuário."""
         tw, th = tile_size(self.cam)
         ox, oy = self._iso_origin(); z = unit_px(self.cam)
         for ev in m.events:
@@ -2945,19 +2969,12 @@ class MapEditorApp:
             cy -= t['h'] * z
 
             sprite_drawn = False
-            if ev.sprite_idx is not None and 0 <= ev.sprite_idx < len(self.project.sprites):
+            if (ev.sprite_idx is not None
+                    and 0 <= ev.sprite_idx < len(self.project.sprites)):
                 sp = self.project.sprites[ev.sprite_idx]
-                base = sp.surface(1.0)
-                ow, oh = base.get_size()
-                if oh > 0 and ow > 0:
-                    target_h = max(20, int(1.6 * th))
-                    ratio = target_h / oh
-                    scaled = pygame.transform.smoothscale(
-                        base, (max(1,int(ow*ratio)), target_h))
-                    sx = int(cx - scaled.get_width() // 2)
-                    sy = int(cy - scaled.get_height())
-                    screen.blit(scaled, (sx, sy))
-                    sprite_drawn = True
+                # Igual ao rendering de objeto: respeita scale/offset/anchor
+                sp.draw_at(screen, cx, cy, self.cam.zoom)
+                sprite_drawn = True
 
             if not sprite_drawn:
                 col = EVENT_KIND_COLORS.get(ev.kind, (200,200,200))
