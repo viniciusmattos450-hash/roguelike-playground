@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-MapEditor v19 — 4 layers + sliders + save/load robusto + auto-scan
+MapEditor v19 — auto-scan + save robusto + 4 layers + mirror + sprite bank
 """
 import os, sys, json, math, subprocess
 from collections import deque
@@ -42,7 +42,8 @@ BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 EXPORTS_DIR = os.path.join(BASE_DIR, "exports", "maps")
 TILES_DIR   = os.path.join(BASE_DIR, "exports", "tiles")
 SPRITES_DIR = os.path.join(BASE_DIR, "exports", "sprites")
-for d in (EXPORTS_DIR, TILES_DIR, SPRITES_DIR):
+SPRITES_DATA_DIR = os.path.join(SPRITES_DIR, "data")
+for d in (EXPORTS_DIR, TILES_DIR, SPRITES_DIR, SPRITES_DATA_DIR):
     os.makedirs(d, exist_ok=True)
 AUTOSAVE_PATH = os.path.join(EXPORTS_DIR, "_autosave.json")
 
@@ -139,6 +140,24 @@ def prettify_name(s):
     if not s: return "Item"
     return s[0].upper() + s[1:]
 
+def sprite_data_path_for(png_path):
+    """Retorna o caminho do JSON de dados para o PNG."""
+    base = os.path.splitext(os.path.basename(png_path))[0]
+    return os.path.join(SPRITES_DATA_DIR, f"{base}.json")
+
+def object_unpack(val):
+    """Aceita tupla antiga (4) ou nova (6) e retorna (sid, dx, dy, dz, dmx, dmy)."""
+    try:
+        if len(val) >= 6:
+            return (int(val[0]), float(val[1]), float(val[2]), float(val[3]),
+                    bool(val[4]), bool(val[5]))
+        elif len(val) >= 4:
+            return (int(val[0]), float(val[1]), float(val[2]), float(val[3]),
+                    False, False)
+    except Exception:
+        pass
+    return None
+
 # ============================================================
 # TEXTURAS BASE
 # ============================================================
@@ -164,7 +183,7 @@ def ensure_base_textures():
 ensure_base_textures()
 
 # ============================================================
-# HELPERS GERAIS
+# HELPERS
 # ============================================================
 def draw_text(surf, text, x, y, font=FONT_M, color=TEXT, center=False):
     r = font.render(str(text), True, color)
@@ -404,21 +423,31 @@ class CustomSprite:
         self.scale = 1.0
         self.offset_x = 0.0; self.offset_y = 0.0
         self.anchor_x = 0.5; self.anchor_y = 1.0
+        self.mirror_x = False
+        self.mirror_y = False
         self._cache_key = None; self._cache = None
         self._ghost_key = None; self._ghost = None
 
-    def surface(self, cam_zoom=1.0):
-        key = (round(self.scale,4), round(cam_zoom,4))
+    def surface(self, cam_zoom=1.0, mirror_x=None, mirror_y=None):
+        if mirror_x is None: mirror_x = self.mirror_x
+        if mirror_y is None: mirror_y = self.mirror_y
+        key = (round(self.scale,4), round(cam_zoom,4),
+               bool(mirror_x), bool(mirror_y))
         if self._cache_key != key:
             ow, oh = self.original.get_size()
+            img = self.original
+            if mirror_x or mirror_y:
+                img = pygame.transform.flip(img, bool(mirror_x), bool(mirror_y))
             w = max(1, int(ow * self.scale * cam_zoom))
             h = max(1, int(oh * self.scale * cam_zoom))
-            self._cache = pygame.transform.smoothscale(self.original, (w, h))
+            self._cache = pygame.transform.smoothscale(img, (w, h))
             self._cache_key = key
         return self._cache
 
-    def ghost(self, cam_zoom=1.0):
-        s = self.surface(cam_zoom)
+    def ghost(self, cam_zoom=1.0, dyn_mirror_x=None, dyn_mirror_y=None):
+        mx = self.mirror_x if dyn_mirror_x is None else (self.mirror_x ^ bool(dyn_mirror_x))
+        my = self.mirror_y if dyn_mirror_y is None else (self.mirror_y ^ bool(dyn_mirror_y))
+        s = self.surface(cam_zoom, mx, my)
         key = (self._cache_key, s.get_size())
         if self._ghost_key != key:
             g = s.copy(); g.set_alpha(140)
@@ -426,8 +455,11 @@ class CustomSprite:
         return self._ghost
 
     def draw_at(self, screen, sx, sy, cam_zoom=1.0,
-                dyn_dx=0.0, dyn_dy=0.0, dyn_dz_px=0.0):
-        s = self.surface(cam_zoom)
+                dyn_dx=0.0, dyn_dy=0.0, dyn_dz_px=0.0,
+                dyn_mirror_x=None, dyn_mirror_y=None):
+        mx = self.mirror_x if dyn_mirror_x is None else (self.mirror_x ^ bool(dyn_mirror_x))
+        my = self.mirror_y if dyn_mirror_y is None else (self.mirror_y ^ bool(dyn_mirror_y))
+        s = self.surface(cam_zoom, mx, my)
         w, h = s.get_size()
         ox = (self.offset_x + dyn_dx) * cam_zoom
         oy = (self.offset_y + dyn_dy) * cam_zoom
@@ -556,6 +588,13 @@ class TileMap:
         def wall_row(x, y, z, v):
             k, tid = wall_val(v)
             return [x, y, z, k, tid]
+        # objects: normaliza para 6-tupla (sid, dx, dy, dz, dmx, dmy)
+        obj_rows = []
+        for (x, y, z, layer), val in self.objects.items():
+            up = object_unpack(val)
+            if up is None: continue
+            sid, dx, dy, dz, dmx, dmy = up
+            obj_rows.append([x, y, z, layer, sid, dx, dy, dz, bool(dmx), bool(dmy)])
         return {
             "version": MAP_FILE_VERSION,
             "name": self.name, "w": self.w, "h": self.h,
@@ -566,8 +605,7 @@ class TileMap:
             "blocks":  [[x, y, z, tid] for (x,y,z), tid in self.blocks.items()],
             "walls_h": [wall_row(x, y, z, v) for (x,y,z), v in self.walls_h.items()],
             "walls_v": [wall_row(x, y, z, v) for (x,y,z), v in self.walls_v.items()],
-            "objects": [[x, y, z, layer, sid, dx, dy, dz]
-                        for (x,y,z,layer), (sid, dx, dy, dz) in self.objects.items()],
+            "objects": obj_rows,
             "passability": [[x, y, v] for (x,y), v in self.passability.items()],
             "events": [ev.to_dict() for ev in self.events],
         }
@@ -632,15 +670,21 @@ class TileMap:
                     m.walls_v[(int(e[0]), int(e[1]), int(e[2]))] = (e[3], None)
             except Exception: continue
 
+        # Aceita 4, 8 ou 10 campos
         m.objects = {}
         for e in (d.get("objects", []) or []):
             try:
-                if len(e) >= 8:
+                if len(e) >= 10:
                     key = (int(e[0]), int(e[1]), int(e[2]), int(e[3]))
-                    val = (int(e[4]), float(e[5]), float(e[6]), float(e[7]))
+                    val = (int(e[4]), float(e[5]), float(e[6]), float(e[7]),
+                           bool(e[8]), bool(e[9]))
+                elif len(e) >= 8:
+                    key = (int(e[0]), int(e[1]), int(e[2]), int(e[3]))
+                    val = (int(e[4]), float(e[5]), float(e[6]), float(e[7]),
+                           False, False)
                 elif len(e) == 4:
                     key = (int(e[0]), int(e[1]), int(e[2]), 0)
-                    val = (int(e[3]), 0.0, 0.0, 0.0)
+                    val = (int(e[3]), 0.0, 0.0, 0.0, False, False)
                 else:
                     continue
                 m.objects[key] = val
@@ -695,10 +739,13 @@ class Project:
             del self.sprites[idx]
             for m in self.maps.values():
                 new_obj = {}
-                for k, (sid, dx, dy, dz) in m.objects.items():
+                for k, val in m.objects.items():
+                    up = object_unpack(val)
+                    if up is None: continue
+                    sid, dx, dy, dz, dmx, dmy = up
                     if sid == idx: continue
                     new_sid = sid - 1 if sid > idx else sid
-                    new_obj[k] = (new_sid, dx, dy, dz)
+                    new_obj[k] = (new_sid, dx, dy, dz, dmx, dmy)
                 m.objects = new_obj
                 for ev in m.events:
                     if ev.sprite_idx is None: continue
@@ -711,7 +758,9 @@ class Project:
             "tileset": self.tileset.to_dict(),
             "sprites": [{"name": s.name, "path": s.path, "scale": s.scale,
                          "offset_x": s.offset_x, "offset_y": s.offset_y,
-                         "anchor_x": s.anchor_x, "anchor_y": s.anchor_y}
+                         "anchor_x": s.anchor_x, "anchor_y": s.anchor_y,
+                         "mirror_x": bool(s.mirror_x),
+                         "mirror_y": bool(s.mirror_y)}
                         for s in self.sprites],
             "maps": {n: m.to_dict() for n,m in self.maps.items()},
             "active_map_name": self.active_map_name,
@@ -748,6 +797,8 @@ class Project:
                 sp.offset_y = float(sd.get("offset_y", 0.0))
                 sp.anchor_x = float(sd.get("anchor_x", 0.5))
                 sp.anchor_y = float(sd.get("anchor_y", 1.0))
+                sp.mirror_x = bool(sd.get("mirror_x", False))
+                sp.mirror_y = bool(sd.get("mirror_y", False))
                 p.sprites.append(sp)
             except Exception as e:
                 print(f"[Project] Sprite '{name}' falhou ({e}); placeholder.")
@@ -885,6 +936,44 @@ class Slider:
         kc = ACCENT_BRIGHT if (self.dragging or hover) else ACCENT
         pygame.draw.circle(surf, kc, (kx, cy), 6)
         pygame.draw.circle(surf, (20,15,10), (kx, cy), 6, 1)
+
+class Checkbox:
+    def __init__(self, key, label, value=False, on_change=None):
+        self.key = key; self.label = label; self.value = bool(value)
+        self.on_change = on_change
+        self.rect = pygame.Rect(0,0,0,0)
+        self.active_this_frame = False
+    def set_position(self, x, y, w, h=16):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.active_this_frame = True
+    def mark_inactive(self):
+        self.rect = pygame.Rect(0,0,0,0)
+        self.active_this_frame = False
+    def set_value(self, v, fire=False):
+        nv = bool(v)
+        if nv != self.value:
+            self.value = nv
+            if fire and self.on_change: self.on_change(nv)
+    def handle_click(self, pos):
+        if self.rect.collidepoint(pos):
+            self.value = not self.value
+            if self.on_change: self.on_change(self.value)
+            return True
+        return False
+    def draw(self, surf):
+        r = self.rect
+        if r.w <= 0: return
+        box = pygame.Rect(r.x, r.y + (r.h-12)//2, 12, 12)
+        pygame.draw.rect(surf, (36,30,25), box, border_radius=3)
+        hover = r.collidepoint(pygame.mouse.get_pos())
+        border = ACCENT_BRIGHT if (self.value or hover) else ACCENT_DARK
+        pygame.draw.rect(surf, border, box, 1, border_radius=3)
+        if self.value:
+            pygame.draw.line(surf, ACCENT_BRIGHT,
+                             (box.x+2, box.y+6), (box.x+5, box.y+9), 2)
+            pygame.draw.line(surf, ACCENT_BRIGHT,
+                             (box.x+5, box.y+9), (box.x+10, box.y+3), 2)
+        draw_text(surf, self.label, r.x + 18, r.y + 1, FONT_XS, TEXT)
 
 class Dropdown:
     def __init__(self, key, label, options, value, on_change=None, max_visible=12):
@@ -1408,6 +1497,8 @@ class MapEditorApp:
         self.current_dyn_x = 0.0
         self.current_dyn_y = 0.0
         self.current_dyn_z = 0.0
+        self.current_dyn_mirror_x = False
+        self.current_dyn_mirror_y = False
         self.selected_obj_key = None
 
         self.active_tool = TOOL_BRUSH
@@ -1419,6 +1510,7 @@ class MapEditorApp:
 
         self.undo_stack = []; self.redo_stack = []
         self.fields = {}; self.dropdowns = {}; self.sliders = {}
+        self.checkboxes = {}
         self.focused_field = None; self.expanded_dropdown = None
         self._init_widgets()
 
@@ -1433,7 +1525,6 @@ class MapEditorApp:
         self._map_hits = []
         self.pending_map_click = None
 
-        # Caminho do JSON atual + auto-scan
         self.current_file_path = None
         self._rescan_timer = 0.0
         self._rescan_interval = 2.0
@@ -1442,7 +1533,6 @@ class MapEditorApp:
         self._sync_fields_from_tile()
         self._sync_fields_from_sprite()
         self._load_autosave_if_any()
-        # Primeira varredura silenciosa
         self.rescan_tiles(quiet=True)
         self.rescan_sprites(quiet=True)
 
@@ -1493,6 +1583,19 @@ class MapEditorApp:
             "sl_dyn_z", "Dyn Z", -5.0, 5.0, 0.0,
             on_change=lambda v: self._on_slider("dyn_z", v), fmt="{:.2f}")
 
+        self.checkboxes["cb_mirror_x"] = Checkbox(
+            "cb_mirror_x", "Espelhar X", False,
+            on_change=lambda v: self._on_checkbox("mirror_x", v))
+        self.checkboxes["cb_mirror_y"] = Checkbox(
+            "cb_mirror_y", "Espelhar Y", False,
+            on_change=lambda v: self._on_checkbox("mirror_y", v))
+        self.checkboxes["cb_dyn_mirror_x"] = Checkbox(
+            "cb_dyn_mirror_x", "Dyn Esp. X", False,
+            on_change=lambda v: self._on_checkbox("dyn_mirror_x", v))
+        self.checkboxes["cb_dyn_mirror_y"] = Checkbox(
+            "cb_dyn_mirror_y", "Dyn Esp. Y", False,
+            on_change=lambda v: self._on_checkbox("dyn_mirror_y", v))
+
         self.dropdowns["floor"] = Dropdown(
             "floor", "Andar",
             [(i, f"Andar {i}") for i in range(NUM_FLOORS)], 0,
@@ -1505,7 +1608,55 @@ class MapEditorApp:
             on_change=self._on_event_trigger_change)
 
     # ============================================================
-    # AUTO-SCAN: tiles e sprites das pastas
+    # SPRITE DATA JSON (banco de sprites)
+    # ============================================================
+    def _save_sprite_data(self, idx):
+        if idx is None or idx < 0 or idx >= len(self.project.sprites): return False
+        sp = self.project.sprites[idx]
+        if not sp.path: return False
+        data = {
+            "name": sp.name,
+            "image": os.path.basename(sp.path),
+            "scale": float(sp.scale),
+            "offset_x": float(sp.offset_x),
+            "offset_y": float(sp.offset_y),
+            "anchor_x": float(sp.anchor_x),
+            "anchor_y": float(sp.anchor_y),
+            "mirror_x": bool(sp.mirror_x),
+            "mirror_y": bool(sp.mirror_y),
+        }
+        fp = sprite_data_path_for(sp.path)
+        ok, err = _atomic_write_json(fp, data)
+        if not ok:
+            print(f"[SpriteData] falha: {err}")
+        return ok
+
+    def _load_sprite_data_for(self, png_path):
+        try:
+            fp = sprite_data_path_for(png_path)
+            if not os.path.isfile(fp): return None
+            with open(fp, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[SpriteData] load: {e}")
+            return None
+
+    def _apply_sprite_data(self, sp, data):
+        try:
+            sp.scale    = float(data.get("scale", 1.0))
+            sp.offset_x = float(data.get("offset_x", 0.0))
+            sp.offset_y = float(data.get("offset_y", 0.0))
+            sp.anchor_x = float(data.get("anchor_x", 0.5))
+            sp.anchor_y = float(data.get("anchor_y", 1.0))
+            sp.mirror_x = bool(data.get("mirror_x", False))
+            sp.mirror_y = bool(data.get("mirror_y", False))
+            return True
+        except Exception as e:
+            print(f"[SpriteData] apply: {e}")
+            return False
+
+    # ============================================================
+    # AUTO-SCAN
     # ============================================================
     def rescan_tiles(self, quiet=False):
         added = 0
@@ -1514,29 +1665,22 @@ class MapEditorApp:
         except Exception:
             return 0
         for entry in sorted(entries):
-            if added >= MAX_SCAN_ADDITIONS:
-                break
+            if added >= MAX_SCAN_ADDITIONS: break
             folder = os.path.join(TILES_DIR, entry)
-            if not os.path.isdir(folder):
-                continue
+            if not os.path.isdir(folder): continue
             tid = entry
-            if tid in self.project.tileset.tiles:
-                continue
-            # Listar imagens na pasta
+            if tid in self.project.tileset.tiles: continue
             try:
                 imgs = [f for f in os.listdir(folder)
                         if os.path.splitext(f)[1].lower() in IMG_EXTS]
             except Exception:
                 continue
-            if not imgs:
-                continue
-            # Ver quais slots estão presentes
+            if not imgs: continue
             present_slots = set()
             for f in imgs:
                 base = os.path.splitext(f)[0].lower()
                 if base in TILE_SLOTS:
                     present_slots.add(base)
-            # Se nenhum slot reconhecido, promove a primeira imagem para top.png
             if not present_slots:
                 try:
                     src = os.path.join(folder, imgs[0])
@@ -1545,7 +1689,6 @@ class MapEditorApp:
                     pygame.image.save(img, dst)
                 except Exception as e:
                     print(f"[Rescan] promove '{imgs[0]}': {e}")
-            # Cria o tile
             try:
                 t = Tile(tid, prettify_name(tid), DEFAULT_TILE_COL,
                          True, "Geral", height=0, folder=folder)
@@ -1567,29 +1710,28 @@ class MapEditorApp:
             entries = os.listdir(SPRITES_DIR)
         except Exception:
             return 0
-        # Já existentes (por caminho absoluto)
         existing_paths = set()
         for sp in self.project.sprites:
             if sp.path:
                 try: existing_paths.add(os.path.abspath(sp.path))
                 except Exception: pass
         for f in sorted(entries):
-            if added >= MAX_SCAN_ADDITIONS:
-                break
+            if added >= MAX_SCAN_ADDITIONS: break
             full = os.path.join(SPRITES_DIR, f)
-            if not os.path.isfile(full):
-                continue
+            if not os.path.isfile(full): continue
             ext = os.path.splitext(f)[1].lower()
-            if ext not in IMG_EXTS:
-                continue
+            if ext not in IMG_EXTS: continue
             try:
                 ap = os.path.abspath(full)
             except Exception:
                 ap = full
-            if ap in existing_paths:
-                continue
+            if ap in existing_paths: continue
             try:
                 sp = CustomSprite(f, full)
+                # Carrega dados salvos se existirem (banco de sprites)
+                data = self._load_sprite_data_for(full)
+                if data is not None:
+                    self._apply_sprite_data(sp, data)
                 self.project.add_sprite(sp)
                 added += 1
             except Exception as e:
@@ -1613,7 +1755,7 @@ class MapEditorApp:
         return (t, s)
 
     # ============================================================
-    # SLIDERS / EVENTOS DE UI
+    # SLIDERS / CHECKBOXES / UI CALLBACKS
     # ============================================================
     def _on_slider(self, which, value):
         idx = self.selected_sprite_idx
@@ -1647,16 +1789,44 @@ class MapEditorApp:
             self.current_dyn_z = value
             self.fields["sprite_dyn_z"].value = f"{value:.2f}"
             self._update_selected_object_dyn(2, value)
+        # Auto-salva dados do sprite (para default, não dynamic)
+        if which in ("scale","off_x","off_y","anc_x","anc_y"):
+            self._save_sprite_data(idx)
+        self._mark_dirty()
+
+    def _on_checkbox(self, which, value):
+        idx = self.selected_sprite_idx
+        if idx is None or idx < 0 or idx >= len(self.project.sprites):
+            return
+        sp = self.project.sprites[idx]
+        if which == "mirror_x":
+            sp.mirror_x = bool(value)
+            self._save_sprite_data(idx)
+        elif which == "mirror_y":
+            sp.mirror_y = bool(value)
+            self._save_sprite_data(idx)
+        elif which == "dyn_mirror_x":
+            self.current_dyn_mirror_x = bool(value)
+            self._update_selected_object_dyn(3, value)
+        elif which == "dyn_mirror_y":
+            self.current_dyn_mirror_y = bool(value)
+            self._update_selected_object_dyn(4, value)
         self._mark_dirty()
 
     def _update_selected_object_dyn(self, idx, value):
+        """idx: 0=dx, 1=dy, 2=dz, 3=dmx, 4=dmy"""
         if self.selected_obj_key is None: return
         m = self.project.active_map()
         if not m: return
         if self.selected_obj_key not in m.objects: return
-        sid, dx, dy, dz = m.objects[self.selected_obj_key]
-        vals = [dx, dy, dz]; vals[idx] = value
-        m.objects[self.selected_obj_key] = (sid, vals[0], vals[1], vals[2])
+        val = m.objects[self.selected_obj_key]
+        up = object_unpack(val)
+        if up is None: return
+        sid, dx, dy, dz, dmx, dmy = up
+        vals = [dx, dy, dz, bool(dmx), bool(dmy)]
+        vals[idx] = value
+        m.objects[self.selected_obj_key] = (
+            sid, vals[0], vals[1], vals[2], bool(vals[3]), bool(vals[4]))
 
     def _msg(self, text, color=ACCENT):
         self.msg = text; self.msg_color = color; self.msg_timer = 2.5
@@ -1799,14 +1969,19 @@ class MapEditorApp:
         tw, th = tile_size(self.cam)
         ox, oy = self._iso_origin(); z_unit = unit_px(self.cam)
         entries = []
-        for (tx, ty, tz, layer), (sid, dx, dy, dz) in m.objects.items():
+        for (tx, ty, tz, layer), val in m.objects.items():
             if tz > self.active_floor: continue
+            up = object_unpack(val)
+            if up is None: continue
+            sid, dx, dy, dz, dmx, dmy = up
             if sid < 0 or sid >= len(self.project.sprites): continue
-            entries.append((tx + ty, layer, tz, tx, ty, layer, sid, dx, dy, dz))
+            entries.append((tx + ty, layer, tz, tx, ty, layer, sid, dx, dy, dz, dmx, dmy))
         entries.sort(key=lambda e: (-e[0], -e[1]))
-        for _, _, tz, tx, ty, layer, sid, dx, dy, dz in entries:
+        for _, _, tz, tx, ty, layer, sid, dx, dy, dz, dmx, dmy in entries:
             sp = self.project.sprites[sid]
-            s = sp.surface(self.cam.zoom)
+            eff_mx = sp.mirror_x ^ bool(dmx)
+            eff_my = sp.mirror_y ^ bool(dmy)
+            s = sp.surface(self.cam.zoom, eff_mx, eff_my)
             w, h = s.get_size()
             wx = (tx - ty) * tw * 0.5; wy = (tx + ty) * th * 0.5
             terr = m.get_terrain(tx, ty)
@@ -1874,11 +2049,9 @@ class MapEditorApp:
         except Exception as e:
             print(f"[Autosave] serialização falhou: {e}")
             return
-        # Backup interno
         ok, err = _atomic_write_json(AUTOSAVE_PATH, data)
         if not ok:
             print(f"[Autosave] falha: {err}")
-        # Arquivo atual do projeto
         if self.current_file_path:
             ok2, err2 = _atomic_write_json(self.current_file_path, data)
             if not ok2:
@@ -1960,6 +2133,11 @@ class MapEditorApp:
             self.sliders["sl_dyn_x"].set_value(self.current_dyn_x)
             self.sliders["sl_dyn_y"].set_value(self.current_dyn_y)
             self.sliders["sl_dyn_z"].set_value(self.current_dyn_z)
+        if "cb_mirror_x" in self.checkboxes:
+            self.checkboxes["cb_mirror_x"].set_value(sp.mirror_x)
+            self.checkboxes["cb_mirror_y"].set_value(sp.mirror_y)
+            self.checkboxes["cb_dyn_mirror_x"].set_value(self.current_dyn_mirror_x)
+            self.checkboxes["cb_dyn_mirror_y"].set_value(self.current_dyn_mirror_y)
 
     def _sync_fields_from_event(self, ev):
         self.editing_event = ev
@@ -2048,11 +2226,16 @@ class MapEditorApp:
         self.current_dyn_x = ndx
         self.current_dyn_y = ndy
         self.current_dyn_z = ndz
+        # Aplica no objeto selecionado (se houver)
         if self.selected_obj_key is not None:
             m = self.project.active_map()
             if m and self.selected_obj_key in m.objects:
-                sid, _, _, _ = m.objects[self.selected_obj_key]
-                m.objects[self.selected_obj_key] = (sid, ndx, ndy, ndz)
+                sid = object_unpack(m.objects[self.selected_obj_key])[0]
+                m.objects[self.selected_obj_key] = (
+                    sid, ndx, ndy, ndz,
+                    bool(self.current_dyn_mirror_x),
+                    bool(self.current_dyn_mirror_y))
+        # Resync sliders
         self.sliders["sl_scale"].set_value(sp.scale)
         self.sliders["sl_off_x"].set_value(sp.offset_x)
         self.sliders["sl_off_y"].set_value(sp.offset_y)
@@ -2061,6 +2244,8 @@ class MapEditorApp:
         self.sliders["sl_dyn_x"].set_value(ndx)
         self.sliders["sl_dyn_y"].set_value(ndy)
         self.sliders["sl_dyn_z"].set_value(ndz)
+        # Salva dados do sprite (banco)
+        self._save_sprite_data(idx)
         self._mark_dirty(); self._msg("Sprite atualizado.", SUCCESS)
 
     def _apply_event_fields(self):
@@ -2197,7 +2382,6 @@ class MapEditorApp:
         self.project.add_map(m); self.active_floor = 0
         self._sync_fields_from_map(); self._mark_dirty()
 
-        # Cria JSON automaticamente com o nome do mapa
         safe = safe_filename(name, "mapa")
         fp = os.path.join(EXPORTS_DIR, f"{safe}.json")
         try:
@@ -2218,10 +2402,30 @@ class MapEditorApp:
         for m in self.project.maps.values():
             if m.parent == name: m.parent = None
         del self.project.maps[name]
+        # Deleta o JSON do mapa (se existir em EXPORTS_DIR)
+        safe = safe_filename(name, "mapa")
+        fp = os.path.join(EXPORTS_DIR, f"{safe}.json")
+        deleted_json = False
+        try:
+            if os.path.isfile(fp):
+                os.remove(fp)
+                deleted_json = True
+        except Exception as e:
+            print(f"[DelMap] {e}")
+        # Limpa arquivo atual se era esse
+        try:
+            if (self.current_file_path
+                and os.path.abspath(self.current_file_path) == os.path.abspath(fp)):
+                self.current_file_path = None
+        except Exception:
+            pass
         self.project.active_map_name = next(iter(self.project.maps))
         self.active_floor = 0
         self._sync_fields_from_map(); self._mark_dirty()
-        self._msg(f"Removido: {name}", TEXT_DIM)
+        if deleted_json:
+            self._msg(f"Removido: {name} (+ json)", TEXT_DIM)
+        else:
+            self._msg(f"Removido: {name}", TEXT_DIM)
 
     def _open_rename(self, name):
         m = self.project.maps.get(name)
@@ -2313,22 +2517,44 @@ class MapEditorApp:
             pygame.image.save(img, dst)
             name = os.path.basename(dst)
             sp = CustomSprite(name, dst)
+            # Se havia data JSON prévio (banco), aplica
+            data = self._load_sprite_data_for(dst)
+            if data is not None:
+                self._apply_sprite_data(sp, data)
             idx = self.project.add_sprite(sp)
             self.selected_sprite_idx = idx; self.active_sprite_idx = idx
+            # Salva data JSON imediatamente (banco)
+            self._save_sprite_data(idx)
             self._sync_fields_from_sprite(); self._mark_dirty()
             self._msg(f"Sprite importado: {name}", SUCCESS)
         except Exception as e:
             self._msg(f"Erro: {e}", DANGER)
 
     def _remove_sprite(self):
+        """Remove sprite do projeto E apaga os arquivos (png + data json)."""
         idx = self.selected_sprite_idx
         if idx is None: return
+        sp = self.project.sprites[idx]
+        png_path = sp.path
+        # Apaga arquivos do disco
+        if png_path:
+            try:
+                ap = os.path.abspath(png_path)
+                root = os.path.abspath(SPRITES_DIR)
+                if os.path.commonpath([ap, root]) == root and os.path.isfile(ap):
+                    os.remove(ap)
+                    dp = sprite_data_path_for(png_path)
+                    if os.path.isfile(dp):
+                        os.remove(dp)
+            except Exception as e:
+                print(f"[RemoveSprite] {e}")
+        # Remove do projeto
         self.project.remove_sprite(idx)
         self.selected_sprite_idx = (0 if self.project.sprites else None)
         self.active_sprite_idx = self.selected_sprite_idx
         self.selected_obj_key = None
         self._sync_fields_from_sprite(); self._mark_dirty()
-        self._msg("Sprite removido.", TEXT_DIM)
+        self._msg("Sprite removido (png + json deletados).", TEXT_DIM)
 
     def _open_sprite_folder(self):
         idx = self.selected_sprite_idx
@@ -2363,12 +2589,17 @@ class MapEditorApp:
         val = m.objects.get(key)
         if val is None:
             self.selected_obj_key = None; return
-        sid, dx, dy, dz = val
+        up = object_unpack(val)
+        if up is None:
+            self.selected_obj_key = None; return
+        sid, dx, dy, dz, dmx, dmy = up
         self.selected_obj_key = key
         self.current_layer = key[3]
         self.current_dyn_x = dx
         self.current_dyn_y = dy
         self.current_dyn_z = dz
+        self.current_dyn_mirror_x = bool(dmx)
+        self.current_dyn_mirror_y = bool(dmy)
         if 0 <= sid < len(self.project.sprites):
             self.selected_sprite_idx = sid
             self.active_sprite_idx = sid
@@ -2390,7 +2621,8 @@ class MapEditorApp:
         self._push_undo()
         m.objects[(cell[0], cell[1], self.active_floor, self.current_layer)] = (
             self.selected_sprite_idx,
-            self.current_dyn_x, self.current_dyn_y, self.current_dyn_z)
+            self.current_dyn_x, self.current_dyn_y, self.current_dyn_z,
+            bool(self.current_dyn_mirror_x), bool(self.current_dyn_mirror_y))
         self.selected_obj_key = (cell[0], cell[1], self.active_floor, self.current_layer)
         self._mark_dirty()
         self._msg(f"Objeto colocado layer {self.current_layer} @ ({cell[0]},{cell[1]})", SUCCESS)
@@ -2415,7 +2647,8 @@ class MapEditorApp:
         if self.selected_sprite_idx is None: return
         m.objects[(cell[0], cell[1], self.active_floor, self.current_layer)] = (
             self.selected_sprite_idx,
-            self.current_dyn_x, self.current_dyn_y, self.current_dyn_z)
+            self.current_dyn_x, self.current_dyn_y, self.current_dyn_z,
+            bool(self.current_dyn_mirror_x), bool(self.current_dyn_mirror_y))
 
     def _rect_object_v2(self, x0, y0, x1, y1):
         m = self.project.active_map()
@@ -2427,7 +2660,8 @@ class MapEditorApp:
             for xx in range(xa, xb+1):
                 m.objects[(xx, yy, z, layer)] = (
                     self.selected_sprite_idx,
-                    self.current_dyn_x, self.current_dyn_y, self.current_dyn_z)
+                    self.current_dyn_x, self.current_dyn_y, self.current_dyn_z,
+                    bool(self.current_dyn_mirror_x), bool(self.current_dyn_mirror_y))
 
     def _delete_object_key(self, key):
         m = self.project.active_map()
@@ -2780,17 +3014,13 @@ class MapEditorApp:
             self._apply_paint_at(pos, erase=(self.active_tool == TOOL_ERASER))
 
     def _on_left_down(self, pos):
-        # --- barra superior ---
         for r, cb in self._top_hits:
             if r.collidepoint(pos):
                 cb(); return
-
-        # --- painel esquerdo ---
         if self._in_left(pos):
             for item in self._left_hits:
                 rect = item[0]
-                if not rect.collidepoint(pos):
-                    continue
+                if not rect.collidepoint(pos): continue
                 kind = item[2] if len(item) >= 3 else None
                 if kind == "map":
                     self.pending_map_click = (item[1], pos)
@@ -2800,9 +3030,12 @@ class MapEditorApp:
                     cb()
                     return
             return
-
-        # --- painel direito ---
         if self._in_right(pos):
+            # checkboxes primeiro
+            for key, cb in self.checkboxes.items():
+                if not cb.active_this_frame: continue
+                if cb.handle_click(pos):
+                    return
             for key, sl in self.sliders.items():
                 if not sl.active_this_frame: continue
                 if sl.handle_down(pos):
@@ -2829,7 +3062,6 @@ class MapEditorApp:
                     return
             return
 
-        # --- canvas ---
         if not self._in_canvas(pos): return
         m = self.project.active_map()
         if not m: return
@@ -2959,7 +3191,7 @@ class MapEditorApp:
                 if kind == "map":
                     name = payload
                     items = [("Renomear…", lambda n=name: self._open_rename(n)),
-                             ("Deletar", lambda n=name: self._del_map(n))]
+                             ("Deletar (apaga json)", lambda n=name: self._del_map(n))]
                     others = [n for n in self.project.maps if n != name]
                     if others:
                         sub = [(f"→ {p}",
@@ -3011,7 +3243,6 @@ class MapEditorApp:
             if self.autosave_timer <= 0:
                 self._do_autosave(); self.autosave_dirty = False
 
-        # Auto-scan periódico
         self._rescan_timer -= dt
         if self._rescan_timer <= 0:
             self._rescan_timer = self._rescan_interval
@@ -3096,6 +3327,7 @@ class MapEditorApp:
         for f in self.fields.values(): f.mark_inactive()
         for dd in self.dropdowns.values(): dd.mark_inactive()
         for sl in self.sliders.values(): sl.mark_inactive()
+        for cb in self.checkboxes.values(): cb.mark_inactive()
         self._draw_top_bar()
         self._draw_canvas()
         self._draw_left_panel()
@@ -3105,6 +3337,8 @@ class MapEditorApp:
             if f.active_this_frame: f.draw(screen)
         for sl in self.sliders.values():
             if sl.active_this_frame: sl.draw(screen)
+        for cb in self.checkboxes.values():
+            if cb.active_this_frame: cb.draw(screen)
         for dd in self.dropdowns.values():
             if dd.active_this_frame: dd.draw(screen)
         self.save_dialog.draw(screen)
@@ -3403,8 +3637,8 @@ class MapEditorApp:
             y += 24
 
             for line in ["Auto-scan: 2s",
-                         "RMB: menu / apaga.",
-                         "Sliders no painel direito."]:
+                         "Del: apaga png + json",
+                         "Data em sprites/data/"]:
                 draw_text(screen, line, x, y, FONT_XS, TEXT_DIM); y += 11
 
         else:
@@ -3599,13 +3833,20 @@ class MapEditorApp:
         y = self._sprite_prop_row(x, y, w, "Offset Y", "sprite_off_y", "sl_off_y")
         y = self._sprite_prop_row(x, y, w, "Ancora X", "sprite_anc_x", "sl_anc_x")
         y = self._sprite_prop_row(x, y, w, "Ancora Y", "sprite_anc_y", "sl_anc_y")
-        y += 4
+
+        half = (w - 6) // 2
+        self.checkboxes["cb_mirror_x"].set_position(x, y, half, 16)
+        self.checkboxes["cb_mirror_y"].set_position(x + half + 6, y, half, 16)
+        y += 22
 
         draw_text(screen, "DYNAMIC (esta colocação)", x, y, FONT_XS, ACCENT); y += 14
         y = self._sprite_prop_row(x, y, w, "Dyn X", "sprite_dyn_x", "sl_dyn_x")
         y = self._sprite_prop_row(x, y, w, "Dyn Y", "sprite_dyn_y", "sl_dyn_y")
         y = self._sprite_prop_row(x, y, w, "Dyn Z", "sprite_dyn_z", "sl_dyn_z")
-        y += 4
+
+        self.checkboxes["cb_dyn_mirror_x"].set_position(x, y, half, 16)
+        self.checkboxes["cb_dyn_mirror_y"].set_position(x + half + 6, y, half, 16)
+        y += 22
 
         r = pygame.Rect(x, y, w, 24)
         draw_button(screen, r, "Aplicar valores", FONT_XS, primary=True)
@@ -3617,7 +3858,8 @@ class MapEditorApp:
             self._right_hits.append((r, self._clear_object_selection)); y += 24
 
         r = pygame.Rect(x, y, w, 22)
-        draw_button(screen, r, "Remover sprite do projeto", FONT_XS, danger=True)
+        draw_button(screen, r, "Deletar sprite (png + json)",
+                    FONT_XS, danger=True)
         self._right_hits.append((r, self._remove_sprite))
 
     def _clear_object_selection(self):
@@ -3759,7 +4001,10 @@ class MapEditorApp:
             if tz > self.active_floor: continue
             kind, tid = wall_val(val)
             items.append(((tx + ty, tz, 2), 'wall_v', (tx, ty, tz, kind, tid)))
-        for (tx, ty, tz, layer), (sid, dx, dy, dz) in m.objects.items():
+        for (tx, ty, tz, layer), val in m.objects.items():
+            up = object_unpack(val)
+            if up is None: continue
+            sid, dx, dy, dz, dmx, dmy = up
             if sid < 0 or sid >= len(self.project.sprites): continue
             if tz > self.active_floor: continue
             terr = m.get_terrain(tx, ty)
@@ -3767,7 +4012,7 @@ class MapEditorApp:
             effective_h = tz + terr_visual_h
             key = (tx + ty, effective_h + 0.01, 3, layer)
             items.append((key, 'object',
-                          (tx, ty, tz, layer, sid, dx, dy, dz)))
+                          (tx, ty, tz, layer, sid, dx, dy, dz, dmx, dmy)))
 
         items.sort(key=lambda it: it[0])
 
@@ -3801,15 +4046,17 @@ class MapEditorApp:
                 tile = self.project.tileset.get(tid) if tid else None
                 draw_wall_v_iso(screen, self.cam, ox, oy, tx, ty, tz, kw, tile)
             elif kind == 'object':
-                tz, layer, sid, dx, dy, dz = (data[2], data[3], data[4],
-                                              data[5], data[6], data[7])
+                (tz, layer, sid, dx, dy, dz, dmx, dmy) = (
+                    data[2], data[3], data[4], data[5],
+                    data[6], data[7], data[8], data[9])
                 sp = self.project.sprites[sid]
                 terr = m.get_terrain(tx, ty)
                 wx = (tx - ty) * tw * 0.5; wy = (tx + ty) * th * 0.5
                 scr_x = ox + wx
                 scr_y = oy + wy + th * 0.5 - (tz + terr['h']) * z
                 sp.draw_at(screen, scr_x, scr_y, self.cam.zoom,
-                           dyn_dx=dx, dyn_dy=dy, dyn_dz_px=dz * z)
+                           dyn_dx=dx, dyn_dy=dy, dyn_dz_px=dz * z,
+                           dyn_mirror_x=dmx, dyn_mirror_y=dmy)
 
         if self.show_grid: self._draw_grid_iso(m)
         if self.tab == self.TAB_DETAILS and self.details_mode == self.DMODE_EVENT:
@@ -3930,7 +4177,9 @@ class MapEditorApp:
                 cx = ox + wx
                 cy = oy + wy + th * 0.5 - (self.active_floor + terr['h']) * z_unit
                 sp = self.project.sprites[self.selected_sprite_idx]
-                g = sp.ghost(self.cam.zoom)
+                g = sp.ghost(self.cam.zoom,
+                             self.current_dyn_mirror_x,
+                             self.current_dyn_mirror_y)
                 w, h = g.get_size()
                 oxx = (sp.offset_x + self.current_dyn_x) * self.cam.zoom
                 oyy = (sp.offset_y + self.current_dyn_y) * self.cam.zoom
@@ -4062,6 +4311,6 @@ class MapEditorApp:
 # ============================================================
 if __name__ == "__main__":
     print("=" * 64)
-    print("MapEditor v19 — auto-scan + save robusto + 4 layers")
+    print("MapEditor v19 — mirror + sprite bank + auto-scan")
     print("=" * 64)
     MapEditorApp().run()

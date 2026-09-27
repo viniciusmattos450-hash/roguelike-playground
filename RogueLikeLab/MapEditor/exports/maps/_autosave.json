@@ -2,124 +2,12 @@
   "version": 2,
   "tileset": {
     "order": [
-      "sample",
-      "dirt",
-      "grass",
-      "ground",
-      "path",
-      "stone",
-      "tree",
-      "wall",
-      "water"
+      "sample"
     ],
     "tiles": [
       {
         "id": "sample",
         "name": "Sample",
-        "color": [
-          150,
-          150,
-          150
-        ],
-        "walkable": true,
-        "category": "Geral",
-        "height": 0,
-        "blocks_sight": false
-      },
-      {
-        "id": "dirt",
-        "name": "Dirt",
-        "color": [
-          150,
-          150,
-          150
-        ],
-        "walkable": true,
-        "category": "Geral",
-        "height": 0,
-        "blocks_sight": false
-      },
-      {
-        "id": "grass",
-        "name": "Grass",
-        "color": [
-          150,
-          150,
-          150
-        ],
-        "walkable": true,
-        "category": "Geral",
-        "height": 0,
-        "blocks_sight": false
-      },
-      {
-        "id": "ground",
-        "name": "Ground",
-        "color": [
-          150,
-          150,
-          150
-        ],
-        "walkable": true,
-        "category": "Geral",
-        "height": 0,
-        "blocks_sight": false
-      },
-      {
-        "id": "path",
-        "name": "Path",
-        "color": [
-          150,
-          150,
-          150
-        ],
-        "walkable": true,
-        "category": "Geral",
-        "height": 0,
-        "blocks_sight": false
-      },
-      {
-        "id": "stone",
-        "name": "Stone",
-        "color": [
-          150,
-          150,
-          150
-        ],
-        "walkable": true,
-        "category": "Geral",
-        "height": 0,
-        "blocks_sight": false
-      },
-      {
-        "id": "tree",
-        "name": "Tree",
-        "color": [
-          150,
-          150,
-          150
-        ],
-        "walkable": true,
-        "category": "Geral",
-        "height": 0,
-        "blocks_sight": false
-      },
-      {
-        "id": "wall",
-        "name": "Wall",
-        "color": [
-          150,
-          150,
-          150
-        ],
-        "walkable": true,
-        "category": "Geral",
-        "height": 0,
-        "blocks_sight": false
-      },
-      {
-        "id": "water",
-        "name": "Water",
         "color": [
           150,
           150,
@@ -136,29 +24,24 @@
     {
       "name": "ComfyUI_00003_.png",
       "path": "c:\\Users\\vinic\\OneDrive\\Área de Trabalho\\roguetest\\RogueLikeLab\\MapEditor\\exports\\sprites\\ComfyUI_00003_.png",
-      "scale": 0.09,
+      "scale": 0.07,
       "offset_x": 0.0,
-      "offset_y": 5.0,
+      "offset_y": 10.0,
       "anchor_x": 0.5,
-      "anchor_y": 1.0
+      "anchor_y": 1.0,
+      "mirror_x": false,
+      "mirror_y": false
     },
     {
       "name": "ComfyUI_00001_.png",
       "path": "c:\\Users\\vinic\\OneDrive\\Área de Trabalho\\roguetest\\RogueLikeLab\\MapEditor\\exports\\sprites\\ComfyUI_00001_.png",
-      "scale": 0.08,
+      "scale": 0.07,
       "offset_x": 0.0,
-      "offset_y": 9.142857142857167,
+      "offset_y": 9.0,
       "anchor_x": 0.5,
-      "anchor_y": 1.0
-    },
-    {
-      "name": "ComfyUI_00002_.png",
-      "path": "c:\\Users\\vinic\\OneDrive\\Área de Trabalho\\roguetest\\RogueLikeLab\\MapEditor\\exports\\sprites\\ComfyUI_00002_.png",
-      "scale": 0.05,
-      "offset_x": 0.0,
-      "offset_y": 11.428571428571445,
-      "anchor_x": 0.5,
-      "anchor_y": 1.0
+      "anchor_y": 1.0,
+      "mirror_x": false,
+      "mirror_y": false
     },
     {
       "name": "Character.png",
@@ -167,7 +50,20 @@
       "offset_x": 0.0,
       "offset_y": 10.0,
       "anchor_x": 0.5,
-      "anchor_y": 1
+      "anchor_y": 1.0,
+      "mirror_x": false,
+      "mirror_y": false
+    },
+    {
+      "name": "ComfyUI_00002_.png",
+      "path": "c:\\Users\\vinic\\OneDrive\\Área de Trabalho\\roguetest\\RogueLikeLab\\MapEditor\\exports\\sprites\\ComfyUI_00002_.png",
+      "scale": 0.05,
+      "offset_x": 0.0,
+      "offset_y": 10.0,
+      "anchor_x": 0.5,
+      "anchor_y": 1.0,
+      "mirror_x": false,
+      "mirror_y": false
     }
   ],
   "maps": {
@@ -1755,320 +1651,7 @@
           "flat"
         ]
       ],
-      "blocks": [
-        [
-          3,
-          8,
-          1,
-          "sample"
-        ],
-        [
-          3,
-          7,
-          1,
-          "sample"
-        ],
-        [
-          3,
-          6,
-          1,
-          "sample"
-        ],
-        [
-          3,
-          5,
-          1,
-          "sample"
-        ],
-        [
-          3,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          3,
-          3,
-          1,
-          "sample"
-        ],
-        [
-          4,
-          3,
-          1,
-          "sample"
-        ],
-        [
-          4,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          4,
-          5,
-          1,
-          "sample"
-        ],
-        [
-          4,
-          6,
-          1,
-          "sample"
-        ],
-        [
-          4,
-          7,
-          1,
-          "sample"
-        ],
-        [
-          4,
-          8,
-          1,
-          "sample"
-        ],
-        [
-          5,
-          3,
-          1,
-          "sample"
-        ],
-        [
-          6,
-          3,
-          1,
-          "sample"
-        ],
-        [
-          7,
-          3,
-          1,
-          "sample"
-        ],
-        [
-          8,
-          3,
-          1,
-          "sample"
-        ],
-        [
-          9,
-          3,
-          1,
-          "sample"
-        ],
-        [
-          10,
-          3,
-          1,
-          "sample"
-        ],
-        [
-          5,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          6,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          7,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          8,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          9,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          10,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          5,
-          5,
-          1,
-          "sample"
-        ],
-        [
-          6,
-          5,
-          1,
-          "sample"
-        ],
-        [
-          7,
-          5,
-          1,
-          "sample"
-        ],
-        [
-          8,
-          5,
-          1,
-          "sample"
-        ],
-        [
-          9,
-          5,
-          1,
-          "sample"
-        ],
-        [
-          10,
-          5,
-          1,
-          "sample"
-        ],
-        [
-          5,
-          6,
-          1,
-          "sample"
-        ],
-        [
-          6,
-          6,
-          1,
-          "sample"
-        ],
-        [
-          7,
-          6,
-          1,
-          "sample"
-        ],
-        [
-          8,
-          6,
-          1,
-          "sample"
-        ],
-        [
-          9,
-          6,
-          1,
-          "sample"
-        ],
-        [
-          10,
-          6,
-          1,
-          "sample"
-        ],
-        [
-          5,
-          7,
-          1,
-          "sample"
-        ],
-        [
-          6,
-          7,
-          1,
-          "sample"
-        ],
-        [
-          7,
-          7,
-          1,
-          "sample"
-        ],
-        [
-          8,
-          7,
-          1,
-          "sample"
-        ],
-        [
-          9,
-          7,
-          1,
-          "sample"
-        ],
-        [
-          10,
-          7,
-          1,
-          "sample"
-        ],
-        [
-          5,
-          8,
-          1,
-          "sample"
-        ],
-        [
-          6,
-          8,
-          1,
-          "sample"
-        ],
-        [
-          7,
-          8,
-          1,
-          "sample"
-        ],
-        [
-          8,
-          8,
-          1,
-          "sample"
-        ],
-        [
-          9,
-          8,
-          1,
-          "sample"
-        ],
-        [
-          10,
-          8,
-          1,
-          "sample"
-        ],
-        [
-          1,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          2,
-          4,
-          1,
-          "sample"
-        ],
-        [
-          1,
-          5,
-          1,
-          "sample"
-        ],
-        [
-          2,
-          5,
-          1,
-          "sample"
-        ]
-      ],
+      "blocks": [],
       "walls_h": [
         [
           3,
@@ -2362,34 +1945,40 @@
       ],
       "objects": [
         [
+          8,
           9,
+          0,
+          0,
+          0,
+          0.0,
+          0.0,
+          0.0,
+          false,
+          false
+        ],
+        [
+          7,
           9,
           0,
           0,
           1,
           0.0,
           0.0,
-          0.0
+          0.0,
+          false,
+          false
         ],
         [
-          10,
+          6,
           9,
           0,
           0,
-          0,
+          3,
           0.0,
           0.0,
-          0.0
-        ],
-        [
-          8,
-          9,
-          0,
-          0,
-          2,
           0.0,
-          0.0,
-          0.0
+          false,
+          false
         ]
       ],
       "passability": [],
