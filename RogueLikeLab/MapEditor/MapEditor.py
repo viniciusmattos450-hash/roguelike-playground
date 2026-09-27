@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-MapEditor v17 — Abas: Map Layout / Texture Mode / Detalhes.
+MapEditor v19 — Texture Mode aplica em paredes e escadas.
 """
 import os, sys, json, math, subprocess
 from collections import deque
@@ -13,9 +13,9 @@ try:
 except ImportError:
     HAS_TK = False
 
-# ============================================================================
+# ============================================================
 # CONFIG
-# ============================================================================
+# ============================================================
 WIDTH, HEIGHT = 1280, 740
 TOP_H     = 38
 LEFT_W    = 240
@@ -44,12 +44,10 @@ for d in (EXPORTS_DIR, TILES_DIR, SPRITES_DIR):
 AUTOSAVE_PATH = os.path.join(EXPORTS_DIR, "_autosave.json")
 
 TILE_SLOTS = ("top", "side_left", "side_right")
-
 FORM_FLAT = 'flat'
 FORMS_RAMP  = ['ramp_n', 'ramp_s', 'ramp_e', 'ramp_w']
 FORMS_STAIR = ['stair_n', 'stair_s', 'stair_e', 'stair_w']
 ALL_FORMS   = [FORM_FLAT] + FORMS_RAMP + FORMS_STAIR
-
 WALL_KINDS = [('wall','Parede'), ('door','Porta'), ('window','Janela')]
 
 TOOL_BRUSH  = 'brush'
@@ -66,13 +64,11 @@ TOOL_DEFS = [
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Map Editor v17")
+pygame.display.set_caption("Map Editor v19")
 clock = pygame.time.Clock()
 
-DEFAULT_TILE_COLORS = {
-    'grass': (120, 200, 80), 'dirt': (150, 95, 60),
-    'path': (205, 185, 145), 'stone': (185, 185, 185),
-}
+DEFAULT_TILE_ID  = 'sample'
+DEFAULT_TILE_COL = (150, 150, 150)
 
 BG            = (22, 20, 18)
 PANEL_BG      = (32, 28, 24)
@@ -105,9 +101,9 @@ FONT_M  = pygame.font.SysFont("georgia,dejavuserif,serif", 12)
 FONT_S  = pygame.font.SysFont("georgia,dejavuserif,serif", 11)
 FONT_XS = pygame.font.SysFont("georgia,dejavuserif,serif", 10)
 
-# ============================================================================
+# ============================================================
 # TEXTURAS BASE
-# ============================================================================
+# ============================================================
 def _make_checker(size, c1, c2, border, path):
     if os.path.isfile(path): return
     surf = pygame.Surface((size, size), pygame.SRCALPHA)
@@ -129,9 +125,9 @@ def ensure_base_textures():
     _make_checker(64, 150, 120, 70, SIDE_RIGHT_TEXTURE)
 ensure_base_textures()
 
-# ============================================================================
+# ============================================================
 # HELPERS
-# ============================================================================
+# ============================================================
 def draw_text(surf, text, x, y, font=FONT_M, color=TEXT, center=False):
     r = font.render(str(text), True, color)
     if center: surf.blit(r, (x - r.get_width()//2, y))
@@ -159,18 +155,18 @@ def draw_button(surf, rect, label, font=FONT_XS, active=False,
                   rect.centery - r.get_height()//2))
 
 def clamp(v, mn, mx): return max(mn, min(mx, v))
+
 def darken(c, f):
     return tuple(max(0, min(255, int(c[i] * f))) for i in range(3))
 
-def parse_hex_color(s, default=(150,150,150)):
-    try:
-        s = s.strip().lstrip("#")
-        if len(s) >= 6:
-            return (int(s[0:2],16), int(s[2:4],16), int(s[4:6],16))
-    except Exception: pass
-    return default
-
-def color_to_hex(c): return "%02x%02x%02x" % tuple(c[:3])
+def wall_val(v):
+    """Normaliza valor de parede para (kind, tile_id)."""
+    if v is None: return ('wall', None)
+    if isinstance(v, str): return (v, None)
+    if isinstance(v, (tuple, list)):
+        if len(v) >= 2: return (v[0], v[1])
+        return (v[0], None)
+    return ('wall', None)
 
 def pick_image_file():
     if HAS_TK:
@@ -214,9 +210,28 @@ def load_sprite_surface(path, tol=18):
                     img.set_at((x,y), (p[0],p[1],p[2],0))
     return img
 
-# ============================================================================
-# TILE / TILESET / SPRITE / EVENT / MAP / PROJECT
-# ============================================================================
+def draw_masked_face(screen, pts, src_img, dim=1.0):
+    """Desenha polígono preenchido com a textura src_img mascarada."""
+    xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
+    x0, y0 = int(min(xs)), int(min(ys))
+    x1, y1 = int(max(xs)), int(max(ys))
+    ww, hh = x1 - x0, y1 - y0
+    if ww <= 0 or hh <= 0: return
+    try:
+        spr = pygame.transform.smoothscale(src_img, (ww, hh))
+    except Exception:
+        return
+    mask = pygame.Surface((ww, hh), pygame.SRCALPHA)
+    rel = [(p[0] - x0, p[1] - y0) for p in pts]
+    pygame.draw.polygon(mask, (255, 255, 255, 255), rel)
+    spr.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+    if dim < 1.0:
+        spr.set_alpha(int(255 * dim))
+    screen.blit(spr, (x0, y0))
+
+# ============================================================
+# TILE
+# ============================================================
 class Tile:
     def __init__(self, tid, name, color=(150,150,150), walkable=True,
                  category="Geral", height=0, blocks_sight=False, folder=None):
@@ -227,6 +242,26 @@ class Tile:
         try: os.makedirs(self.folder, exist_ok=True)
         except Exception: pass
         self._cache = {}; self._mtimes = {}
+        self._ensure_base_textures()
+
+    def _ensure_base_textures(self):
+        """Copia a textura base gerada automaticamente para slots vazios."""
+        base_map = {
+            'top':        BASE_TEXTURE,
+            'side_left':  SIDE_LEFT_TEXTURE,
+            'side_right': SIDE_RIGHT_TEXTURE,
+        }
+        for slot, base_path in base_map.items():
+            dst = self.slot_path(slot)
+            if os.path.isfile(dst):
+                continue
+            if not os.path.isfile(base_path):
+                continue
+            try:
+                img = pygame.image.load(base_path)
+                pygame.image.save(img, dst)
+            except Exception:
+                pass
 
     def slot_path(self, slot): return os.path.join(self.folder, f"{slot}.png")
     def has_slot(self, slot): return os.path.isfile(self.slot_path(slot))
@@ -280,7 +315,6 @@ class Tile:
                    d.get("walkable", True), d.get("category","Geral"),
                    d.get("height", 0), d.get("blocks_sight", False))
 
-
 class TileSet:
     def __init__(self):
         self.tiles = {}; self.order = []
@@ -306,20 +340,15 @@ class TileSet:
         ts.order = d.get("order", list(ts.tiles.keys()))
         return ts
 
-
 def default_tileset():
     ts = TileSet()
-    data = [
-        ("grass","Grama",DEFAULT_TILE_COLORS['grass'],True,"Terreno",0),
-        ("dirt","Terra",DEFAULT_TILE_COLORS['dirt'],True,"Terreno",0),
-        ("path","Caminho",DEFAULT_TILE_COLORS['path'],True,"Terreno",0),
-        ("stone","Pedra",DEFAULT_TILE_COLORS['stone'],True,"Terreno",0),
-    ]
-    for tid, name, col, walk, cat, h in data:
-        ts.add(Tile(tid, name, color=col, walkable=walk, category=cat, height=h))
+    ts.add(Tile(DEFAULT_TILE_ID, "Sample", DEFAULT_TILE_COL,
+                True, "Geral", height=0))
     return ts
 
-
+# ============================================================
+# CUSTOM SPRITE
+# ============================================================
 class CustomSprite:
     def __init__(self, name, path):
         self.name = name; self.path = path
@@ -356,13 +385,14 @@ class CustomSprite:
         dy = sy - self.anchor_y * h + oy
         screen.blit(s, (int(dx), int(dy)))
 
-
+# ============================================================
+# EVENT
+# ============================================================
 EVENT_KINDS = [("player_spawn","Player Spawn"),("trigger","Trigger"),
                ("teleport","Teleport"),("other","Other")]
 EVENT_KIND_COLORS = {"player_spawn":(100,220,255),"trigger":(230,100,100),
                      "teleport":(200,130,240),"other":(200,200,200)}
 EVENT_KIND_GLYPHS = {"player_spawn":"P","trigger":"T","teleport":"!","other":"?"}
-
 
 class GameEvent:
     def __init__(self, kind="other", x=0, y=0, eid=0):
@@ -381,11 +411,12 @@ class GameEvent:
         ev.sprite_idx = d.get("sprite_idx", None)
         return ev
 
-
 def default_terrain():
-    return {'tile_id': 'grass', 'h': 0, 'form': FORM_FLAT}
+    return {'tile_id': DEFAULT_TILE_ID, 'h': 0, 'form': FORM_FLAT}
 
-
+# ============================================================
+# MAPA
+# ============================================================
 class TileMap:
     def __init__(self, name="novo_mapa", w=24, h=20, num_floors=NUM_FLOORS):
         self.name = name; self.w = w; self.h = h
@@ -455,6 +486,9 @@ class TileMap:
         self.w = nw; self.h = nh
 
     def to_dict(self):
+        def wall_row(x, y, z, v):
+            k, tid = wall_val(v)
+            return [x, y, z, k, tid]
         return {
             "name": self.name, "w": self.w, "h": self.h,
             "num_floors": self.num_floors, "parent": self.parent,
@@ -462,8 +496,8 @@ class TileMap:
                          self.terrain[(x,y)]['h'], self.terrain[(x,y)]['form']]
                         for (x,y) in self.terrain],
             "blocks":  [[x, y, z, tid] for (x,y,z), tid in self.blocks.items()],
-            "walls_h": [[x, y, z, k]   for (x,y,z), k   in self.walls_h.items()],
-            "walls_v": [[x, y, z, k]   for (x,y,z), k   in self.walls_v.items()],
+            "walls_h": [wall_row(x, y, z, v) for (x,y,z), v in self.walls_h.items()],
+            "walls_v": [wall_row(x, y, z, v) for (x,y,z), v in self.walls_v.items()],
             "objects": [[x, y, z, sid] for (x,y,z), sid in self.objects.items()],
             "passability": [[x, y, v] for (x,y), v in self.passability.items()],
             "events": [ev.to_dict() for ev in self.events],
@@ -485,8 +519,16 @@ class TileMap:
                 if (x,y) not in m.terrain:
                     m.terrain[(x,y)] = default_terrain()
         m.blocks  = {(e[0],e[1],e[2]): e[3] for e in d.get("blocks", [])}
-        m.walls_h = {(e[0],e[1],e[2]): e[3] for e in d.get("walls_h", [])}
-        m.walls_v = {(e[0],e[1],e[2]): e[3] for e in d.get("walls_v", [])}
+        for e in d.get("walls_h", []):
+            if len(e) >= 5:
+                m.walls_h[(e[0],e[1],e[2])] = (e[3], e[4])
+            elif len(e) == 4:
+                m.walls_h[(e[0],e[1],e[2])] = (e[3], None)
+        for e in d.get("walls_v", []):
+            if len(e) >= 5:
+                m.walls_v[(e[0],e[1],e[2])] = (e[3], e[4])
+            elif len(e) == 4:
+                m.walls_v[(e[0],e[1],e[2])] = (e[3], None)
         m.objects = {(e[0],e[1],e[2]): e[3] for e in d.get("objects", [])}
         for e in d.get("passability", []):
             if len(e) >= 3: m.passability[(e[0],e[1])] = e[2]
@@ -494,7 +536,9 @@ class TileMap:
             m.events.append(GameEvent.from_dict(evd))
         return m
 
-
+# ============================================================
+# PROJECT
+# ============================================================
 class Project:
     def __init__(self):
         self.tileset = default_tileset()
@@ -564,9 +608,9 @@ class Project:
             p.active_map_name = next(iter(p.maps))
         return p
 
-# ============================================================================
+# ============================================================
 # UI WIDGETS
-# ============================================================================
+# ============================================================
 class TextField:
     def __init__(self, key, label, value="", max_len=80):
         self.key = key; self.label = label; self.value = value
@@ -605,7 +649,6 @@ class TextField:
             pygame.draw.line(surf, TEXT, (cx, self.rect.y + 4),
                              (cx, self.rect.bottom - 4), 1)
         surf.set_clip(clip)
-
 
 class Dropdown:
     def __init__(self, key, label, options, value, on_change=None, max_visible=12):
@@ -673,7 +716,6 @@ class Dropdown:
             if v == self.value: pygame.draw.rect(surf, BTN_ACTIVE, r)
             draw_text(surf, l, r.x+6, r.y+5, FONT_S, TEXT)
 
-
 class InputDialog:
     def __init__(self):
         self.active = False; self.text = ""
@@ -727,7 +769,6 @@ class InputDialog:
         draw_button(surf, self.btn_cancel, "Cancelar  (ESC)", FONT_M)
         draw_button(surf, self.btn_ok, "OK  (Enter)", FONT_M, primary=True)
 
-
 class SaveDialog:
     def __init__(self):
         self.active = False; self.text = ""
@@ -780,7 +821,6 @@ class SaveDialog:
         draw_button(surf, self.btn_cancel, "Cancelar", FONT_M)
         draw_button(surf, self.btn_save, "Salvar", FONT_M, primary=True)
 
-
 class ContextMenu:
     def __init__(self):
         self.active = False; self.items = []; self.rect = None
@@ -820,9 +860,9 @@ class ContextMenu:
                 pygame.draw.rect(surf, BTN_HOVER, r, border_radius=3)
             draw_text(surf, l, r.x+10, r.y+4, FONT_M, TEXT)
 
-# ============================================================================
+# ============================================================
 # CAMERA / PROJECAO
-# ============================================================================
+# ============================================================
 class Camera:
     def __init__(self):
         self.x = 0.0; self.y = 0.0; self.zoom = 1.0
@@ -867,9 +907,9 @@ def point_in_poly(px, py, pts):
         j = i
     return inside
 
-# ============================================================================
+# ============================================================
 # RENDER ISOMETRICO
-# ============================================================================
+# ============================================================
 def mask_diamond(img, w, h):
     w = max(1, int(w)); h = max(1, int(h))
     src = pygame.transform.smoothscale(img, (w, h))
@@ -904,54 +944,29 @@ def draw_terrain_iso(screen, terrain_t, tile, x, y, z_base, cam, ox, oy):
 
     if s_h > 0 or w_h > 0:
         pts = [W, S, St, Wt]
-        xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
-        x0, y0 = min(xs), min(ys); x1, y1 = max(xs), max(ys)
-        ww, hh = int(x1-x0), int(y1-y0)
-        if ww > 0 and hh > 0:
-            left = tile.get_sprite("side_left", (ww, hh))
-            if left:
-                spr = pygame.transform.smoothscale(left, (ww, hh))
-                mask = pygame.Surface((ww, hh), pygame.SRCALPHA)
-                rel = [(p[0]-x0, p[1]-y0) for p in pts]
-                pygame.draw.polygon(mask, (255,255,255,255), rel)
-                spr.blit(mask, (0,0), special_flags=pygame.BLEND_RGBA_MULT)
-                screen.blit(spr, (int(x0), int(y0)))
-            else:
-                pygame.draw.polygon(screen, darken(tile.color, 0.55), pts)
+        left = tile.get_sprite("side_left", (64, 64))
+        if left is None: left = tile.get_sprite("top", (64, 64))
+        if left:
+            draw_masked_face(screen, pts, left, 1.0)
+        else:
+            pygame.draw.polygon(screen, darken(tile.color, 0.55), pts)
 
     if s_h > 0 or e_h > 0:
         pts = [S, E, Et, St]
-        xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
-        x0, y0 = min(xs), min(ys); x1, y1 = max(xs), max(ys)
-        ww, hh = int(x1-x0), int(y1-y0)
-        if ww > 0 and hh > 0:
-            right = tile.get_sprite("side_right", (ww, hh))
-            if right:
-                spr = pygame.transform.smoothscale(right, (ww, hh))
-                mask = pygame.Surface((ww, hh), pygame.SRCALPHA)
-                rel = [(p[0]-x0, p[1]-y0) for p in pts]
-                pygame.draw.polygon(mask, (255,255,255,255), rel)
-                spr.blit(mask, (0,0), special_flags=pygame.BLEND_RGBA_MULT)
-                screen.blit(spr, (int(x0), int(y0)))
-            else:
-                pygame.draw.polygon(screen, darken(tile.color, 0.75), pts)
+        right = tile.get_sprite("side_right", (64, 64))
+        if right is None: right = tile.get_sprite("top", (64, 64))
+        if right:
+            draw_masked_face(screen, pts, right, 1.0)
+        else:
+            pygame.draw.polygon(screen, darken(tile.color, 0.75), pts)
 
     top_pts = [Nt, Et, St, Wt]
-    xs = [p[0] for p in top_pts]; ys = [p[1] for p in top_pts]
-    x0, y0 = int(min(xs)), int(min(ys)); x1, y1 = int(max(xs)), int(max(ys))
-    ww, hh = max(1, x1-x0), max(1, y1-y0)
-    top = tile.get_sprite("top", (ww, hh))
+    top = tile.get_sprite("top", (int(tw), int(th)))
     if top:
-        spr = pygame.transform.smoothscale(top, (ww, hh))
-        mask = pygame.Surface((ww, hh), pygame.SRCALPHA)
-        rel = [(p[0]-x0, p[1]-y0) for p in top_pts]
-        pygame.draw.polygon(mask, (255,255,255,255), rel)
-        spr.blit(mask, (0,0), special_flags=pygame.BLEND_RGBA_MULT)
-        screen.blit(spr, (x0, y0))
+        draw_masked_face(screen, top_pts, top, 1.0)
     else:
         pygame.draw.polygon(screen, tile.color, top_pts)
         pygame.draw.polygon(screen, darken(tile.color, 0.8), top_pts, 1)
-
 
 def draw_block_iso(screen, tile, x, y, z, cam, ox, oy, dim=1.0):
     z_unit = unit_px(cam)
@@ -970,20 +985,9 @@ def draw_block_iso(screen, tile, x, y, z, cam, ox, oy, dim=1.0):
     S1 = (Sb[0], Sb[1] - z_top); W1 = (Wb[0], Wb[1] - z_top)
 
     def _draw_face(pts, slot, fallback_factor):
-        xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
-        x0, y0 = int(min(xs)), int(min(ys))
-        x1, y1 = int(max(xs)), int(max(ys))
-        ww, hh = x1 - x0, y1 - y0
-        if ww <= 0 or hh <= 0: return
-        spr_src = tile.get_sprite(slot, (ww, hh))
+        spr_src = tile.get_sprite(slot, (64, 64))
         if spr_src:
-            spr = pygame.transform.smoothscale(spr_src, (ww, hh))
-            mask = pygame.Surface((ww, hh), pygame.SRCALPHA)
-            rel = [(p[0] - x0, p[1] - y0) for p in pts]
-            pygame.draw.polygon(mask, (255, 255, 255, 255), rel)
-            spr.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-            if dim < 1.0: spr.set_alpha(int(255 * dim))
-            screen.blit(spr, (x0, y0))
+            draw_masked_face(screen, pts, spr_src, dim)
         else:
             c = darken(tile.color, fallback_factor * dim)
             pygame.draw.polygon(screen, c, pts)
@@ -993,20 +997,25 @@ def draw_block_iso(screen, tile, x, y, z, cam, ox, oy, dim=1.0):
 
     top_spr = tile.get_sprite("top", (int(tw), int(th)))
     if top_spr:
-        masked = mask_diamond(top_spr, tw, th)
-        if dim < 1.0: masked.set_alpha(int(255 * dim))
-        screen.blit(masked, (int(Nb[0] - tw / 2), int(Nb[1] - z_top)))
+        draw_masked_face(screen, [N1, E1, S1, W1], top_spr, dim)
     else:
         top_pts = [N1, E1, S1, W1]
         c = darken(tile.color, dim)
         pygame.draw.polygon(screen, c, top_pts)
         pygame.draw.polygon(screen, darken(c, 0.8), top_pts, 1)
 
-
 def draw_stairs_iso(screen, terrain_t, tile, x, y, cam, ox, oy):
     h = terrain_t['h']; form = terrain_t['form']
     direction = form.split('_')[1]
-    z_unit = unit_px(cam); base_col = tile.color
+    z_unit = unit_px(cam)
+    base_col = tile.color
+
+    top_src = tile.get_sprite("top", (64, 64))
+    left_src = tile.get_sprite("side_left", (64, 64))
+    right_src = tile.get_sprite("side_right", (64, 64))
+    if left_src is None: left_src = top_src
+    if right_src is None: right_src = top_src
+
     steps = []
     for k in range(N_STEPS):
         z_top = h + (N_STEPS - 1 - k) / N_STEPS
@@ -1021,6 +1030,13 @@ def draw_stairs_iso(screen, terrain_t, tile, x, y, cam, ox, oy):
             y0, y1 = y, y + 1; x0 = x + u0; x1 = x + u1
         steps.append(((x0+x1)*0.5 + (y0+y1)*0.5, x0, y0, x1, y1, z_top))
     steps.sort(key=lambda s: s[0])
+
+    def face(pts, src, factor):
+        if src:
+            draw_masked_face(screen, pts, src, 1.0)
+        else:
+            pygame.draw.polygon(screen, darken(base_col, factor), pts)
+
     for _, sx0, sy0, sx1, sy1, sz_top in steps:
         N = world_to_screen(sx0, sy0, cam, ox, oy)
         E = world_to_screen(sx1, sy0, cam, ox, oy)
@@ -1031,13 +1047,16 @@ def draw_stairs_iso(screen, terrain_t, tile, x, y, cam, ox, oy):
         St = (S[0], S[1]-z_off); Wt = (W[0], W[1]-z_off)
         Nb = (N[0], N[1]-zb); Eb = (E[0], E[1]-zb)
         Sb = (S[0], S[1]-zb); Wb = (W[0], W[1]-zb)
-        pygame.draw.polygon(screen, darken(base_col, 0.65), [Nb, Eb, Et, Nt])
-        pygame.draw.polygon(screen, darken(base_col, 0.55), [Nb, Wb, Wt, Nt])
-        pygame.draw.polygon(screen, darken(base_col, 0.80), [Eb, Sb, St, Et])
-        pygame.draw.polygon(screen, darken(base_col, 0.85), [Sb, Wb, Wt, St])
-        pygame.draw.polygon(screen, base_col, [Nt, Et, St, Wt])
-        pygame.draw.polygon(screen, darken(base_col, 0.75), [Nt, Et, St, Wt], 1)
-
+        face([Nb, Wb, Wt, Nt], left_src, 0.55)
+        face([Sb, Wb, Wt, St], left_src, 0.85)
+        face([Eb, Sb, St, Et], right_src, 0.80)
+        face([Nb, Eb, Et, Nt], right_src, 0.65)
+        if top_src:
+            draw_masked_face(screen, [Nt, Et, St, Wt], top_src, 1.0)
+        else:
+            pygame.draw.polygon(screen, base_col, [Nt, Et, St, Wt])
+            pygame.draw.polygon(screen, darken(base_col, 0.75),
+                                [Nt, Et, St, Wt], 1)
 
 def _wall_overlay(screen, p1, p2, wh, kind, dim):
     if kind == 'door':
@@ -1052,31 +1071,50 @@ def _wall_overlay(screen, p1, p2, wh, kind, dim):
     pygame.draw.polygon(screen, darken(col, dim), [r1, r2, r3, r4])
     pygame.draw.polygon(screen, darken((20,20,20), dim), [r1, r2, r3, r4], 1)
 
-
-def draw_wall_h_iso(screen, cam, ox, oy, x, y, z, kind, dim=1.0):
+def draw_wall_h_iso(screen, cam, ox, oy, x, y, z, kind, tile=None, dim=1.0):
     z_off = z * unit_px(cam); wh = unit_px(cam) * WALL_HEIGHT_UNITS
     p1 = world_to_screen(x,     y, cam, ox, oy); p2 = world_to_screen(x + 1, y, cam, ox, oy)
     p1 = (p1[0], p1[1] - z_off); p2 = (p2[0], p2[1] - z_off)
     p1u = (p1[0], p1[1] - wh);   p2u = (p2[0], p2[1] - wh)
-    pygame.draw.polygon(screen, darken(C_WALL_H_FRONT, dim), [p1, p2, p2u, p1u])
-    pygame.draw.line(screen, darken(C_WALL_H_FRONT, dim * 1.10), p1u, p2u, 2)
+    quad = [p1, p2, p2u, p1u]
+
+    textured = False
+    if tile is not None:
+        spr = tile.get_sprite("side_left", (64, 64))
+        if spr is None: spr = tile.get_sprite("top", (64, 64))
+        if spr is not None:
+            draw_masked_face(screen, quad, spr, dim)
+            textured = True
+    if not textured:
+        pygame.draw.polygon(screen, darken(C_WALL_H_FRONT, dim), quad)
+
     if kind in ('door', 'window'):
         _wall_overlay(screen, p1, p2, wh, kind, dim)
 
-
-def draw_wall_v_iso(screen, cam, ox, oy, x, y, z, kind, dim=1.0):
+def draw_wall_v_iso(screen, cam, ox, oy, x, y, z, kind, tile=None, dim=1.0):
     z_off = z * unit_px(cam); wh = unit_px(cam) * WALL_HEIGHT_UNITS
     p1 = world_to_screen(x, y,     cam, ox, oy); p2 = world_to_screen(x, y + 1, cam, ox, oy)
     p1 = (p1[0], p1[1] - z_off); p2 = (p2[0], p2[1] - z_off)
     p1u = (p1[0], p1[1] - wh);   p2u = (p2[0], p2[1] - wh)
-    pygame.draw.polygon(screen, darken(C_WALL_V_FRONT, dim), [p1, p2, p2u, p1u])
-    pygame.draw.line(screen, darken(C_WALL_V_FRONT, dim * 1.10), p1u, p2u, 2)
+    quad = [p1, p2, p2u, p1u]
+
+    textured = False
+    if tile is not None:
+        spr = tile.get_sprite("side_right", (64, 64))
+        if spr is None: spr = tile.get_sprite("side_left", (64, 64))
+        if spr is None: spr = tile.get_sprite("top", (64, 64))
+        if spr is not None:
+            draw_masked_face(screen, quad, spr, dim)
+            textured = True
+    if not textured:
+        pygame.draw.polygon(screen, darken(C_WALL_V_FRONT, dim), quad)
+
     if kind in ('door', 'window'):
         _wall_overlay(screen, p1, p2, wh, kind, dim)
 
-# ============================================================================
+# ============================================================
 # APP
-# ============================================================================
+# ============================================================
 class MapEditorApp:
     TAB_LAYOUT  = 'layout'
     TAB_TEXTURE = 'texture'
@@ -1086,7 +1124,6 @@ class MapEditorApp:
                   TAB_TEXTURE: 'Texture Mode',
                   TAB_DETAILS: 'Detalhes'}
 
-    # sub-modo do Map Layout
     LMODE_TERRAIN = 'terrain'
     LMODE_BLOCK   = 'block'
     LMODE_WALL    = 'wall'
@@ -1095,13 +1132,11 @@ class MapEditorApp:
                     LMODE_BLOCK: 'Piso/Telhado',
                     LMODE_WALL: 'Paredes'}
 
-    # sub-modo do Details
     DMODE_SPRITE = 'sprite'
     DMODE_EVENT  = 'event'
     DMODES = [DMODE_SPRITE, DMODE_EVENT]
     DMODE_LABELS = {DMODE_SPRITE: 'Sprites', DMODE_EVENT: 'Eventos'}
 
-    # ferramentas permitidas por (aba, submodo)
     TOOLS_MAP = {
         (TAB_LAYOUT, LMODE_TERRAIN): [TOOL_BRUSH, TOOL_ERASER, TOOL_FILL, TOOL_RECT],
         (TAB_LAYOUT, LMODE_BLOCK):   [TOOL_BRUSH, TOOL_ERASER, TOOL_FILL, TOOL_RECT],
@@ -1165,7 +1200,7 @@ class MapEditorApp:
                        ("map_h","Altura"),("num_floors","Andares")]:
             self.fields[k] = TextField(k, lbl, "", max_len=32)
         for k, lbl in [("tile_name","Nome"),("tile_category","Categoria"),
-                       ("tile_color","Cor"),("tile_height","Altura base")]:
+                       ("tile_height","Altura base")]:
             self.fields[k] = TextField(k, lbl, "", max_len=200)
         for k in ("sprite_scale","sprite_off_x","sprite_off_y",
                   "sprite_anc_x","sprite_anc_y"):
@@ -1252,7 +1287,7 @@ class MapEditorApp:
         if m.in_bounds(gx, gy): return (gx, gy)
         return None
 
-    def _pick_wall_at(self, mx, my, snap_dist=20.0):
+    def _pick_wall_at(self, mx, my, snap_dist=26.0):
         m = self.project.active_map()
         if not m: return None
         ox, oy = self._iso_origin()
@@ -1351,7 +1386,6 @@ class MapEditorApp:
         if not t: return
         self.fields["tile_name"].value = t.name
         self.fields["tile_category"].value = t.category
-        self.fields["tile_color"].value = color_to_hex(t.color)
         self.fields["tile_height"].value = str(t.height)
     def _sync_fields_from_sprite(self):
         idx = getattr(self, 'selected_sprite_idx', None)
@@ -1399,7 +1433,6 @@ class MapEditorApp:
         if not t: return
         t.name = self.fields["tile_name"].value.strip() or t.id
         t.category = self.fields["tile_category"].value.strip() or "Geral"
-        t.color = parse_hex_color(self.fields["tile_color"].value, t.color)
         try: t.height = int(self.fields["tile_height"].value or 0)
         except Exception: pass
         self._mark_dirty(); self._msg("Tile atualizado.", SUCCESS)
@@ -1515,11 +1548,7 @@ class MapEditorApp:
     # --------- tiles ---------
     def _new_tile(self):
         tid = self.project.tileset.unique_id("tile")
-        t = Tile(tid, "Novo tile", (150,150,150), True, "Geral", height=0)
-        try:
-            img = pygame.image.load(BASE_TEXTURE)
-            pygame.image.save(img, t.slot_path("top")); t.clear_cache()
-        except Exception: pass
+        t = Tile(tid, "Novo tile", DEFAULT_TILE_COL, True, "Geral", height=0)
         self.project.tileset.add(t)
         self.selected_tile_id = tid
         self._sync_fields_from_tile(); self._mark_dirty()
@@ -1530,11 +1559,19 @@ class MapEditorApp:
         if len(self.project.tileset.tiles) <= 1:
             self._msg("Não pode remover o último tile.", DANGER); return
         self.project.tileset.remove(tid)
+        fallback = (self.project.tileset.order[0]
+                    if self.project.tileset.order else DEFAULT_TILE_ID)
         for m in self.project.maps.values():
             for k, t in list(m.terrain.items()):
-                if t['tile_id'] == tid: t['tile_id'] = 'grass'
+                if t['tile_id'] == tid: t['tile_id'] = fallback
             for k in list(m.blocks.keys()):
                 if m.blocks[k] == tid: del m.blocks[k]
+            for k, v in list(m.walls_h.items()):
+                kk, tid_ = wall_val(v)
+                if tid_ == tid: m.walls_h[k] = (kk, None)
+            for k, v in list(m.walls_v.items()):
+                kk, tid_ = wall_val(v)
+                if tid_ == tid: m.walls_v[k] = (kk, None)
         self.selected_tile_id = (self.project.tileset.order[0]
                                  if self.project.tileset.order else None)
         self._sync_fields_from_tile(); self._mark_dirty()
@@ -1599,7 +1636,7 @@ class MapEditorApp:
             except Exception: pass
 
     # ================================================================
-    #  FERRAMENTAS - LAYOUT
+    # FERRAMENTAS - LAYOUT
     # ================================================================
     def _paint_terrain(self, x, y, erase=False):
         m = self.project.active_map()
@@ -1674,15 +1711,27 @@ class MapEditorApp:
         d = m.walls_h if kind == 'h' else m.walls_v
         key = (x, y, z)
         if erase:
-            if key in d: del d[key]; return True
+            if key in d:
+                del d[key]; return True
             return False
-        else:
-            if d.get(key) != self.current_wall_kind:
-                d[key] = self.current_wall_kind; return True
+        # NOVO: parede sempre recebe a textura do tile selecionado
+        new_tid = self.selected_tile_id
+        if key not in d:
+            d[key] = (self.current_wall_kind, new_tid)
+            return True
+        cur_kind, cur_tid = wall_val(d[key])
+        if cur_kind != self.current_wall_kind or cur_tid != new_tid:
+            # Preserva a textura já pintada se só o tipo mudou e ela existe
+            keep_tid = cur_tid if cur_tid else new_tid
+            if cur_kind != self.current_wall_kind:
+                d[key] = (self.current_wall_kind, keep_tid)
+            else:
+                d[key] = (cur_kind, new_tid)
+            return True
         return False
 
     # ================================================================
-    #  FERRAMENTAS - TEXTURE MODE
+    # FERRAMENTAS - TEXTURE MODE
     # ================================================================
     def _apply_texture_terrain(self, x, y):
         m = self.project.active_map()
@@ -1703,16 +1752,29 @@ class MapEditorApp:
         m.blocks[k] = self.selected_tile_id
         return True
 
+    def _apply_texture_wall(self, mx, my):
+        m = self.project.active_map()
+        hit = self._pick_wall_at(mx, my)
+        if not hit: return False
+        kind, x, y = hit
+        z = self.active_floor
+        d = m.walls_h if kind == 'h' else m.walls_v
+        key = (x, y, z)
+        if key not in d: return False
+        cur_kind, cur_tid = wall_val(d[key])
+        if cur_tid == self.selected_tile_id: return False
+        d[key] = (cur_kind, self.selected_tile_id)
+        return True
+
     def _apply_texture_at(self, pos):
-        """Aplica textura no item sob o mouse (terreno ou bloco)."""
         mx, my = pos
         m = self.project.active_map()
         if not m: return False
-        # Tenta bloco no andar atual primeiro
+        if self._apply_texture_wall(mx, my):
+            return True
         cell_b = self._pick_tile_at_height(mx, my, self.active_floor)
         if cell_b and (cell_b[0], cell_b[1], self.active_floor) in m.blocks:
             return self._apply_texture_block(cell_b[0], cell_b[1], self.active_floor)
-        # Senão, tenta terreno
         cell_t = self._pick_tile_at(mx, my) or self._cell_from_pos(pos)
         if cell_t:
             return self._apply_texture_terrain(cell_t[0], cell_t[1])
@@ -1732,29 +1794,20 @@ class MapEditorApp:
         return changed
 
     def _texture_fill(self, x, y):
-        """Flood fill: mesma tile alvo, propaga para vizinhos com o mesmo tipo
-        (terreno↔terreno ou bloco↔bloco)."""
         m = self.project.active_map()
         if not m.in_bounds(x, y): return False
         z = self.active_floor
         target_new = self.selected_tile_id
         if target_new is None: return False
-
-        # decide se é bloco ou terreno
         is_block = (x, y, z) in m.blocks
         if is_block:
             old = m.blocks.get((x, y, z))
-            def get_val(cx, cy):
-                return m.blocks.get((cx, cy, z))
-            def set_val(cx, cy):
-                m.blocks[(cx, cy, z)] = target_new
+            def get_val(cx, cy): return m.blocks.get((cx, cy, z))
+            def set_val(cx, cy): m.blocks[(cx, cy, z)] = target_new
         else:
             old = m.get_terrain(x, y)['tile_id']
-            def get_val(cx, cy):
-                return m.get_terrain(cx, cy)['tile_id']
-            def set_val(cx, cy):
-                m.get_terrain(cx, cy)['tile_id'] = target_new
-
+            def get_val(cx, cy): return m.get_terrain(cx, cy)['tile_id']
+            def set_val(cx, cy): m.get_terrain(cx, cy)['tile_id'] = target_new
         if old == target_new: return False
         changed = False
         queue = deque([(x, y)]); visited = set()
@@ -1763,14 +1816,13 @@ class MapEditorApp:
             if (cx, cy) in visited: continue
             if not m.in_bounds(cx, cy): continue
             if get_val(cx, cy) != old: continue
-            visited.add((cx, cy))
-            set_val(cx, cy); changed = True
+            visited.add((cx, cy)); set_val(cx, cy); changed = True
             queue.append((cx+1, cy)); queue.append((cx-1, cy))
             queue.append((cx, cy+1)); queue.append((cx, cy-1))
         return changed
 
     # ================================================================
-    #  FERRAMENTAS - DETALHES
+    # FERRAMENTAS - DETALHES
     # ================================================================
     def _paint_object(self, x, y, erase=False):
         m = self.project.active_map()
@@ -1786,9 +1838,6 @@ class MapEditorApp:
             for xx in range(xa, xb+1):
                 self._paint_object(xx, yy, erase=erase)
 
-    # ================================================================
-    #  DISPATCH DE PINTURA
-    # ================================================================
     def _apply_paint_at(self, pos, erase=False):
         mx, my = pos
         if self.tab == self.TAB_LAYOUT:
@@ -1819,7 +1868,7 @@ class MapEditorApp:
                         self._mark_dirty()
 
     # ================================================================
-    #  EVENTOS PYGAME
+    # EVENTOS PYGAME
     # ================================================================
     def handle_events(self, events):
         for e in events:
@@ -1942,9 +1991,7 @@ class MapEditorApp:
                 if not dd.active_this_frame: continue
                 if dd.rect.collidepoint(pos):
                     dd.expanded = True; self.expanded_dropdown = key; return
-            prefixes = ["map_", "num_floors"]
-            if self.tab == self.TAB_DETAILS:
-                prefixes = ["tile_", "sprite_", "ev_", "map_"]
+            prefixes = ["map_", "num_floors", "tile_", "sprite_", "ev_"]
             for key, f in self.fields.items():
                 if not f.active_this_frame: continue
                 if not any(key.startswith(p) for p in prefixes): continue
@@ -2093,7 +2140,7 @@ class MapEditorApp:
             self.cam.y += wdy * spd
 
     # ================================================================
-    #  DRAW
+    # DRAW
     # ================================================================
     def draw(self):
         screen.fill(BG)
@@ -2146,7 +2193,7 @@ class MapEditorApp:
         draw_button(screen, rect, "Grid", FONT_S, active=self.show_grid)
         self._top_hits.append((rect, lambda: setattr(self, 'show_grid',
                                                      not self.show_grid)))
-        draw_text(screen, "MAP EDITOR v17", WIDTH - 130, 11, FONT_L, ACCENT_BRIGHT)
+        draw_text(screen, "MAP EDITOR v19", WIDTH - 130, 11, FONT_L, ACCENT_BRIGHT)
 
     def _switch_tab(self, tab):
         self.tab = tab
@@ -2211,7 +2258,6 @@ class MapEditorApp:
         return y
 
     def _draw_tile_grid(self, x, y, w, cols=5):
-        """Desenha grid de tiles. Retorna Y após o grid."""
         tiles = list(self.project.tileset.order)
         tw = (w - (cols-1)*3) // cols
         cx = x; cy = y
@@ -2236,7 +2282,6 @@ class MapEditorApp:
         self._msg(f"Tile: {tid}", ACCENT)
 
     def _draw_left_layout(self, x, y, w):
-        # Sub-modo
         draw_text(screen, "SUB-MODO", x, y, FONT_XS, ACCENT); y += 12
         bw = (w - 2*3) // 3
         for i, lm in enumerate(self.LMODES):
@@ -2246,7 +2291,6 @@ class MapEditorApp:
             self._left_hits.append((r, (lambda m=lm: self._set_layout_mode(m)), None))
         y += 24
 
-        # Parâmetros por sub-modo
         if self.layout_mode == self.LMODE_TERRAIN:
             draw_text(screen, f"ALTURA: {self.terrain_height}",
                       x, y, FONT_XS, ACCENT); y += 12
@@ -2306,8 +2350,12 @@ class MapEditorApp:
                                              setattr(self, 'current_wall_kind', k)), None))
                 y += 24
             y += 4
+            for line in ["Clique PERTO da linha",
+                         "do grid para colocar.",
+                         "Preview amarelo mostra",
+                         "onde vai encaixar."]:
+                draw_text(screen, line, x, y, FONT_XS, TEXT_DIM); y += 12
 
-        # Paleta de tiles
         draw_text(screen, "TILES", x, y, FONT_XS, ACCENT); y += 12
         y = self._draw_tile_grid(x, y, w)
         bw = (w - 8) // 3
@@ -2328,10 +2376,13 @@ class MapEditorApp:
 
     def _draw_left_texture(self, x, y, w):
         draw_text(screen, "TEXTURA", x, y, FONT_XS, ACCENT); y += 12
-        for line in ["Clique num tile abaixo e depois",
-                     "clique sobre terreno/piso para",
-                     "trocar a textura. Tipo e altura",
-                     "são preservados."]:
+        for line in ["Pinta textura em qualquer",
+                     "objeto já colocado:",
+                     "- Terreno / Rampas / Escadas",
+                     "- Piso / Telhado",
+                     "- Paredes / Portas / Janelas",
+                     "Tipo, altura e forma são",
+                     "sempre preservados."]:
             draw_text(screen, line, x, y, FONT_XS, TEXT_DIM); y += 12
         y += 4
 
@@ -2423,7 +2474,9 @@ class MapEditorApp:
         self._sync_fields_from_sprite()
         self._msg(f"Sprite: {self.project.sprites[idx].name}", ACCENT)
 
-    # -------- RIGHT PANEL --------
+    # ================================================================
+    # RIGHT PANEL
+    # ================================================================
     def _draw_right_panel(self):
         rx = WIDTH - RIGHT_W
         r = pygame.Rect(rx, TOP_H, RIGHT_W, HEIGHT - TOP_H - BOTTOM_H)
@@ -2431,7 +2484,80 @@ class MapEditorApp:
         pygame.draw.line(screen, PANEL_BORDER, (rx, TOP_H), (rx, HEIGHT - BOTTOM_H))
         x = rx + 14; y = TOP_H + 6; w = RIGHT_W - 28
 
-        # Cabeçalho comum: mapa
+        if self.tab == self.TAB_LAYOUT:
+            self._draw_right_layout(x, y, w)
+        elif self.tab == self.TAB_TEXTURE:
+            self._draw_right_texture(x, y, w)
+        elif self.tab == self.TAB_DETAILS:
+            self._draw_right_details(x, y, w)
+
+    def _draw_floor_widget(self, x, y, w):
+        draw_text(screen, "ANDAR ATIVO", x, y, FONT_XS, ACCENT); y += 12
+        self.dropdowns["floor"].set_position(x, y, w)
+        return y + 36
+
+    def _draw_tile_properties(self, x, y, w):
+        tid = self.selected_tile_id
+        t = self.project.tileset.get(tid) if tid else None
+        if not t:
+            draw_text(screen, "Nenhum tile selecionado.", x, y, FONT_XS, TEXT_DIM)
+            return y + 14
+
+        draw_text(screen, "TILE", x, y, FONT_XS, ACCENT); y += 12
+        img = t.get_sprite("top", (40, 40))
+        if img: screen.blit(img, (x+2, y+2))
+        else: pygame.draw.rect(screen, t.color, (x+2, y+2, 40, 40))
+        pygame.draw.rect(screen, ACCENT_DARK, (x, y, 44, 44), 2)
+        draw_text(screen, t.id[:20], x+50, y+4, FONT_S, TEXT_GOLD)
+        draw_text(screen, f"h:{t.height}", x+50, y+22, FONT_XS, TEXT_DIM)
+        y += 48
+
+        self.fields["tile_name"].set_position(x, y, w); y += 36
+        self.fields["tile_category"].set_position(x, y, w); y += 36
+        self.fields["tile_height"].set_position(x, y, w); y += 36
+
+        draw_text(screen, "SPRITES POR SLOT", x, y, FONT_XS, ACCENT); y += 12
+        for slot in TILE_SLOTS:
+            r = pygame.Rect(x, y, w, 26)
+            pygame.draw.rect(screen, (30, 26, 22), r, border_radius=3)
+            pygame.draw.rect(screen, ACCENT_DARK, r, 1, border_radius=3)
+            mini = pygame.Rect(x+3, y+3, 20, 20)
+            m = t.get_sprite(slot, (18, 18))
+            if m: screen.blit(m, (mini.x+1, mini.y+1))
+            else:
+                pygame.draw.rect(screen, (50, 44, 38), mini)
+                draw_text(screen, "—", mini.x+6, mini.y+3, FONT_XS, TEXT_DIM)
+            pygame.draw.rect(screen, ACCENT_DARK, mini, 1)
+            draw_text(screen, slot, x+28, y+7, FONT_S, TEXT)
+            bw = 64
+            r_pick = pygame.Rect(x + w - bw*2 - 4, y+2, bw, 22)
+            r_del  = pygame.Rect(x + w - bw - 4, y+2, 18, 22)
+            draw_button(screen, r_pick, "Escolher…", FONT_XS)
+            draw_button(screen, r_del, "X", FONT_XS, danger=True)
+            self._right_hits.append((r_pick, (lambda s=slot: self._pick_slot_image(s))))
+            self._right_hits.append((r_del, (lambda s=slot: self._remove_slot_image(s))))
+            y += 28
+
+        r = pygame.Rect(x, y, w, 22)
+        def toggle_walk():
+            tt = self.project.tileset.get(self.selected_tile_id)
+            if tt: tt.walkable = not tt.walkable; self._mark_dirty()
+        label = f"Walkable: {'ON' if t.walkable else 'OFF'}"
+        draw_button(screen, r, label, FONT_XS, active=t.walkable)
+        self._right_hits.append((r, toggle_walk))
+        y += 26
+
+        r = pygame.Rect(x, y, w//2 - 3, 22)
+        r2 = pygame.Rect(x + w//2 + 3, y, w//2 - 3, 22)
+        draw_button(screen, r, "Pasta", FONT_XS)
+        draw_button(screen, r2, "Aplicar", FONT_XS, primary=True)
+        self._right_hits.append((r, self._open_tile_folder))
+        self._right_hits.append((r2, self._apply_tile_fields))
+        y += 26
+
+        return y
+
+    def _draw_right_layout(self, x, y, w):
         draw_text(screen, "MAPA", x, y, FONT_XS, ACCENT); y += 12
         self.fields["map_name"].set_position(x, y, w); y += 36
         half = (w - 6) // 2
@@ -2442,80 +2568,36 @@ class MapEditorApp:
         draw_button(screen, r, "Aplicar mapa", FONT_XS, primary=True)
         self._right_hits.append((r, self._apply_map_fields)); y += 26
 
-        draw_text(screen, "ANDAR ATIVO", x, y, FONT_XS, ACCENT); y += 12
-        self.dropdowns["floor"].set_position(x, y, w); y += 36
-
-        # Separador
+        y = self._draw_floor_widget(x, y, w)
         pygame.draw.line(screen, ACCENT_DARK, (x, y), (x+w, y)); y += 6
-
-        # Seção específica da aba
-        if self.tab == self.TAB_LAYOUT:
-            self._draw_right_layout(x, y, w)
-        elif self.tab == self.TAB_TEXTURE:
-            self._draw_right_texture(x, y, w)
-        elif self.tab == self.TAB_DETAILS:
-            if self.details_mode == self.DMODE_SPRITE:
-                self._draw_right_sprite(x, y, w)
-            else:
-                self._draw_right_event(x, y, w)
-
-    def _draw_right_layout(self, x, y, w):
-        draw_text(screen, "MODO ATUAL", x, y, FONT_XS, ACCENT); y += 12
-        draw_text(screen, self.LMODE_LABELS[self.layout_mode],
-                  x, y, FONT_M, TEXT_GOLD); y += 18
-
-        if self.layout_mode == self.LMODE_WALL:
-            draw_text(screen, "Paredes nas arestas do grid.",
-                      x, y, FONT_XS, TEXT_DIM); y += 12
-            draw_text(screen, "Cada parede = 1 andar de altura.",
-                      x, y, FONT_XS, TEXT_DIM); y += 12
-        elif self.layout_mode == self.LMODE_BLOCK:
-            draw_text(screen, "Piso/Telhado como placa fina.",
-                      x, y, FONT_XS, TEXT_DIM); y += 12
-        else:
-            draw_text(screen, "Terreno com altura e forma.",
-                      x, y, FONT_XS, TEXT_DIM); y += 12
-
-        y += 6
-        draw_text(screen, "TILE ATUAL", x, y, FONT_XS, ACCENT); y += 12
-        t = self.project.tileset.get(self.selected_tile_id) if self.selected_tile_id else None
-        if t:
-            img = t.get_sprite("top", (36, 36))
-            if img: screen.blit(img, (x+2, y+2))
-            else: pygame.draw.rect(screen, t.color, (x+2, y+2, 36, 36))
-            draw_text(screen, t.name[:24], x+44, y+4, FONT_S, TEXT)
-            draw_text(screen, f"h: {t.height}", x+44, y+20, FONT_XS, TEXT_DIM)
-            y += 42
-
-        draw_text(screen, "ATALHOS", x, y, FONT_XS, ACCENT); y += 12
-        for line in ["B pincel · E borracha", "F fill · R retângulo",
-                     "WASD mover · Scroll zoom",
-                     "TAB próxima aba · G grade"]:
-            draw_text(screen, line, x, y, FONT_XS, TEXT_DIM); y += 12
+        y = self._draw_tile_properties(x, y, w)
 
     def _draw_right_texture(self, x, y, w):
-        draw_text(screen, "MODO", x, y, FONT_XS, ACCENT); y += 12
-        draw_text(screen, "Trocar textura", x, y, FONT_M, TEXT_GOLD); y += 18
-        for line in ["Selecione um tile e clique",
-                     "sobre um terreno ou placa",
-                     "existente para trocar o visual.",
+        y = self._draw_floor_widget(x, y, w)
+        pygame.draw.line(screen, ACCENT_DARK, (x, y), (x+w, y)); y += 6
+
+        draw_text(screen, "TILE APLICADO", x, y, FONT_XS, ACCENT); y += 12
+        y = self._draw_tile_properties(x, y, w)
+
+        y += 6
+        pygame.draw.line(screen, ACCENT_DARK, (x, y), (x+w, y)); y += 6
+        for line in ["Clique sobre um objeto já",
+                     "existente: terreno, rampa,",
+                     "escada, piso, telhado, parede,",
+                     "porta ou janela.",
                      "",
-                     "O tipo (terreno/piso), altura",
+                     "Só a textura muda. Tipo, altura",
                      "e forma são preservados."]:
             draw_text(screen, line, x, y, FONT_XS, TEXT_DIM); y += 12
 
-        y += 6
-        draw_text(screen, "TILE APLICADO", x, y, FONT_XS, ACCENT); y += 12
-        t = self.project.tileset.get(self.selected_tile_id) if self.selected_tile_id else None
-        if t:
-            img = t.get_sprite("top", (36, 36))
-            if img: screen.blit(img, (x+2, y+2))
-            else: pygame.draw.rect(screen, t.color, (x+2, y+2, 36, 36))
-            draw_text(screen, t.name[:24], x+44, y+4, FONT_S, TEXT)
-            y += 42
+    def _draw_right_details(self, x, y, w):
+        y = self._draw_floor_widget(x, y, w)
+        pygame.draw.line(screen, ACCENT_DARK, (x, y), (x+w, y)); y += 6
 
-        for line in ["Atalhos:", "B pincel · F fill · R retângulo"]:
-            draw_text(screen, line, x, y, FONT_XS, TEXT_DIM); y += 12
+        if self.details_mode == self.DMODE_SPRITE:
+            self._draw_right_sprite(x, y, w)
+        else:
+            self._draw_right_event(x, y, w)
 
     def _draw_right_sprite(self, x, y, w):
         idx = self.selected_sprite_idx
@@ -2622,7 +2704,7 @@ class MapEditorApp:
         self._right_hits.append((r2, (lambda e=ev: self._del_event(e))))
 
     # ================================================================
-    #  CANVAS
+    # CANVAS
     # ================================================================
     def _draw_canvas(self):
         clip = self._canvas_rect()
@@ -2648,12 +2730,14 @@ class MapEditorApp:
         for (tx, ty, tz), blk in m.blocks.items():
             if tz > self.active_floor: continue
             items.append(((tx + ty, tz, 1), 'block', (tx, ty, tz, blk)))
-        for (tx, ty, tz), kind in m.walls_h.items():
+        for (tx, ty, tz), val in m.walls_h.items():
             if tz > self.active_floor: continue
-            items.append(((tx + ty, tz, 2), 'wall_h', (tx, ty, tz, kind)))
-        for (tx, ty, tz), kind in m.walls_v.items():
+            kind, tid = wall_val(val)
+            items.append(((tx + ty, tz, 2), 'wall_h', (tx, ty, tz, kind, tid)))
+        for (tx, ty, tz), val in m.walls_v.items():
             if tz > self.active_floor: continue
-            items.append(((tx + ty, tz, 2), 'wall_v', (tx, ty, tz, kind)))
+            kind, tid = wall_val(val)
+            items.append(((tx + ty, tz, 2), 'wall_v', (tx, ty, tz, kind, tid)))
         for (tx, ty, tz), sid in m.objects.items():
             if sid < 0 or sid >= len(self.project.sprites): continue
             if tz > self.active_floor: continue
@@ -2683,11 +2767,13 @@ class MapEditorApp:
                 if not tile: continue
                 draw_block_iso(screen, tile, tx, ty, tz, self.cam, ox, oy)
             elif kind == 'wall_h':
-                tz = data[2]; kw = data[3]
-                draw_wall_h_iso(screen, self.cam, ox, oy, tx, ty, tz, kw)
+                tz = data[2]; kw = data[3]; tid = data[4]
+                tile = self.project.tileset.get(tid) if tid else None
+                draw_wall_h_iso(screen, self.cam, ox, oy, tx, ty, tz, kw, tile)
             elif kind == 'wall_v':
-                tz = data[2]; kw = data[3]
-                draw_wall_v_iso(screen, self.cam, ox, oy, tx, ty, tz, kw)
+                tz = data[2]; kw = data[3]; tid = data[4]
+                tile = self.project.tileset.get(tid) if tid else None
+                draw_wall_v_iso(screen, self.cam, ox, oy, tx, ty, tz, kw, tile)
             elif kind == 'object':
                 tz = data[2]; sid = data[3]
                 sp = self.project.sprites[sid]
@@ -2718,8 +2804,11 @@ class MapEditorApp:
         screen.blit(surf, (CANVAS_X, CANVAS_Y))
 
     def _draw_hover_iso(self, m):
-        # Preview de parede
+        mx, my = pygame.mouse.get_pos()
+
         if (self.tab == self.TAB_LAYOUT and self.layout_mode == self.LMODE_WALL):
+            if not self.hover_wall:
+                self.hover_wall = self._pick_wall_at(mx, my)
             if not self.hover_wall: return
             kind, x, y = self.hover_wall
             ox, oy = self._iso_origin()
@@ -2741,7 +2830,32 @@ class MapEditorApp:
             pygame.draw.polygon(screen, (255, 240, 100), [p1, p2, p2u, p1u], 2)
             return
 
-        # Preview de retângulo
+        if self.tab == self.TAB_TEXTURE:
+            hit = self._pick_wall_at(mx, my)
+            if hit and m:
+                kind, x, y = hit
+                z = self.active_floor
+                d = m.walls_h if kind == 'h' else m.walls_v
+                if (x, y, z) in d:
+                    ox, oy = self._iso_origin()
+                    z_off = z * unit_px(self.cam)
+                    wh = unit_px(self.cam) * WALL_HEIGHT_UNITS
+                    if kind == 'h':
+                        p1 = world_to_screen(x,     y, self.cam, ox, oy)
+                        p2 = world_to_screen(x + 1, y, self.cam, ox, oy)
+                    else:
+                        p1 = world_to_screen(x, y,     self.cam, ox, oy)
+                        p2 = world_to_screen(x, y + 1, self.cam, ox, oy)
+                    p1 = (p1[0], p1[1] - z_off); p2 = (p2[0], p2[1] - z_off)
+                    p1u = (p1[0], p1[1] - wh);   p2u = (p2[0], p2[1] - wh)
+                    s = pygame.Surface((CANVAS_W, CANVAS_H), pygame.SRCALPHA)
+                    rel = [(p[0]-CANVAS_X, p[1]-CANVAS_Y)
+                           for p in [p1, p2, p2u, p1u]]
+                    pygame.draw.polygon(s, (140, 200, 255, 100), rel)
+                    screen.blit(s, (CANVAS_X, CANVAS_Y))
+                    pygame.draw.polygon(screen, (140, 200, 255),
+                                        [p1, p2, p2u, p1u], 2)
+
         if self.drag_start is not None and self.active_tool == TOOL_RECT:
             mpos = pygame.mouse.get_pos()
             if (self.tab == self.TAB_LAYOUT and
@@ -2772,7 +2886,6 @@ class MapEditorApp:
             screen.blit(s, (CANVAS_X, CANVAS_Y))
             return
 
-        # Preview de sprite
         if (self.tab == self.TAB_DETAILS and self.details_mode == self.DMODE_SPRITE
                 and self.selected_sprite_idx is not None
                 and 0 <= self.selected_sprite_idx < len(self.project.sprites)):
@@ -2798,7 +2911,6 @@ class MapEditorApp:
                                      (cx, cy + hh), (cx - hw, cy)], 2)
                 return
 
-        # Hover padrão
         cell = self.hover_cell
         if not cell: return
         tw, th = tile_size(self.cam)
@@ -2810,7 +2922,7 @@ class MapEditorApp:
 
         col = HIGHLIGHT
         if self.tab == self.TAB_TEXTURE:
-            col = (140, 200, 255)  # azul claro
+            col = (140, 200, 255)
         if self.tab == self.TAB_LAYOUT and self.layout_mode == self.LMODE_BLOCK:
             cy -= self.active_floor * unit_px(self.cam)
         else:
@@ -2906,11 +3018,11 @@ class MapEditorApp:
             self.draw()
         pygame.quit()
 
-# ============================================================================
+# ============================================================
 # MAIN
-# ============================================================================
+# ============================================================
 if __name__ == "__main__":
     print("=" * 64)
-    print("MapEditor v17 — Map Layout / Texture Mode / Detalhes")
+    print("MapEditor v19 — Texture Mode em paredes e escadas")
     print("=" * 64)
     MapEditorApp().run()
