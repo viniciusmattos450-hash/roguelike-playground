@@ -258,7 +258,6 @@ class Tile:
         self._ensure_base_textures()
 
     def _ensure_base_textures(self):
-        """Copia a textura base gerada automaticamente para slots vazios."""
         base_map = {
             'top':        BASE_TEXTURE,
             'side_left':  SIDE_LEFT_TEXTURE,
@@ -1215,19 +1214,23 @@ class MapEditorApp:
         for k, lbl in [("tile_name","Nome"),("tile_category","Categoria"),
                        ("tile_height","Altura base")]:
             self.fields[k] = TextField(k, lbl, "", max_len=200)
-        for k in ("sprite_scale","sprite_off_x","sprite_off_y",
-                  "sprite_anc_x","sprite_anc_y"):
-            self.fields[k] = TextField(k, k, "", max_len=10)
+        self.fields["sprite_name"] = TextField("sprite_name", "Nome", "", max_len=64)
+        for k, lbl in [("sprite_scale","Escala"),("sprite_off_x","Offset X"),
+                       ("sprite_off_y","Offset Y"),("sprite_anc_x","Ancora X"),
+                       ("sprite_anc_y","Ancora Y")]:
+            self.fields[k] = TextField(k, lbl, "", max_len=10)
         for k in ("ev_id","ev_name","ev_tag"):
             self.fields[k] = TextField(k, k, "", max_len=64)
+        for k, lbl in [("ev_tele_map","Mapa destino"),
+                       ("ev_tele_x","X"),("ev_tele_y","Y"),("ev_tele_z","Z")]:
+            self.fields[k] = TextField(k, lbl, "", max_len=64)
         self.dropdowns["floor"] = Dropdown(
             "floor", "Andar",
             [(i, f"Andar {i}") for i in range(NUM_FLOORS)], 0,
             on_change=lambda v: setattr(self, 'active_floor', int(v)))
         self.dropdowns["ev_kind"] = Dropdown(
             "ev_kind", "Tipo de evento", EVENT_KINDS, 'player_spawn',
-            on_change=lambda k: (setattr(self.editing_event, 'kind', k)
-                                 if self.editing_event else None))
+            on_change=self._on_event_kind_change)
 
     def _msg(self, text, color=ACCENT):
         self.msg = text; self.msg_color = color; self.msg_timer = 2.5
@@ -1404,6 +1407,7 @@ class MapEditorApp:
         idx = getattr(self, 'selected_sprite_idx', None)
         if idx is None or idx < 0 or idx >= len(self.project.sprites): return
         sp = self.project.sprites[idx]
+        self.fields["sprite_name"].value = sp.name
         self.fields["sprite_scale"].value = f"{sp.scale:.2f}"
         self.fields["sprite_off_x"].value = f"{sp.offset_x:.0f}"
         self.fields["sprite_off_y"].value = f"{sp.offset_y:.0f}"
@@ -1416,6 +1420,20 @@ class MapEditorApp:
         self.fields["ev_name"].value = ev.name
         self.fields["ev_tag"].value = ev.tag
         self.dropdowns["ev_kind"].value = ev.kind
+        d = ev.data or {}
+        if ev.kind == 'teleport':
+            self.fields["ev_tele_map"].value = str(d.get("target_map", ""))
+            self.fields["ev_tele_x"].value = str(d.get("target_x", 0))
+            self.fields["ev_tele_y"].value = str(d.get("target_y", 0))
+            self.fields["ev_tele_z"].value = str(d.get("target_z", 0))
+        else:
+            for fk in ("ev_tele_map","ev_tele_x","ev_tele_y","ev_tele_z"):
+                self.fields[fk].value = ""
+
+    def _on_event_kind_change(self, kind):
+        if self.editing_event:
+            self.editing_event.kind = kind
+            self._sync_fields_from_event(self.editing_event)
 
     # --------- apply ---------
     def _apply_map_fields(self):
@@ -1453,6 +1471,7 @@ class MapEditorApp:
         idx = self.selected_sprite_idx
         if idx is None or idx < 0 or idx >= len(self.project.sprites): return
         sp = self.project.sprites[idx]
+        sp.name = self.fields["sprite_name"].value.strip() or sp.name
         try: sp.scale = max(0.05, float(self.fields["sprite_scale"].value))
         except Exception: pass
         try: sp.offset_x = float(self.fields["sprite_off_x"].value)
@@ -1472,6 +1491,13 @@ class MapEditorApp:
         ev.name = self.fields["ev_name"].value.strip()
         ev.tag = self.fields["ev_tag"].value.strip()
         ev.kind = self.dropdowns["ev_kind"].value
+        if ev.kind == 'teleport':
+            ev.data["target_map"] = self.fields["ev_tele_map"].value.strip()
+            for key, fk in (("target_x","ev_tele_x"),
+                            ("target_y","ev_tele_y"),
+                            ("target_z","ev_tele_z")):
+                try: ev.data[key] = int(self.fields[fk].value or 0)
+                except Exception: ev.data[key] = 0
         self._mark_dirty(); self._msg("Evento atualizado.", SUCCESS)
     def _apply_current_field_group(self):
         f = self.focused_field
@@ -1608,15 +1634,12 @@ class MapEditorApp:
 
     # --------- sprites ---------
     def _import_sprite(self):
-        """Copia o arquivo escolhido para exports/sprites/ e cria a sprite."""
         path = pick_image_file()
         if not path: return
         try:
             base = os.path.splitext(os.path.basename(path))[0]
             base = safe_filename(base, "sprite")
             dst = unique_path_in_dir(SPRITES_DIR, base, ".png")
-            # Carrega e aplica o processamento de alpha/transparência UMA vez,
-            # salva já processado para reuso futuro (igual tiles fazem).
             img = load_sprite_surface(path)
             pygame.image.save(img, dst)
             name = os.path.basename(dst)
@@ -2634,8 +2657,10 @@ class MapEditorApp:
             th = pygame.transform.smoothscale(pv, (int(pw*ratio), int(ph*ratio)))
             screen.blit(th, (x+2, y+2))
         draw_text(screen, sp.name[:22], x+62, y+4, FONT_S, TEXT_GOLD)
+        draw_text(screen, f"{pw}x{ph}px", x+62, y+22, FONT_XS, TEXT_DIM)
         y += 62
 
+        self.fields["sprite_name"].set_position(x, y, w); y += 36
         self.fields["sprite_scale"].set_position(x, y, w); y += 36
         half = (w - 6) // 2
         self.fields["sprite_off_x"].set_position(x, y, half)
@@ -2673,6 +2698,16 @@ class MapEditorApp:
         self.fields["ev_name"].set_position(x, y, half)
         self.fields["ev_id"].set_position(x + half + 6, y, half); y += 36
         self.fields["ev_tag"].set_position(x, y, w); y += 36
+
+        # ----- Campos específicos do tipo Teleport -----
+        if ev.kind == 'teleport':
+            draw_text(screen, "TELEPORT", x, y, FONT_XS, ACCENT); y += 12
+            self.fields["ev_tele_map"].set_position(x, y, w); y += 36
+            bw = (w - 12) // 3
+            self.fields["ev_tele_x"].set_position(x, y, bw)
+            self.fields["ev_tele_y"].set_position(x + bw + 6, y, bw)
+            self.fields["ev_tele_z"].set_position(x + 2*(bw + 6), y, bw)
+            y += 36
 
         draw_text(screen, "SPRITE DO EVENTO", x, y, FONT_XS, ACCENT); y += 12
 
@@ -2972,7 +3007,6 @@ class MapEditorApp:
             if (ev.sprite_idx is not None
                     and 0 <= ev.sprite_idx < len(self.project.sprites)):
                 sp = self.project.sprites[ev.sprite_idx]
-                # Igual ao rendering de objeto: respeita scale/offset/anchor
                 sp.draw_at(screen, cx, cy, self.cam.zoom)
                 sprite_drawn = True
 
