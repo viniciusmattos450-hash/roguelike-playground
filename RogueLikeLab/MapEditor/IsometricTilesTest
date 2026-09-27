@@ -1,0 +1,1117 @@
+import pygame, math, sys
+
+try:
+    import tkinter as tk
+    from tkinter import filedialog
+    HAS_TK = True
+except ImportError:
+    HAS_TK = False
+
+# ============================================================
+#  CONFIG
+# ============================================================
+WIN_W, WIN_H = 1400, 900
+PALETTE_W    = 280
+SCENE_W      = WIN_W - PALETTE_W
+FPS          = 60
+MAP_W, MAP_H = 24, 24
+NUM_FLOORS   = 6
+N_STEPS      = 4
+
+BASE_TILE_W  = 64.0
+BASE_TILE_H  = 32.0
+BASE_WALL_H  = 32.0
+
+MAT_COLORS = {
+    'grass': {'top': (120, 200, 80), 'right': (140, 90, 60),  'left': (105, 65, 45)},
+    'dirt':  {'top': (150, 95, 60),  'right': (105, 65, 45),  'left': (80, 50, 32)},
+    'path':  {'top': (205, 185, 145),'right': (165, 145, 110),'left': (135, 118, 88)},
+    'stone': {'top': (185, 185, 185),'right': (130, 130, 130),'left': (100, 100, 100)},
+}
+
+C_WALL_H_FRONT = (232, 220, 200)
+C_WALL_V_FRONT = (196, 184, 164)
+C_DOOR         = (110, 70, 40)
+C_WINDOW       = (150, 212, 240)
+C_ROOF         = (180, 80, 68)
+C_STONE_FLOOR  = (170, 164, 152)
+C_WOOD_FLOOR   = (150, 108, 70)
+
+TOOLS = [
+    {'name': 'Grama',   'kind': 'terrain', 'color': MAT_COLORS['grass']['top'], 'mat': 'grass'},
+    {'name': 'Terra',   'kind': 'terrain', 'color': MAT_COLORS['dirt']['top'],  'mat': 'dirt'},
+    {'name': 'Caminho', 'kind': 'terrain', 'color': MAT_COLORS['path']['top'],  'mat': 'path'},
+    {'name': 'Pedra',   'kind': 'terrain', 'color': MAT_COLORS['stone']['top'], 'mat': 'stone'},
+    {'name': 'Rampa N', 'kind': 'form', 'color': (170, 220, 170), 'form': 'ramp_n'},
+    {'name': 'Rampa S', 'kind': 'form', 'color': (170, 220, 170), 'form': 'ramp_s'},
+    {'name': 'Rampa L', 'kind': 'form', 'color': (170, 220, 170), 'form': 'ramp_e'},
+    {'name': 'Rampa O', 'kind': 'form', 'color': (170, 220, 170), 'form': 'ramp_w'},
+    {'name': 'Escada N','kind': 'form', 'color': (200, 230, 130), 'form': 'stair_n'},
+    {'name': 'Escada S','kind': 'form', 'color': (200, 230, 130), 'form': 'stair_s'},
+    {'name': 'Escada L','kind': 'form', 'color': (200, 230, 130), 'form': 'stair_e'},
+    {'name': 'Escada O','kind': 'form', 'color': (200, 230, 130), 'form': 'stair_w'},
+    {'name': 'Plano',   'kind': 'form', 'color': (210, 210, 210), 'form': 'flat'},
+    {'name': 'Nivel +', 'kind': 'level', 'color': (100, 220, 100), 'delta': +1},
+    {'name': 'Nivel -', 'kind': 'level', 'color': (220, 110, 110), 'delta': -1},
+    {'name': 'Piso Pedra',   'kind': 'block', 'color': C_STONE_FLOOR, 'blk': 'stone_floor'},
+    {'name': 'Piso Madeira', 'kind': 'block', 'color': C_WOOD_FLOOR,  'blk': 'wood_floor'},
+    {'name': 'Parede',       'kind': 'wall',  'color': C_WALL_H_FRONT,'wall': 'wall'},
+    {'name': 'Porta',        'kind': 'wall',  'color': C_DOOR,        'wall': 'door'},
+    {'name': 'Janela',       'kind': 'wall',  'color': C_WINDOW,      'wall': 'window'},
+    {'name': 'Telhado',      'kind': 'block', 'color': C_ROOF,        'blk': 'roof'},
+]
+
+FLOOR_NAMES = ['Terreo'] + [f'Andar {i}' for i in range(1, NUM_FLOORS)]
+
+PAL_TOP = 30
+TOOL_H  = 22
+TOOL_RECTS = [pygame.Rect(SCENE_W+10, PAL_TOP+i*TOOL_H, PALETTE_W-20, TOOL_H-2)
+              for i in range(len(TOOLS))]
+
+SPRITE_SECTION_Y = PAL_TOP + len(TOOLS)*TOOL_H + 16
+SPRITE_BTN_H     = 24
+SPRITE_IMPORT_RECT = pygame.Rect(SCENE_W+10, SPRITE_SECTION_Y, PALETTE_W-20, SPRITE_BTN_H)
+SPRITE_ITEM_H    = 22
+SPRITE_ITEM_RECTS = []
+
+DROP_Y = 0
+DROP_H = 24
+DROP_RECT = pygame.Rect(0, 0, PALETTE_W-24, DROP_H)
+DROP_ITEM_RECTS = [pygame.Rect(SCENE_W+12, 0, PALETTE_W-24, 20)
+                   for _ in range(NUM_FLOORS)]
+OPTIONS_Y = 0
+GROUP_AT = {0, 4, 8, 12, 13, 15}
+
+PROPS_W = 260
+PROPS_H = 200
+PROPS_X = 12
+PROPS_Y = WIN_H - PROPS_H - 12
+
+PROP_SLIDERS = [
+    ('scale',    'Escala',   0.10, 3.00, '{:.2f}'),
+    ('offset_x', 'Offset X', -150,  150, '{:+.0f}'),
+    ('offset_y', 'Offset Y', -150,  150, '{:+.0f}'),
+    ('anchor_x', 'Ancora X',  0.00, 1.00, '{:.2f}'),
+    ('anchor_y', 'Ancora Y',  0.00, 1.00, '{:.2f}'),
+]
+PROP_ROW_H   = 26
+PROP_BTN_RECT = pygame.Rect(PROPS_X + 12, PROPS_Y + PROPS_H - 30, PROPS_W - 24, 22)
+
+
+# ============================================================
+#  CAMERA / PROJECAO
+# ============================================================
+class Camera:
+    def __init__(self):
+        self.x = MAP_W * 0.5
+        self.y = MAP_H * 0.5
+        self.zoom = 1.0
+
+
+def tile_size(cam):
+    return BASE_TILE_W * cam.zoom, BASE_TILE_H * cam.zoom
+
+
+def unit_px(cam):
+    return BASE_WALL_H * cam.zoom
+
+
+def world_to_screen(px, py, cam):
+    tw, th = tile_size(cam)
+    dx = px - cam.x; dy = py - cam.y
+    sx = SCENE_W * 0.5 + (dx - dy) * tw * 0.5
+    sy = WIN_H * 0.5 + (dx + dy) * th * 0.5
+    return sx, sy
+
+
+def screen_to_world(mx, my, cam):
+    tw, th = tile_size(cam)
+    sx = (mx - SCENE_W * 0.5) / (tw * 0.5)
+    sy = (my - WIN_H * 0.5) / (th * 0.5)
+    dx = (sx + sy) * 0.5
+    dy = (sy - sx) * 0.5
+    return cam.x + dx, cam.y + dy
+
+
+def seg_dist_sq(px, py, x1, y1, x2, y2):
+    dx = x2 - x1; dy = y2 - y1
+    dd = dx*dx + dy*dy
+    if dd < 1e-9:
+        return (px - x1)**2 + (py - y1)**2
+    t = ((px - x1)*dx + (py - y1)*dy) / dd
+    t = max(0.0, min(1.0, t))
+    ex = x1 + dx*t; ey = y1 + dy*t
+    return (px - ex)**2 + (py - ey)**2
+
+
+def dc(c, f):
+    return (max(0, min(255, int(c[0]*f))),
+            max(0, min(255, int(c[1]*f))),
+            max(0, min(255, int(c[2]*f))))
+
+
+def point_in_poly(px, py, pts):
+    n = len(pts); inside = False; j = n - 1
+    for i in range(n):
+        xi, yi = pts[i]; xj, yj = pts[j]
+        if ((yi > py) != (yj > py)) and \
+           (px < (xj - xi) * (py - yi) / (yj - yi + 1e-12) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+# ============================================================
+#  CUSTOM SPRITE
+# ============================================================
+def load_sprite_surface(path, chroma_tolerance=18):
+    """Carrega imagem. Se nao tiver alpha real, aplica chroma-key
+       na cor do canto (tipicamente branco)."""
+    raw = pygame.image.load(path)
+
+    # Verifica se realmente tem alpha (amostra em grade)
+    raw = raw.convert_alpha()
+    w, h = raw.get_size()
+    has_alpha = False
+    step = max(1, min(w, h) // 30)
+    for x in range(0, w, step):
+        for y in range(0, h, step):
+            if raw.get_at((x, y))[3] < 250:
+                has_alpha = True
+                break
+        if has_alpha:
+            break
+
+    if has_alpha:
+        return raw
+
+    # Sem alpha real -> chroma-key na cor do canto
+    bg = raw.get_at((0, 0))
+    br, bg_, bb = bg[0], bg[1], bg[2]
+
+    # So faz chroma-key se o canto for claro (branco/cinza claro)
+    if br > 200 and bg_ > 200 and bb > 200:
+        for x in range(w):
+            for y in range(h):
+                p = raw.get_at((x, y))
+                if (abs(p[0] - br) <= chroma_tolerance and
+                    abs(p[1] - bg_) <= chroma_tolerance and
+                    abs(p[2] - bb) <= chroma_tolerance):
+                    raw.set_at((x, y), (p[0], p[1], p[2], 0))
+    return raw
+
+
+class CustomSprite:
+    def __init__(self, name, path):
+        self.name = name
+        self.path = path
+        self.original = load_sprite_surface(path)
+        self.scale    = 1.0
+        self.offset_x = 0.0
+        self.offset_y = 0.0
+        self.anchor_x = 0.5
+        self.anchor_y = 1.0
+        self._cache_key = None
+        self._cache = None
+        self._ghost_key = None
+        self._ghost = None
+
+    def surface(self, cam_zoom=1.0):
+        key = (round(self.scale, 4), round(cam_zoom, 4))
+        if self._cache_key != key:
+            ow = self.original.get_width()
+            oh = self.original.get_height()
+            w = max(1, int(ow * self.scale * cam_zoom))
+            h = max(1, int(oh * self.scale * cam_zoom))
+            self._cache = pygame.transform.smoothscale(self.original, (w, h))
+            self._cache_key = key
+        return self._cache
+
+    def ghost(self, cam_zoom=1.0):
+        s = self.surface(cam_zoom)
+        key = (self._cache_key, s.get_size())
+        if self._ghost_key != key:
+            g = s.copy()
+            g.set_alpha(140)
+            self._ghost = g
+            self._ghost_key = key
+        return self._ghost
+
+    def draw_at(self, screen, sx, sy, cam_zoom=1.0):
+        s = self.surface(cam_zoom)
+        w, h = s.get_size()
+        ox = self.offset_x * cam_zoom
+        oy = self.offset_y * cam_zoom
+        dx = sx - self.anchor_x * w + ox
+        dy = sy - self.anchor_y * h + oy
+        screen.blit(s, (int(dx), int(dy)))
+
+
+sprites_custom = []
+active_sprite_idx = None
+state_mode = 'tool'
+
+
+def import_sprite():
+    global active_sprite_idx
+    path = None
+    if HAS_TK:
+        root = tk.Tk(); root.withdraw()
+        path = filedialog.askopenfilename(
+            title="Escolha a imagem",
+            filetypes=[("Imagens", "*.png *.jpg *.jpeg *.bmp *.gif"),
+                       ("Todos", "*.*")])
+        root.destroy()
+    else:
+        try:
+            path = input("Caminho da imagem: ").strip().strip('"').strip("'")
+        except EOFError:
+            path = None
+    if not path:
+        return False
+    try:
+        name = path.replace('\\', '/').split('/')[-1]
+        sp = CustomSprite(name, path)
+        sprites_custom.append(sp)
+        active_sprite_idx = len(sprites_custom) - 1
+        return True
+    except Exception as e:
+        print(f"[Import] Erro: {e}")
+        return False
+
+
+# ============================================================
+#  HEIGHTS
+# ============================================================
+def corner_heights(form, h):
+    if form == 'flat':
+        return (h, h, h, h)
+    if form.endswith('_n'): return (h + 1.0, h + 1.0, h + 0.0, h + 0.0)
+    if form.endswith('_s'): return (h + 0.0, h + 0.0, h + 1.0, h + 1.0)
+    if form.endswith('_e'): return (h + 0.0, h + 1.0, h + 1.0, h + 0.0)
+    if form.endswith('_w'): return (h + 1.0, h + 0.0, h + 0.0, h + 1.0)
+    return (h, h, h, h)
+
+
+# ============================================================
+#  DRAW HELPERS
+# ============================================================
+def draw_box(screen, x0, y0, x1, y1, z_bot, z_top, col, cam):
+    z_unit = unit_px(cam)
+    NW = world_to_screen(x0, y0, cam); NE = world_to_screen(x1, y0, cam)
+    SE = world_to_screen(x1, y1, cam); SW = world_to_screen(x0, y1, cam)
+    zt = z_top * z_unit; zb = z_bot * z_unit
+    NW_t = (NW[0], NW[1] - zt); NE_t = (NE[0], NE[1] - zt)
+    SE_t = (SE[0], SE[1] - zt); SW_t = (SW[0], SW[1] - zt)
+    NW_b = (NW[0], NW[1] - zb); NE_b = (NE[0], NE[1] - zb)
+    SE_b = (SE[0], SE[1] - zb); SW_b = (SW[0], SW[1] - zb)
+    pygame.draw.polygon(screen, col['right'], [NW_b, NE_b, NE_t, NW_t])
+    pygame.draw.polygon(screen, col['left'],  [NW_b, SW_b, SW_t, NW_t])
+    pygame.draw.polygon(screen, col['top'],   [NW_t, NE_t, SE_t, SW_t])
+    pygame.draw.polygon(screen, col['right'], [SE_b, NE_b, NE_t, SE_t])
+    pygame.draw.polygon(screen, col['left'],  [SW_b, SE_b, SE_t, SW_t])
+
+
+def draw_flat_or_ramp(screen, x, y, t, cam):
+    h = t['h']; mat = t['mat']; form = t['form']
+    n_h, e_h, s_h, w_h = corner_heights(form, h)
+    z_unit = unit_px(cam)
+    col = MAT_COLORS.get(mat, MAT_COLORS['grass'])
+    N_b = world_to_screen(x,     y,     cam)
+    E_b = world_to_screen(x + 1, y,     cam)
+    S_b = world_to_screen(x + 1, y + 1, cam)
+    W_b = world_to_screen(x,     y + 1, cam)
+    N_t = (N_b[0], N_b[1] - n_h * z_unit); E_t = (E_b[0], E_b[1] - e_h * z_unit)
+    S_t = (S_b[0], S_b[1] - s_h * z_unit); W_t = (W_b[0], W_b[1] - w_h * z_unit)
+    if w_h > 0 or s_h > 0:
+        pygame.draw.polygon(screen, col['left'], [W_b, S_b, S_t, W_t])
+    if s_h > 0 or e_h > 0:
+        pygame.draw.polygon(screen, col['right'], [S_b, E_b, E_t, S_t])
+    top_pts = [N_t, E_t, S_t, W_t]
+    pygame.draw.polygon(screen, col['top'], top_pts)
+    pygame.draw.polygon(screen, dc(col['top'], 0.82), top_pts, 1)
+
+
+def draw_stairs(screen, x, y, t, cam):
+    h = t['h']; mat = t['mat']; form = t['form']
+    direction = form.split('_')[1]
+    col = MAT_COLORS.get(mat, MAT_COLORS['grass'])
+    steps = []
+    for k in range(N_STEPS):
+        z_top = h + (N_STEPS - 1 - k) / N_STEPS
+        u0 = k / N_STEPS; u1 = (k + 1) / N_STEPS
+        if direction == 'n':
+            y0 = y + u0; y1 = y + u1; x0, x1 = x, x + 1
+        elif direction == 's':
+            y0 = y + 1 - u1; y1 = y + 1 - u0; x0, x1 = x, x + 1
+        elif direction == 'e':
+            x0 = x + 1 - u1; x1 = x + 1 - u0; y0, y1 = y, y + 1
+        else:
+            x0 = x + u0; x1 = x + u1; y0, y1 = y, y + 1
+        depth = (x0 + x1) * 0.5 + (y0 + y1) * 0.5
+        steps.append((depth, x0, y0, x1, y1, z_top))
+    steps.sort(key=lambda s: s[0])
+    for _, sx0, sy0, sx1, sy1, sz_top in steps:
+        draw_box(screen, sx0, sy0, sx1, sy1, 0, sz_top, col, cam)
+
+
+def draw_terrain_tile(screen, x, y, t, cam):
+    form = t.get('form', 'flat')
+    if form.startswith('stair_'):
+        draw_stairs(screen, x, y, t, cam)
+    else:
+        draw_flat_or_ramp(screen, x, y, t, cam)
+
+
+def draw_block_diamond(screen, x, y, z, blk, dim, cam):
+    if blk == 'stone_floor':   base = C_STONE_FLOOR
+    elif blk == 'wood_floor':  base = C_WOOD_FLOOR
+    elif blk == 'roof':        base = C_ROOF
+    else:                      base = (200, 200, 200)
+    col = dc(base, dim)
+    z_off = z * unit_px(cam)
+    N = world_to_screen(x,     y,     cam); E = world_to_screen(x + 1, y,     cam)
+    S = world_to_screen(x + 1, y + 1, cam); W = world_to_screen(x,     y + 1, cam)
+    pts = [(N[0], N[1] - z_off), (E[0], E[1] - z_off),
+           (S[0], S[1] - z_off), (W[0], W[1] - z_off)]
+    pygame.draw.polygon(screen, col, pts)
+    pygame.draw.polygon(screen, dc(col, 0.85), pts, 1)
+
+
+def _wall_overlay(screen, p1, p2, wh, kind, dim):
+    if kind == 'door':
+        t0, t1 = 0.18, 0.82; u0, u1 = 0.03, 0.90; col = C_DOOR
+    else:
+        t0, t1 = 0.22, 0.78; u0, u1 = 0.32, 0.76; col = C_WINDOW
+    def lerp(a, b, t):
+        return (a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t)
+    q1 = lerp(p1, p2, t0); q2 = lerp(p1, p2, t1)
+    r1 = (q1[0], q1[1] - wh * u0); r2 = (q2[0], q2[1] - wh * u0)
+    r3 = (q2[0], q2[1] - wh * u1); r4 = (q1[0], q1[1] - wh * u1)
+    pygame.draw.polygon(screen, dc(col, dim), [r1, r2, r3, r4])
+    pygame.draw.polygon(screen, dc((20, 20, 20), dim), [r1, r2, r3, r4], 1)
+
+
+def draw_wall_h(screen, x, y, z, kind, dim, cam):
+    z_off = z * unit_px(cam); wh = unit_px(cam)
+    p1 = world_to_screen(x,     y, cam); p2 = world_to_screen(x + 1, y, cam)
+    p1 = (p1[0], p1[1] - z_off); p2 = (p2[0], p2[1] - z_off)
+    p1u = (p1[0], p1[1] - wh);   p2u = (p2[0], p2[1] - wh)
+    pygame.draw.polygon(screen, dc(C_WALL_H_FRONT, dim), [p1, p2, p2u, p1u])
+    pygame.draw.line(screen, dc(C_WALL_H_FRONT, dim * 1.10), p1u, p2u, 2)
+    if kind in ('door', 'window'):
+        _wall_overlay(screen, p1, p2, wh, kind, dim)
+
+
+def draw_wall_v(screen, x, y, z, kind, dim, cam):
+    z_off = z * unit_px(cam); wh = unit_px(cam)
+    p1 = world_to_screen(x, y,     cam); p2 = world_to_screen(x, y + 1, cam)
+    p1 = (p1[0], p1[1] - z_off); p2 = (p2[0], p2[1] - z_off)
+    p1u = (p1[0], p1[1] - wh);   p2u = (p2[0], p2[1] - wh)
+    pygame.draw.polygon(screen, dc(C_WALL_V_FRONT, dim), [p1, p2, p2u, p1u])
+    pygame.draw.line(screen, dc(C_WALL_V_FRONT, dim * 1.10), p1u, p2u, 2)
+    if kind in ('door', 'window'):
+        _wall_overlay(screen, p1, p2, wh, kind, dim)
+
+
+# ============================================================
+#  PICKING
+# ============================================================
+def pick_tile(mx, my, cam, terrain):
+    wx, wy = screen_to_world(mx, my, cam)
+    R = 10; z_unit = unit_px(cam)
+    best = None; best_depth = -1e9
+    tx_min = max(0, int(math.floor(wx)) - R)
+    tx_max = min(MAP_W, int(math.floor(wx)) + R + 1)
+    ty_min = max(0, int(math.floor(wy)) - R)
+    ty_max = min(MAP_H, int(math.floor(wy)) + R + 1)
+    for tx in range(tx_min, tx_max):
+        for ty in range(ty_min, ty_max):
+            t = terrain.get((tx, ty))
+            if t is None:
+                n_h = e_h = s_h = w_h = 0
+            else:
+                form = t.get('form', 'flat')
+                pick_form = form
+                if form.startswith('stair_'):
+                    pick_form = 'ramp_' + form.split('_')[1]
+                n_h, e_h, s_h, w_h = corner_heights(pick_form, t['h'])
+            N_b = world_to_screen(tx,     ty,     cam); E_b = world_to_screen(tx + 1, ty,     cam)
+            S_b = world_to_screen(tx + 1, ty + 1, cam); W_b = world_to_screen(tx,     ty + 1, cam)
+            pts = [(N_b[0], N_b[1] - n_h * z_unit), (E_b[0], E_b[1] - e_h * z_unit),
+                   (S_b[0], S_b[1] - s_h * z_unit), (W_b[0], W_b[1] - w_h * z_unit)]
+            if point_in_poly(mx, my, pts):
+                depth = tx + ty + (t['h'] * 0.01 if t else 0)
+                if depth > best_depth:
+                    best_depth = depth; best = (tx, ty)
+    return best
+
+
+def pick_wall(mx, my, cam, snap_dist=16.0):
+    wx, wy = screen_to_world(mx, my, cam)
+    tx = int(math.floor(wx)); ty = int(math.floor(wy))
+    candidates = [('h', tx, ty), ('v', tx, ty), ('h', tx, ty + 1), ('v', tx + 1, ty)]
+    best = None; best_d2 = snap_dist * snap_dist
+    for kind, x, y in candidates:
+        if kind == 'h':
+            p1 = world_to_screen(x,     y, cam); p2 = world_to_screen(x + 1, y, cam)
+        else:
+            p1 = world_to_screen(x, y,     cam); p2 = world_to_screen(x, y + 1, cam)
+        d2 = seg_dist_sq(mx, my, p1[0], p1[1], p2[0], p2[1])
+        if d2 < best_d2:
+            best_d2 = d2; best = (kind, x, y)
+    return best
+
+
+# ============================================================
+#  RENDER CENA
+# ============================================================
+def render_scene(screen, cam, state, terrain, blocks, walls_h, walls_v, placed_sprites):
+    cur_z = state['floor']
+    show_lower = state['show_lower']
+    items = []
+    for (x, y), t in terrain.items():
+        h = t['h']; form = t.get('form', 'flat')
+        z_sort = h + (1.0 if form != 'flat' else 0.0)
+        items.append(((x + y, z_sort, 0), 'terrain', (x, y, t)))
+    for (x, y, z), blk in blocks.items():
+        if z > cur_z: continue
+        if z < cur_z and not show_lower: continue
+        dim = 1.0 if z == cur_z else 0.55
+        items.append(((x + y, z, 1), 'block', (x, y, z, blk, dim)))
+    for (x, y, z), kind in walls_h.items():
+        if z > cur_z: continue
+        if z < cur_z and not show_lower: continue
+        dim = 1.0 if z == cur_z else 0.55
+        items.append(((x + y, z, 2), 'wall_h', (x, y, z, kind, dim)))
+    for (x, y, z), kind in walls_v.items():
+        if z > cur_z: continue
+        if z < cur_z and not show_lower: continue
+        dim = 1.0 if z == cur_z else 0.55
+        items.append(((x + y, z, 2), 'wall_v', (x, y, z, kind, dim)))
+    for (x, y, z), sid in placed_sprites.items():
+        if z > cur_z: continue
+        if z < cur_z and not show_lower: continue
+        items.append(((x + y, z, 3), 'sprite', (x, y, z, sid)))
+
+    items.sort(key=lambda it: it[0])
+    for _, k, d in items:
+        if k == 'terrain':
+            x, y, t = d; draw_terrain_tile(screen, x, y, t, cam)
+        elif k == 'block':
+            x, y, z, blk, dim = d; draw_block_diamond(screen, x, y, z, blk, dim, cam)
+        elif k == 'wall_h':
+            x, y, z, kind, dim = d; draw_wall_h(screen, x, y, z, kind, dim, cam)
+        elif k == 'wall_v':
+            x, y, z, kind, dim = d; draw_wall_v(screen, x, y, z, kind, dim, cam)
+        elif k == 'sprite':
+            x, y, z, sid = d
+            if 0 <= sid < len(sprites_custom):
+                sp = sprites_custom[sid]
+                sx, sy = world_to_screen(x + 0.5, y + 0.5, cam)
+                sy -= z * unit_px(cam)
+                sp.draw_at(screen, sx, sy, cam.zoom)
+
+
+# ============================================================
+#  HOVER
+# ============================================================
+def draw_hover(screen, cam, state, terrain):
+    mx, my = pygame.mouse.get_pos()
+    if mx >= SCENE_W: return
+
+    if state_mode == 'sprite' and active_sprite_idx is not None:
+        tx_ty = pick_tile(mx, my, cam, terrain)
+        if tx_ty is None: return
+        tx, ty = tx_ty
+        z = state['floor']
+        sp = sprites_custom[active_sprite_idx]
+        sx, sy = world_to_screen(tx + 0.5, ty + 0.5, cam)
+        sy -= z * unit_px(cam)
+        g = sp.ghost(cam.zoom)
+        w, h = g.get_size()
+        ox = sp.offset_x * cam.zoom
+        oy = sp.offset_y * cam.zoom
+        dx = sx - sp.anchor_x * w + ox
+        dy = sy - sp.anchor_y * h + oy
+        screen.blit(g, (int(dx), int(dy)))
+        N = world_to_screen(tx,     ty,     cam); E = world_to_screen(tx + 1, ty,     cam)
+        S = world_to_screen(tx + 1, ty + 1, cam); W = world_to_screen(tx,     ty + 1, cam)
+        z_off = z * unit_px(cam)
+        pts = [(N[0], N[1] - z_off), (E[0], E[1] - z_off),
+               (S[0], S[1] - z_off), (W[0], W[1] - z_off)]
+        pygame.draw.polygon(screen, (255, 240, 100), pts, 2)
+        return
+
+    tool = TOOLS[state['tool_idx']]
+    z = state['floor']
+    surf = pygame.Surface((SCENE_W, WIN_H), pygame.SRCALPHA)
+
+    if tool['kind'] == 'wall':
+        hit = pick_wall(mx, my, cam)
+        if hit:
+            kind, x, y = hit
+            z_off = z * unit_px(cam); wh = unit_px(cam)
+            if kind == 'h':
+                p1 = world_to_screen(x,     y, cam); p2 = world_to_screen(x + 1, y, cam)
+            else:
+                p1 = world_to_screen(x, y,     cam); p2 = world_to_screen(x, y + 1, cam)
+            p1 = (p1[0], p1[1] - z_off); p2 = (p2[0], p2[1] - z_off)
+            pts = [p1, p2, (p2[0], p2[1] - wh), (p1[0], p1[1] - wh)]
+            pygame.draw.polygon(surf, (255, 240, 100, 100), pts)
+            screen.blit(surf, (0, 0))
+            pygame.draw.polygon(screen, (255, 240, 100), pts, 2)
+    else:
+        tx_ty = pick_tile(mx, my, cam, terrain)
+        if tx_ty is None: return
+        tx, ty = tx_ty
+        t = terrain.get((tx, ty))
+        if t is None:
+            n_h = e_h = s_h = w_h = 0
+        else:
+            form = t.get('form', 'flat')
+            pick_form = form
+            if form.startswith('stair_'):
+                pick_form = 'ramp_' + form.split('_')[1]
+            n_h, e_h, s_h, w_h = corner_heights(pick_form, t['h'])
+        z_unit = unit_px(cam)
+        N = world_to_screen(tx,     ty,     cam); E = world_to_screen(tx + 1, ty,     cam)
+        S = world_to_screen(tx + 1, ty + 1, cam); W = world_to_screen(tx,     ty + 1, cam)
+        pts = [(N[0], N[1] - n_h * z_unit), (E[0], E[1] - e_h * z_unit),
+               (S[0], S[1] - s_h * z_unit), (W[0], W[1] - w_h * z_unit)]
+        pygame.draw.polygon(surf, (255, 240, 100, 80), pts)
+        screen.blit(surf, (0, 0))
+        pygame.draw.polygon(screen, (255, 240, 100), pts, 2)
+
+
+# ============================================================
+#  GRID
+# ============================================================
+def draw_grid(screen, cam, z):
+    surf = pygame.Surface((SCENE_W, WIN_H), pygame.SRCALPHA)
+    z_off = z * unit_px(cam)
+    for x in range(MAP_W + 1):
+        p1 = world_to_screen(x, 0, cam); p2 = world_to_screen(x, MAP_H, cam)
+        pygame.draw.line(surf, (255, 255, 255, 40),
+                         (p1[0], p1[1] - z_off), (p2[0], p2[1] - z_off), 1)
+    for y in range(MAP_H + 1):
+        p1 = world_to_screen(0, y, cam); p2 = world_to_screen(MAP_W, y, cam)
+        pygame.draw.line(surf, (255, 255, 255, 40),
+                         (p1[0], p1[1] - z_off), (p2[0], p2[1] - z_off), 1)
+    screen.blit(surf, (0, 0))
+
+
+# ============================================================
+#  PROP PANEL
+# ============================================================
+prop_slider_rects = {}
+dragging_slider = None
+
+
+def _layout_props():
+    prop_slider_rects.clear()
+    y = PROPS_Y + 34
+    for (key, _label, _vmin, _vmax, _fmt) in PROP_SLIDERS:
+        bar = pygame.Rect(PROPS_X + 90, y + 6, PROPS_W - 90 - 60, 8)
+        prop_slider_rects[key] = bar
+        y += PROP_ROW_H
+
+
+def draw_props_panel(screen, fs, fb):
+    if not (state_mode == 'sprite' and active_sprite_idx is not None):
+        return
+    if not (0 <= active_sprite_idx < len(sprites_custom)):
+        return
+    sp = sprites_custom[active_sprite_idx]
+
+    panel = pygame.Rect(PROPS_X, PROPS_Y, PROPS_W, PROPS_H)
+    s = pygame.Surface((PROPS_W, PROPS_H), pygame.SRCALPHA)
+    s.fill((20, 24, 32, 220))
+    screen.blit(s, (PROPS_X, PROPS_Y))
+    pygame.draw.rect(screen, (90, 100, 120), panel, 1, border_radius=6)
+
+    title = f"SPRITE: {sp.name[:22]}"
+    screen.blit(fb.render(title, True, (235, 235, 235)), (PROPS_X + 12, PROPS_Y + 8))
+
+    _layout_props()
+    for (key, label, vmin, vmax, fmt) in PROP_SLIDERS:
+        bar = prop_slider_rects[key]
+        screen.blit(fs.render(label, True, (200, 210, 220)),
+                    (PROPS_X + 12, bar.y - 6))
+        pygame.draw.rect(screen, (30, 35, 45), bar, border_radius=4)
+        val = getattr(sp, key)
+        frac = (val - vmin) / max(1e-6, vmax - vmin)
+        frac = max(0.0, min(1.0, frac))
+        fill = pygame.Rect(bar.x, bar.y, int(bar.w * frac), bar.h)
+        pygame.draw.rect(screen, (110, 160, 230), fill, border_radius=4)
+        screen.blit(fs.render(fmt.format(val), True, (220, 220, 220)),
+                    (PROPS_X + PROPS_W - 56, bar.y - 6))
+
+    pygame.draw.rect(screen, (140, 60, 60), PROP_BTN_RECT, border_radius=4)
+    pygame.draw.rect(screen, (200, 90, 90), PROP_BTN_RECT, 1, border_radius=4)
+    txt = fs.render("REMOVER SPRITE", True, (255, 240, 240))
+    screen.blit(txt, (PROP_BTN_RECT.centerx - txt.get_width() // 2,
+                      PROP_BTN_RECT.y + 4))
+
+
+def handle_props_click(mx, my, button):
+    global dragging_slider, active_sprite_idx
+    if not (state_mode == 'sprite' and active_sprite_idx is not None):
+        return False
+    panel = pygame.Rect(PROPS_X, PROPS_Y, PROPS_W, PROPS_H)
+    if not panel.collidepoint(mx, my):
+        return False
+    sp = sprites_custom[active_sprite_idx]
+    if PROP_BTN_RECT.collidepoint(mx, my):
+        removed_id = active_sprite_idx
+        for k in list(placed_sprites.keys()):
+            if placed_sprites[k] == removed_id:
+                del placed_sprites[k]
+        del sprites_custom[removed_id]
+        for k in list(placed_sprites.keys()):
+            if placed_sprites[k] > removed_id:
+                placed_sprites[k] -= 1
+        active_sprite_idx = None if not sprites_custom else 0
+        return True
+    if button == 1:
+        for (key, _l, vmin, vmax, _f) in PROP_SLIDERS:
+            bar = prop_slider_rects[key]
+            hit = bar.inflate(0, 16).collidepoint(mx, my)
+            if hit:
+                frac = (mx - bar.x) / max(1, bar.w)
+                frac = max(0.0, min(1.0, frac))
+                setattr(sp, key, vmin + frac * (vmax - vmin))
+                dragging_slider = key
+                return True
+    return True
+
+
+def handle_props_drag(mx, my):
+    global dragging_slider
+    if dragging_slider is None:
+        return
+    if not (0 <= active_sprite_idx < len(sprites_custom)):
+        dragging_slider = None; return
+    sp = sprites_custom[active_sprite_idx]
+    for (key, _l, vmin, vmax, _f) in PROP_SLIDERS:
+        if key == dragging_slider:
+            bar = prop_slider_rects[key]
+            frac = (mx - bar.x) / max(1, bar.w)
+            frac = max(0.0, min(1.0, frac))
+            setattr(sp, key, vmin + frac * (vmax - vmin))
+            break
+
+
+# ============================================================
+#  PALETA / HUD
+# ============================================================
+def draw_palette(screen, fs, fb, state):
+    tool_idx = state['tool_idx']; floor = state['floor']
+    dropdown_open = state['dropdown_open']
+
+    pygame.draw.rect(screen, (28, 32, 40), (SCENE_W, 0, PALETTE_W, WIN_H))
+    pygame.draw.line(screen, (60, 66, 80), (SCENE_W, 0), (SCENE_W, WIN_H), 2)
+    screen.blit(fb.render("TILES", True, (235, 235, 235)), (SCENE_W + 12, 6))
+
+    for i, tool in enumerate(TOOLS):
+        if i in GROUP_AT and i != 0:
+            y_sep = PAL_TOP + i * TOOL_H - 2
+            pygame.draw.line(screen, (60, 66, 80),
+                             (SCENE_W + 10, y_sep),
+                             (SCENE_W + PALETTE_W - 10, y_sep), 1)
+        r = TOOL_RECTS[i]
+        sel = (state_mode == 'tool' and i == tool_idx)
+        bg = (70, 100, 150) if sel else (44, 50, 62)
+        pygame.draw.rect(screen, bg, r, border_radius=3)
+        if sel:
+            pygame.draw.rect(screen, (120, 160, 230), r, 2, border_radius=3)
+        sw = pygame.Rect(r.x + 5, r.y + 4, 20, 14)
+        pygame.draw.rect(screen, tool['color'], sw)
+        pygame.draw.rect(screen, (20, 20, 20), sw, 1)
+        screen.blit(fs.render(str(i + 1), True, (150, 160, 180)), (r.x + 32, r.y + 3))
+        screen.blit(fs.render(tool['name'], True, (225, 225, 225)), (r.x + 50, r.y + 3))
+
+    y = SPRITE_SECTION_Y
+    screen.blit(fb.render("SPRITES CUSTOM", True, (235, 235, 235)),
+                (SCENE_W + 12, y - 14))
+    pygame.draw.rect(screen, (50, 90, 60), SPRITE_IMPORT_RECT, border_radius=3)
+    pygame.draw.rect(screen, (100, 200, 120), SPRITE_IMPORT_RECT, 1, border_radius=3)
+    screen.blit(fs.render("+ IMPORTAR IMAGEM (I)", True, (225, 245, 225)),
+                (SPRITE_IMPORT_RECT.x + 6, SPRITE_IMPORT_RECT.y + 5))
+
+    global SPRITE_ITEM_RECTS
+    SPRITE_ITEM_RECTS = []
+    y = SPRITE_SECTION_Y + SPRITE_BTN_H + 4
+    for i, sp in enumerate(sprites_custom):
+        r = pygame.Rect(SCENE_W + 10, y, PALETTE_W - 20, SPRITE_ITEM_H - 2)
+        SPRITE_ITEM_RECTS.append(r)
+        sel = (state_mode == 'sprite' and i == active_sprite_idx)
+        bg = (70, 100, 150) if sel else (44, 50, 62)
+        pygame.draw.rect(screen, bg, r, border_radius=3)
+        if sel:
+            pygame.draw.rect(screen, (120, 160, 230), r, 2, border_radius=3)
+        th = sp.surface(1.0)
+        th_w, th_h = th.get_size()
+        max_h = SPRITE_ITEM_H - 6
+        if th_h > 0 and th_w > 0:
+            ratio = max_h / th_h
+            tw = max(1, int(th_w * ratio))
+            thumb = pygame.transform.smoothscale(th, (tw, max_h))
+            screen.blit(thumb, (r.x + 4, r.y + 3))
+        name = sp.name[:20]
+        screen.blit(fs.render(name, True, (225, 225, 225)), (r.x + 34, r.y + 3))
+        y += SPRITE_ITEM_H
+
+    global DROP_Y, DROP_RECT, DROP_ITEM_RECTS, OPTIONS_Y
+    DROP_Y = y + 20
+    DROP_RECT = pygame.Rect(SCENE_W + 12, DROP_Y, PALETTE_W - 24, DROP_H)
+    DROP_ITEM_RECTS = [pygame.Rect(SCENE_W+12, DROP_Y+DROP_H+2+i*20, PALETTE_W-24, 20)
+                       for i in range(NUM_FLOORS)]
+
+    screen.blit(fb.render("ANDAR", True, (235, 235, 235)), (SCENE_W + 12, DROP_Y - 18))
+    bg = (70, 100, 150) if dropdown_open else (44, 50, 62)
+    pygame.draw.rect(screen, bg, DROP_RECT, border_radius=4)
+    pygame.draw.rect(screen, (120, 130, 150), DROP_RECT, 1, border_radius=4)
+    screen.blit(fs.render(f"{floor}: {FLOOR_NAMES[floor]}", True, (235, 235, 235)),
+                (DROP_RECT.x + 8, DROP_RECT.y + 4))
+    ax = DROP_RECT.right - 16; ay = DROP_RECT.y + DROP_RECT.h // 2
+    pygame.draw.polygon(screen, (200, 200, 200),
+                        [(ax, ay - 3), (ax + 8, ay - 3), (ax + 4, ay + 3)])
+
+    OPTIONS_Y = DROP_Y + DROP_H + 20
+    y = OPTIONS_Y
+    screen.blit(fs.render("[L] Andares abaixo: " +
+                          ("ON" if state['show_lower'] else "OFF"),
+                          True, (180, 200, 220)), (SCENE_W + 12, y))
+    y += 18
+    screen.blit(fs.render("[G] Grid: " +
+                          ("ON" if state['show_grid'] else "OFF"),
+                          True, (180, 200, 220)), (SCENE_W + 12, y))
+    y += 24
+    for line in [
+        "LMB: aplicar   RMB: resetar",
+        "WASD: mover cam   Scroll: zoom",
+        "TAB: andar   I: importar imagem",
+    ]:
+        screen.blit(fs.render(line, True, (140, 150, 170)), (SCENE_W + 12, y))
+        y += 15
+
+    if dropdown_open:
+        panel = pygame.Rect(SCENE_W + 12, DROP_Y + DROP_H + 2,
+                            PALETTE_W - 24, NUM_FLOORS * 20)
+        pygame.draw.rect(screen, (34, 38, 48), panel)
+        pygame.draw.rect(screen, (90, 100, 120), panel, 1)
+        mx, my = pygame.mouse.get_pos()
+        for i in range(NUM_FLOORS):
+            r = DROP_ITEM_RECTS[i]
+            hover = r.collidepoint(mx, my); sel = (i == floor)
+            if sel:    col = (70, 100, 150)
+            elif hover: col = (60, 70, 90)
+            else:      col = (40, 46, 58)
+            pygame.draw.rect(screen, col, r)
+            screen.blit(fs.render(f"{i}: {FLOOR_NAMES[i]}", True, (230, 230, 230)),
+                        (r.x + 8, r.y + 2))
+
+
+def draw_hud(screen, font, cam, state):
+    tool = TOOLS[state['tool_idx']]
+    mode_txt = "SPRITE" if state_mode == 'sprite' else "TILE"
+    lines = [
+        f"Modo: {mode_txt}",
+        f"Ferramenta: {tool['name']}",
+        f"Andar: {state['floor']} - {FLOOR_NAMES[state['floor']]}",
+        f"Zoom: {cam.zoom:.2f}x",
+    ]
+    h = 22 * len(lines) + 12
+    panel = pygame.Surface((340, h), pygame.SRCALPHA)
+    panel.fill((0, 0, 0, 150))
+    screen.blit(panel, (10, 10))
+    for i, line in enumerate(lines):
+        screen.blit(font.render(line, True, (230, 230, 230)), (18, 16 + i * 22))
+
+
+# ============================================================
+#  APPLY
+# ============================================================
+def default_terrain():
+    return {'h': 0, 'mat': 'grass', 'form': 'flat'}
+
+
+def apply_tool(tool, mx, my, cam, state, terrain, blocks, walls_h, walls_v):
+    z = state['floor']
+    if tool['kind'] == 'wall':
+        hit = pick_wall(mx, my, cam)
+        if not hit: return False
+        kind, x, y = hit
+        d = walls_h if kind == 'h' else walls_v
+        key = (x, y, z)
+        if d.get(key) != tool['wall']:
+            d[key] = tool['wall']; return True
+        return False
+    if tool['kind'] in ('terrain', 'form', 'level'):
+        tx_ty = pick_tile(mx, my, cam, terrain)
+        if tx_ty is None: return False
+        tx, ty = tx_ty
+        t = terrain.setdefault((tx, ty), default_terrain())
+        if tool['kind'] == 'terrain':
+            if t['mat'] != tool['mat']:
+                t['mat'] = tool['mat']; return True
+        elif tool['kind'] == 'form':
+            if t['form'] != tool['form']:
+                t['form'] = tool['form']; return True
+        elif tool['kind'] == 'level':
+            new_h = max(0, min(NUM_FLOORS, t['h'] + tool['delta']))
+            if new_h != t['h']:
+                t['h'] = new_h; return True
+        return False
+    wx, wy = screen_to_world(mx, my, cam)
+    tx = int(math.floor(wx)); ty = int(math.floor(wy))
+    if not (0 <= tx < MAP_W and 0 <= ty < MAP_H): return False
+    if tool['kind'] == 'block':
+        k = (tx, ty, z)
+        if blocks.get(k) != tool['blk']:
+            blocks[k] = tool['blk']; return True
+    return False
+
+
+def erase_tool(tool, mx, my, cam, state, terrain, blocks, walls_h, walls_v):
+    z = state['floor']
+    if tool['kind'] == 'wall':
+        hit = pick_wall(mx, my, cam)
+        if not hit: return False
+        kind, x, y = hit
+        d = walls_h if kind == 'h' else walls_v
+        key = (x, y, z)
+        if key in d:
+            del d[key]; return True
+        return False
+    if tool['kind'] in ('terrain', 'form', 'level'):
+        tx_ty = pick_tile(mx, my, cam, terrain)
+        if tx_ty is None: return False
+        tx, ty = tx_ty
+        t = terrain.get((tx, ty))
+        if t is not None and (t['h'] != 0 or t['mat'] != 'grass' or t['form'] != 'flat'):
+            terrain[(tx, ty)] = default_terrain(); return True
+        return False
+    wx, wy = screen_to_world(mx, my, cam)
+    tx = int(math.floor(wx)); ty = int(math.floor(wy))
+    if not (0 <= tx < MAP_W and 0 <= ty < MAP_H): return False
+    if tool['kind'] == 'block':
+        k = (tx, ty, z)
+        if k in blocks:
+            del blocks[k]; return True
+    return False
+
+
+def apply_sprite(mx, my, cam, state, terrain, placed_sprites, erase=False):
+    if active_sprite_idx is None: return False
+    tx_ty = pick_tile(mx, my, cam, terrain)
+    if tx_ty is None: return False
+    tx, ty = tx_ty
+    z = state['floor']
+    k = (tx, ty, z)
+    if erase:
+        if k in placed_sprites:
+            del placed_sprites[k]; return True
+        return False
+    if placed_sprites.get(k) != active_sprite_idx:
+        placed_sprites[k] = active_sprite_idx; return True
+    return False
+
+
+# ============================================================
+#  MAIN
+# ============================================================
+def main():
+    global state_mode, active_sprite_idx, dragging_slider, placed_sprites
+    pygame.init()
+    screen = pygame.display.set_mode((WIN_W, WIN_H))
+    pygame.display.set_caption("Editor Isometrico 2D - Sprites Custom")
+    clock = pygame.time.Clock()
+    try:
+        font = pygame.font.SysFont("consolas,couriernew,monospace", 12)
+        font_big = pygame.font.SysFont("consolas,couriernew,monospace", 15, bold=True)
+    except Exception:
+        font = pygame.font.Font(None, 14); font_big = pygame.font.Font(None, 18)
+
+    terrain = {(x, y): default_terrain() for x in range(MAP_W) for y in range(MAP_H)}
+    blocks = {}; walls_h = {}; walls_v = {}
+    placed_sprites = {}
+
+    cam = Camera()
+    state = {'tool_idx': 0, 'floor': 0, 'show_lower': True,
+             'show_grid': False, 'dropdown_open': False}
+
+    lmb = rmb = False
+    last_paint = None
+
+    running = True
+    while running:
+        dt = min(clock.tick(FPS) / 1000.0, 0.05)
+
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                running = False
+
+            elif e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_ESCAPE: running = False
+                elif e.key == pygame.K_i:
+                    if import_sprite():
+                        state_mode = 'sprite'
+                elif e.key == pygame.K_TAB:
+                    state['floor'] = (state['floor'] + 1) % NUM_FLOORS
+                    state['dropdown_open'] = False
+                elif e.key == pygame.K_g:
+                    state['show_grid'] = not state['show_grid']
+                elif e.key == pygame.K_l:
+                    state['show_lower'] = not state['show_lower']
+                elif e.key == pygame.K_r:
+                    for x in range(MAP_W):
+                        for y in range(MAP_H):
+                            terrain[(x, y)] = default_terrain()
+                    blocks.clear(); walls_h.clear(); walls_v.clear()
+                    placed_sprites.clear()
+                elif pygame.K_1 <= e.key <= pygame.K_9:
+                    idx = e.key - pygame.K_1
+                    if idx < len(TOOLS):
+                        state['tool_idx'] = idx
+                        state_mode = 'tool'
+
+            elif e.type == getattr(pygame, 'MOUSEWHEEL', -1):
+                mx, my = pygame.mouse.get_pos()
+                if mx < SCENE_W:
+                    wx0, wy0 = screen_to_world(mx, my, cam)
+                    cam.zoom = max(0.4, min(3.0, cam.zoom * (1.15 ** e.y)))
+                    wx1, wy1 = screen_to_world(mx, my, cam)
+                    cam.x += wx0 - wx1; cam.y += wy0 - wy1
+
+            elif e.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = e.pos
+                if e.button in (4, 5):
+                    if mx < SCENE_W:
+                        f = 1.15 if e.button == 4 else 1/1.15
+                        wx0, wy0 = screen_to_world(mx, my, cam)
+                        cam.zoom = max(0.4, min(3.0, cam.zoom * f))
+                        wx1, wy1 = screen_to_world(mx, my, cam)
+                        cam.x += wx0 - wx1; cam.y += wy0 - wy1
+                    continue
+
+                if handle_props_click(mx, my, e.button):
+                    continue
+
+                if mx >= SCENE_W:
+                    if state['dropdown_open']:
+                        for i, r in enumerate(DROP_ITEM_RECTS):
+                            if r.collidepoint(mx, my):
+                                state['floor'] = i
+                                break
+                        state['dropdown_open'] = False
+                        continue
+                    if DROP_RECT.collidepoint(mx, my):
+                        state['dropdown_open'] = True
+                        continue
+                    for i, r in enumerate(TOOL_RECTS):
+                        if r.collidepoint(mx, my):
+                            state['tool_idx'] = i
+                            state_mode = 'tool'
+                            break
+                    else:
+                        if SPRITE_IMPORT_RECT.collidepoint(mx, my):
+                            if import_sprite():
+                                state_mode = 'sprite'
+                            continue
+                        for i, r in enumerate(SPRITE_ITEM_RECTS):
+                            if r.collidepoint(mx, my):
+                                active_sprite_idx = i
+                                state_mode = 'sprite'
+                                break
+                    continue
+
+                if state_mode == 'sprite':
+                    if e.button == 1:
+                        apply_sprite(mx, my, cam, state, terrain,
+                                     placed_sprites, erase=False)
+                        lmb = True
+                    elif e.button == 3:
+                        apply_sprite(mx, my, cam, state, terrain,
+                                     placed_sprites, erase=True)
+                        rmb = True
+                else:
+                    tool = TOOLS[state['tool_idx']]
+                    if e.button == 1:
+                        apply_tool(tool, mx, my, cam, state,
+                                   terrain, blocks, walls_h, walls_v)
+                        lmb = True; last_paint = (mx, my, False)
+                    elif e.button == 3:
+                        erase_tool(tool, mx, my, cam, state,
+                                   terrain, blocks, walls_h, walls_v)
+                        rmb = True; last_paint = (mx, my, True)
+
+            elif e.type == pygame.MOUSEBUTTONUP:
+                if e.button == 1:
+                    lmb = False; last_paint = None
+                    dragging_slider = None
+                if e.button == 3: rmb = False; last_paint = None
+
+            elif e.type == pygame.MOUSEMOTION:
+                mx, my = e.pos
+                if dragging_slider is not None:
+                    handle_props_drag(mx, my)
+                    continue
+                if (lmb or rmb) and mx < SCENE_W:
+                    if last_paint:
+                        dx = mx - last_paint[0]; dy = my - last_paint[1]
+                        if dx*dx + dy*dy < 16: continue
+                    if state_mode == 'sprite':
+                        if rmb:
+                            apply_sprite(mx, my, cam, state, terrain,
+                                         placed_sprites, erase=True)
+                        else:
+                            apply_sprite(mx, my, cam, state, terrain,
+                                         placed_sprites, erase=False)
+                        last_paint = (mx, my, rmb)
+                    else:
+                        tool = TOOLS[state['tool_idx']]
+                        if rmb:
+                            erase_tool(tool, mx, my, cam, state,
+                                       terrain, blocks, walls_h, walls_v)
+                        else:
+                            apply_tool(tool, mx, my, cam, state,
+                                       terrain, blocks, walls_h, walls_v)
+                        last_paint = (mx, my, rmb)
+
+        keys = pygame.key.get_pressed()
+        spd = 10.0 / cam.zoom
+        ddx = ddy = 0
+        if keys[pygame.K_a]: ddx -= 1
+        if keys[pygame.K_d]: ddx += 1
+        if keys[pygame.K_w]: ddy -= 1
+        if keys[pygame.K_s]: ddy += 1
+        if ddx or ddy:
+            m = math.hypot(ddx, ddy); ddx /= m; ddy /= m
+            wdx = ddx * 0.5 + ddy * 0.5
+            wdy = -ddx * 0.5 + ddy * 0.5
+            mm = math.hypot(wdx, wdy)
+            if mm > 1e-6: wdx /= mm; wdy /= mm
+            cam.x += wdx * spd * dt; cam.y += wdy * spd * dt
+        cam.x = max(-5, min(MAP_W + 5, cam.x))
+        cam.y = max(-5, min(MAP_H + 5, cam.y))
+
+        screen.fill((22, 26, 34))
+        render_scene(screen, cam, state, terrain, blocks, walls_h, walls_v,
+                     placed_sprites)
+        if state['show_grid']:
+            draw_grid(screen, cam, state['floor'])
+        draw_hover(screen, cam, state, terrain)
+        draw_palette(screen, font, font_big, state)
+        draw_props_panel(screen, font, font_big)
+        draw_hud(screen, font, cam, state)
+
+        pygame.display.flip()
+
+    pygame.quit()
+    sys.exit()
+
+
+if __name__ == "__main__":
+    main()
