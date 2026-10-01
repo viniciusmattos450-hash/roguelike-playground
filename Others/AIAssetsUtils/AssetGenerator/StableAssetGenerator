@@ -1,0 +1,2522 @@
+"""
+Asset Creator — v1.1
+====================
+
+Novidades sobre v1.0:
+    - Character Sheet Generator agora suporta Flux 2 Klein (4B e 9B)
+    - Modo A: Klein 4B + fal spritesheet LoRA (objetos e assets)
+    - Modo B: Klein 9B + TripleView LoRA (personagens front/side/back)
+    - Detecção automática de qual combo está instalado
+    - DOWNLOADS atualizado com os modelos corretos
+"""
+
+# ====================================================================
+#  AUTO-INSTALAÇÃO
+# ====================================================================
+import importlib, subprocess, sys
+REQUIRED = [("websocket", "websocket-client"), ("PIL", "Pillow"),
+            ("requests", "requests"), ("huggingface_hub", "huggingface_hub")]
+
+def _has(mod):
+    try: importlib.import_module(mod); return True
+    except ImportError: return False
+
+def _ensure_dependencies():
+    missing = [pip for mod, pip in REQUIRED if not _has(mod)]
+    if not missing: return
+    print("[i] Instalando:", ", ".join(missing))
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
+    except subprocess.CalledProcessError:
+        print("[!] Falha. Instale: pip install", " ".join(missing))
+        input("ENTER..."); sys.exit(1)
+    print("[+] Reiniciando...")
+    subprocess.check_call([sys.executable] + sys.argv)
+    sys.exit(0)
+
+_ensure_dependencies()
+
+
+# ====================================================================
+#  IMPORTS
+# ====================================================================
+import io, json, math, os, random, shutil, threading, time, uuid, atexit
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
+import websocket
+import requests
+from PIL import Image, ImageDraw, ImageFont, ImageTk
+from huggingface_hub import hf_hub_download
+
+
+# ====================================================================
+#  CONFIG
+# ====================================================================
+COMFY_SERVER = "127.0.0.1:8188"
+NEGATIVE_BASE = "low quality, blurry, watermark, text"
+DETAIL_BOOST  = ", extremely detailed, sharp focus, intricate surface detail, high quality"
+
+MAX_BATCH  = 6
+THUMB_SIZE = 170
+
+SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
+TEMP_DIR     = os.path.join(SCRIPT_DIR, "temp")
+ASSETS_DIR   = os.path.join(SCRIPT_DIR, "assets")
+CHARS_DIR    = os.path.join(ASSETS_DIR, "characters")
+PRESETS_FILE = os.path.join(SCRIPT_DIR, "presets.json")
+os.makedirs(TEMP_DIR, exist_ok=True)
+os.makedirs(ASSETS_DIR, exist_ok=True)
+os.makedirs(CHARS_DIR, exist_ok=True)
+
+
+# ====================================================================
+#  PROMPTS DO CHARACTER SHEET
+# ====================================================================
+# Modo B (Klein 9B + TripleView) — front/side/back de personagens
+TRIPLEVIEW_PROMPT = (
+    "Convert the character in the image to a Character Sheet showing "
+    "front, side and back full body views"
+)
+QUADVIEW_PROMPT = (
+    "Convert the character in the image to a Character Sheet showing "
+    "a face close-up, front, side and back full body views"
+)
+
+# Modo A (Klein 4B + fal spritesheet) — 2x2 de objetos
+SPRITESHEET_PROMPT = "2x2 sprite sheet"
+
+
+# ====================================================================
+#  CATEGORIAS + PRESETS PADRÃO
+# ====================================================================
+CATEGORIES = {
+    "personagens": {
+        "title": "🧙 Personagens",
+        "default_preset": "T-pose",
+        "prompt_hint": "ex: warrior woman with sword",
+        "presets": {
+            "T-pose": ", character design, T-pose, full body, game asset, isolated on white background, high detail, concept art, front view",
+            "Portrait": ", character portrait, bust, detailed face, game asset, isolated on white background, studio lighting, concept art",
+            "Character Icon": ", character icon, avatar, headshot, game UI, centered, isolated on dark background, high contrast, stylized",
+            "Monstro": ", monster design, creature, game asset, full body, isolated on white background, high detail, concept art",
+            "Criatura": ", creature design, beast, game asset, full body, isolated on white background, high detail, concept art",
+            "NPC": ", NPC character, game asset, full body, isolated on white background, high detail, concept art",
+            "Sprite Sheet": ", character sprite sheet, multiple poses, game asset, isolated on white background, high detail",
+        },
+    },
+    "objetos": {
+        "title": "📦 Objetos",
+        "default_preset": "Item / Prop",
+        "prompt_hint": "ex: wooden treasure chest",
+        "presets": {
+            "Item / Prop": ", game asset, isolated on white background, high detail, concept art, single object",
+            "Textura": ", seamless texture, tileable, high detail, PBR, material study, top down view",
+            "Mobília": ", furniture design, game asset, isolated on white background, high detail, studio lighting",
+            "Árvore / Vegetação": ", stylized tree, game asset, isolated on white background, high detail, concept art",
+            "Arma": ", weapon design, game asset, isolated on white background, high detail, concept art",
+            "Veículo": ", vehicle design, game asset, isolated on white background, high detail, concept art",
+            "Comida": ", food item, game asset, isolated on white background, high detail, concept art, stylized",
+        },
+    },
+    "ui": {
+        "title": "🎨 UI",
+        "default_preset": "Ícone de Skill",
+        "prompt_hint": "ex: fireball spell icon",
+        "presets": {
+            "Ícone de Skill": ", game icon, skill icon, UI icon, centered, isolated on dark background, high contrast, vector art",
+            "Ícone de Item": ", inventory icon, item icon, game UI, centered, isolated on dark background, high contrast",
+            "Botão de UI": ", UI button, game interface, clean design, isolated on transparent background, flat design",
+            "Barra de Progresso": ", UI progress bar, game interface, horizontal, clean design, flat design",
+            "Frame / Painel": ", UI panel, game interface frame, clean design, flat design",
+            "Moeda / Recurso": ", game currency icon, resource icon, UI element, centered, high contrast",
+        },
+    },
+}
+
+
+# ====================================================================
+#  MODELOS PARA DOWNLOAD
+# ====================================================================
+DOWNLOADS = {
+    "Upscale": {
+        "RealESRGAN_x4plus": {
+            "repo_id": "Comfy-Org/Real-ESRGAN_repackaged",
+            "filename": "RealESRGAN_x4plus.safetensors",
+            "display": "RealESRGAN x4plus (fotos, objetos, texturas)",
+            "size_mb": 64, "target": "upscale_models",
+        },
+        "RealESRGAN_x4plus_anime_6B": {
+            "repo_id": "ai-forever/Real-ESRGAN",
+            "filename": "RealESRGAN_x4plus_anime_6B.pth",
+            "display": "RealESRGAN x4plus Anime (ícones, UI, arte estilizada)",
+            "size_mb": 18, "target": "upscale_models",
+        },
+        "4x_NMKD-Siax_200k": {
+            "repo_id": "gemasai/4x_NMKD-Siax_200k",
+            "filename": "4x_NMKD-Siax_200k.pth",
+            "display": "4x NMKD Siax (detalhes finos)",
+            "size_mb": 64, "target": "upscale_models",
+        },
+        "4x-UltraSharp": {
+            "repo_id": "Kim2091/UltraSharp",
+            "filename": "4x-UltraSharp.pth",
+            "display": "4x UltraSharp (nitidez alta)",
+            "size_mb": 67, "target": "upscale_models",
+        },
+    },
+    "Character Sheet": {
+        "TripleView_klein9b": {
+            "repo_id": "Alissonerdx/CharacterSheet",
+            "filename": "TripleView_klein9b_v1.safetensors",
+            "display": "TripleView LoRA — front/side/back de personagens (Klein 9B)",
+            "size_mb": 180, "target": "loras",
+        },
+        "QuadView_klein9b": {
+            "repo_id": "Alissonerdx/CharacterSheet",
+            "filename": "QuadView_klein9b_v1.safetensors",
+            "display": "QuadView LoRA — face + front/side/back (Klein 9B)",
+            "size_mb": 180, "target": "loras",
+        },
+        "Klein9B_Q4_K_M": {
+            "repo_id": "unsloth/FLUX.2-klein-base-9B-GGUF",
+            "filename": "flux-2-klein-base-9b-Q4_K_M.gguf",
+            "display": "Flux Klein 9B Base Q4_K_M (modelo p/ TripleView)",
+            "size_mb": 5500, "target": "unet",
+        },
+        "Klein9B_Q3_K_S": {
+            "repo_id": "unsloth/FLUX.2-klein-base-9B-GGUF",
+            "filename": "flux-2-klein-base-9b-Q3_K_S.gguf",
+            "display": "Flux Klein 9B Base Q3_K_S (mais leve, ~4.2 GB)",
+            "size_mb": 4200, "target": "unet",
+        },
+        "Klein4B_spritesheet_lora": {
+            "repo_id": "fal/flux-2-klein-4b-spritesheet-lora",
+            "filename": "flux-spritesheet-lora.safetensors",
+            "display": "Spritesheet 2x2 LoRA — 4 views de objetos (Klein 4B)",
+            "size_mb": 150, "target": "loras",
+        },
+    },
+    "Remoção de Fundo": {
+        "RMBG-2.0": {
+            "repo_id": "briaai/RMBG-2.0",
+            "filename": "model.safetensors",
+            "display": "RMBG-2.0 (briaai, SOTA)",
+            "size_mb": 885, "target": "RMBG",
+        },
+        "birefnet": {
+            "repo_id": "ZhengPeng7/BiRefNet",
+            "filename": "model.safetensors",
+            "display": "BiRefNet (ZhengPeng7)",
+            "size_mb": 890, "target": "background_removal",
+        },
+    },
+}
+
+
+# ====================================================================
+#  PRESETS MANAGER
+# ====================================================================
+def load_presets():
+    defaults = {k: dict(v["presets"]) for k, v in CATEGORIES.items()}
+    if not os.path.exists(PRESETS_FILE):
+        return defaults
+    try:
+        with open(PRESETS_FILE, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+        for cat_key, presets in loaded.items():
+            if cat_key in defaults and isinstance(presets, dict):
+                defaults[cat_key] = dict(presets)
+        return defaults
+    except Exception as e:
+        print(f"[!] presets.json corrompido: {e}")
+        return defaults
+
+
+def save_presets(presets):
+    try:
+        with open(PRESETS_FILE, "w", encoding="utf-8") as f:
+            json.dump(presets, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"[!] Erro ao salvar presets: {e}")
+        return False
+
+
+# ====================================================================
+#  UTIL: DESCOBRIR PASTA DO COMFYUI
+# ====================================================================
+def find_comfyui_dir():
+    candidates = []
+    for env in ("COMFYUI_PATH", "COMFYUI_DIR", "COMFY_PATH"):
+        p = os.environ.get(env)
+        if p and os.path.isdir(p):
+            candidates.append(p)
+
+    home = os.path.expanduser("~")
+    for base in (home, os.path.join(home, "Documents"),
+                 os.path.join(home, "Desktop"),
+                 os.path.join(home, "OneDrive"), "C:\\", "D:\\"):
+        if not os.path.isdir(base):
+            continue
+        try:
+            for root, dirs, files in os.walk(base):
+                depth = root[len(base):].count(os.sep)
+                if depth > 4:
+                    dirs[:] = []
+                    continue
+                if os.path.basename(root) == "ComfyUI":
+                    if os.path.isdir(os.path.join(root, "models")):
+                        candidates.append(root)
+        except Exception:
+            pass
+
+    local_models = os.path.join(SCRIPT_DIR, "models")
+    if os.path.isdir(local_models):
+        candidates.append(SCRIPT_DIR)
+
+    for c in candidates:
+        if os.path.isdir(os.path.join(c, "models")):
+            return c
+    return None
+
+
+def get_models_dir(comfy_dir=None, target="upscale_models"):
+    if comfy_dir is None:
+        comfy_dir = find_comfyui_dir()
+    if not comfy_dir:
+        return None
+    d = os.path.join(comfy_dir, "models", target)
+    try:
+        os.makedirs(d, exist_ok=True)
+    except Exception:
+        return None
+    return d
+
+
+# ====================================================================
+#  PROMPT BUILDERS
+# ====================================================================
+def build_positive(user_input, preset_suffix, extra=""):
+    user_input = user_input.strip()
+    base = (f"{user_input}{preset_suffix}" if user_input
+            else preset_suffix.lstrip(", ").strip())
+    return base + (extra or "")
+
+def build_negative(user_input):
+    user_input = user_input.strip()
+    return NEGATIVE_BASE if not user_input else f"{NEGATIVE_BASE}, {user_input}"
+
+
+# ====================================================================
+#  PASTAS
+# ====================================================================
+def clear_temp_dir():
+    if not os.path.isdir(TEMP_DIR): return
+    for f in os.listdir(TEMP_DIR):
+        p = os.path.join(TEMP_DIR, f)
+        try:
+            if os.path.isfile(p): os.unlink(p)
+            elif os.path.isdir(p): shutil.rmtree(p, ignore_errors=True)
+        except Exception: pass
+
+def folder_count(path):
+    try: return len([f for f in os.listdir(path)
+                     if os.path.isfile(os.path.join(path, f))])
+    except Exception: return 0
+
+def unique_asset_path(base_name, suffix):
+    ts = time.strftime("%Y%m%d_%H%M%S")
+    safe = "".join(c if c.isalnum() or c in "-_" else "_"
+                   for c in base_name.strip())[:40] or "asset"
+    return os.path.join(ASSETS_DIR, f"{safe}_{ts}_{suffix}.png")
+
+def save_temp(data, prefix):
+    ts = time.strftime("%H%M%S")
+    path = os.path.join(TEMP_DIR, f"{prefix}_{ts}_{uuid.uuid4().hex[:6]}.png")
+    with open(path, "wb") as f: f.write(data)
+    return path
+
+
+# ====================================================================
+#  CLIENTE COMFYUI
+# ====================================================================
+class ComfyClient:
+    def __init__(self, server):
+        self.server = server
+        self.client_id = str(uuid.uuid4())
+        self.ws = None
+
+    def connect_ws(self):
+        try:
+            self.ws = websocket.WebSocket()
+            self.ws.connect(f"ws://{self.server}/ws?clientId={self.client_id}")
+            return True
+        except Exception as e:
+            print(f"[!] WS: {e}"); return False
+
+    def is_alive(self):
+        try: requests.get(f"http://{self.server}/history", timeout=2); return True
+        except Exception: return False
+
+    def queue(self, workflow):
+        try:
+            r = requests.post(f"http://{self.server}/prompt",
+                              json={"prompt": workflow, "client_id": self.client_id},
+                              timeout=10)
+            return r.json()
+        except Exception as e:
+            print(f"[!] queue: {e}"); return None
+
+    def history(self, prompt_id):
+        r = requests.get(f"http://{self.server}/history/{prompt_id}", timeout=10)
+        return r.json()
+
+    def fetch_image(self, filename, subfolder, folder_type):
+        r = requests.get(f"http://{self.server}/view",
+                         params={"filename": filename, "subfolder": subfolder,
+                                 "type": folder_type}, timeout=30)
+        return r.content
+
+    def upload_image(self, filepath):
+        try:
+            with open(filepath, "rb") as f:
+                r = requests.post(f"http://{self.server}/upload/image",
+                                  files={"image": (os.path.basename(filepath),
+                                                   f, "image/png")}, timeout=30)
+            resp = r.json()
+            if resp.get("subfolder"):
+                return f"{resp['subfolder']}/{resp['name']}"
+            return resp.get("name")
+        except Exception as e:
+            print(f"[!] upload: {e}"); return None
+
+    def object_info(self, node_class):
+        try:
+            r = requests.get(f"http://{self.server}/object_info/{node_class}",
+                             timeout=5)
+            info = r.json()
+            return info.get(node_class)
+        except Exception:
+            return None
+
+    def node_exists(self, node_class):
+        return self.object_info(node_class) is not None
+
+    def list_options(self, node_class, input_name):
+        info = self.object_info(node_class)
+        if not info:
+            return []
+        val = None
+        try:
+            val = info["input"]["required"][input_name][0]
+        except Exception:
+            try:
+                val = info["input"]["optional"][input_name][0]
+            except Exception:
+                return []
+        if val is None:
+            return []
+        if isinstance(val, list):
+            return val
+        if isinstance(val, str):
+            return [val]
+        try:
+            return list(val)
+        except Exception:
+            return []
+
+    def wait_for(self, prompt_id, on_progress=None):
+        try:
+            while True:
+                msg = self.ws.recv()
+                if isinstance(msg, str):
+                    m = json.loads(msg)
+                    t = m.get("type")
+                    if t == "progress" and on_progress:
+                        d = m["data"]
+                        on_progress(d.get("value", 0), d.get("max", 1))
+                    elif t == "executing":
+                        d = m["data"]
+                        if d.get("node") is None and d.get("prompt_id") == prompt_id:
+                            return True, "ok"
+                    elif t == "execution_error":
+                        d = m["data"]
+                        return False, d.get("exception_message", "erro")
+        except Exception as e:
+            return False, f"ws: {e}"
+
+
+# ====================================================================
+#  MODELS DETECTION
+# ====================================================================
+class Models:
+    def __init__(self):
+        self.flux_unets = []
+        self.flux_clips = []
+        self.flux_vaes = []
+        self.ckpts = []
+        self.loras = []
+        self.rmbg_models = []
+        self.upscale_models = []
+        self.has_rmbg = False
+        self.i2t_method = None
+        self.i2t_node = None
+        self.flux_ok = False
+        self.sdxl_ok = False
+        # Character Sheet
+        self.klein4b_unet = None
+        self.klein9b_unet = None
+        self.tripleview_lora = None
+        self.quadview_lora = None
+        self.spritesheet_lora = None
+
+    def refresh(self, client):
+        self.flux_unets = client.list_options("UnetLoaderGGUF", "unet_name")
+        self.flux_clips = client.list_options("CLIPLoaderGGUF", "clip_name")
+        self.flux_vaes  = client.list_options("VAELoader", "vae_name")
+        self.ckpts      = client.list_options("CheckpointLoaderSimple", "ckpt_name")
+        self.loras      = client.list_options("LoraLoader", "lora_name")
+        self.upscale_models = client.list_options("UpscaleModelLoader", "model_name")
+
+        self.flux_ok = bool(self.flux_unets and self.flux_clips and self.flux_vaes)
+        self.sdxl_ok = bool(self.ckpts)
+
+        # Detecção de Klein 4B e 9B
+        for u in self.flux_unets:
+            ul = u.lower()
+            if "klein" in ul and "4b" in ul:
+                self.klein4b_unet = u
+            if "klein" in ul and "9b" in ul:
+                self.klein9b_unet = u
+
+        # LoRAs de Character Sheet
+        self.tripleview_lora = None
+        self.quadview_lora = None
+        self.spritesheet_lora = None
+        for l in self.loras:
+            ll = l.lower()
+            if "tripleview" in ll:
+                self.tripleview_lora = l
+            elif "quadview" in ll:
+                self.quadview_lora = l
+            elif "spritesheet" in ll or "sprite_sheet" in ll:
+                self.spritesheet_lora = l
+
+        # RMBG
+        info = client.object_info("RMBG")
+        if info:
+            self.has_rmbg = True
+            try:
+                self.rmbg_models = info["input"]["required"]["model"][0] or []
+                if isinstance(self.rmbg_models, str):
+                    self.rmbg_models = [self.rmbg_models]
+            except Exception:
+                self.rmbg_models = ["RMBG-2.0"]
+
+        # Image-to-text
+        i2t_candidates = [
+            ("Florence2Run", "florence2"),
+            ("Florence2|Florence2Run", "florence2"),
+            ("DownloadAndLoadFlorence2Model", "florence2"),
+            ("WD14Tagger|pysssss", "wd14"),
+            ("WD14Tagger", "wd14"),
+            ("Miaoshouai_Tagger", "miaoshouai"),
+            ("JoyCaption", "joycaption"),
+            ("BLIPCaption", "blip"),
+        ]
+        for node_name, method in i2t_candidates:
+            if client.node_exists(node_name):
+                self.i2t_method = method
+                self.i2t_node = node_name
+                break
+        else:
+            self.i2t_method = None
+            self.i2t_node = None
+
+    def pick_flux(self, prefer_9b=False):
+        if prefer_9b and self.klein9b_unet:
+            unet = self.klein9b_unet
+        elif self.klein4b_unet:
+            unet = self.klein4b_unet
+        elif self.klein9b_unet:
+            unet = self.klein9b_unet
+        else:
+            unet = next((f for f in self.flux_unets
+                         if "klein" in f.lower() or "flux" in f.lower()),
+                        self.flux_unets[0] if self.flux_unets else "")
+        clip = next((c for c in self.flux_clips if "qwen" in c.lower()),
+                    self.flux_clips[0] if self.flux_clips else "")
+        vae  = next((v for v in self.flux_vaes if "flux" in v.lower()),
+                    self.flux_vaes[0] if self.flux_vaes else "")
+        return unet, clip, vae
+
+    def character_sheet_mode(self):
+        """Retorna o modo disponível: 'tripleview', 'spritesheet' ou None."""
+        if self.klein9b_unet and (self.tripleview_lora or self.quadview_lora):
+            return "tripleview"
+        if self.klein4b_unet and self.spritesheet_lora:
+            return "spritesheet"
+        return None
+
+
+# ====================================================================
+#  WORKFLOW BUILDERS
+# ====================================================================
+def wf_flux_txt2img(unet, clip, vae, pos, neg, w, h, batch, steps, seed):
+    return {
+        "1": {"inputs": {"unet_name": unet}, "class_type": "UnetLoaderGGUF"},
+        "2": {"inputs": {"clip_name": clip, "type": "flux2"}, "class_type": "CLIPLoaderGGUF"},
+        "3": {"inputs": {"vae_name": vae}, "class_type": "VAELoader"},
+        "4": {"inputs": {"text": pos, "clip": ["2", 0]}, "class_type": "CLIPTextEncode"},
+        "5": {"inputs": {"text": neg, "clip": ["2", 0]}, "class_type": "CLIPTextEncode"},
+        "6": {"inputs": {"width": w, "height": h, "batch_size": batch}, "class_type": "EmptyLatentImage"},
+        "7": {"inputs": {"seed": seed, "steps": steps, "cfg": 1.0,
+                         "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0,
+                         "model": ["1", 0], "positive": ["4", 0],
+                         "negative": ["5", 0], "latent_image": ["6", 0]}, "class_type": "KSampler"},
+        "8": {"inputs": {"samples": ["7", 0], "vae": ["3", 0]}, "class_type": "VAEDecode"},
+        "9": {"inputs": {"images": ["8", 0]}, "class_type": "PreviewImage"},
+    }
+
+def wf_sdxl_txt2img(ckpt, pos, neg, w, h, batch, steps, seed, lora=None, lora_str=0.8, cfg=7.0):
+    n = {
+        "1": {"inputs": {"ckpt_name": ckpt}, "class_type": "CheckpointLoaderSimple"},
+        "6": {"inputs": {"width": w, "height": h, "batch_size": batch}, "class_type": "EmptyLatentImage"},
+        "7": {"inputs": {"seed": seed, "steps": steps, "cfg": cfg,
+                         "sampler_name": "dpmpp_2m", "scheduler": "karras",
+                         "denoise": 1.0, "model": ["1", 0], "positive": ["4", 0],
+                         "negative": ["5", 0], "latent_image": ["6", 0]}, "class_type": "KSampler"},
+        "8": {"inputs": {"samples": ["7", 0], "vae": ["1", 2]}, "class_type": "VAEDecode"},
+        "9": {"inputs": {"images": ["8", 0]}, "class_type": "PreviewImage"},
+    }
+    if lora:
+        n["2"] = {"inputs": {"model": ["1", 0], "clip": ["1", 1], "lora_name": lora,
+                             "strength_model": lora_str, "strength_clip": lora_str},
+                  "class_type": "LoraLoader"}
+        ms, cs = ["2", 0], ["2", 1]
+    else:
+        ms, cs = ["1", 0], ["1", 1]
+    n["4"] = {"inputs": {"text": pos, "clip": cs}, "class_type": "CLIPTextEncode"}
+    n["5"] = {"inputs": {"text": neg, "clip": cs}, "class_type": "CLIPTextEncode"}
+    n["7"]["inputs"]["model"] = ms
+    return n
+
+def wf_scale_only(image_ref, scale):
+    return {
+        "10": {"inputs": {"image": image_ref}, "class_type": "LoadImage"},
+        "11": {"inputs": {"image": ["10", 0], "upscale_method": "lanczos",
+                          "scale_by": scale}, "class_type": "ImageScaleBy"},
+        "9":  {"inputs": {"images": ["11", 0]}, "class_type": "PreviewImage"},
+    }
+
+def wf_upscale_with_model(image_ref, model_name):
+    return {
+        "1": {"inputs": {"image": image_ref}, "class_type": "LoadImage"},
+        "2": {"inputs": {"model_name": model_name}, "class_type": "UpscaleModelLoader"},
+        "3": {"inputs": {"upscale_model": ["2", 0], "image": ["1", 0]},
+              "class_type": "ImageUpscaleWithModel"},
+        "9": {"inputs": {"images": ["3", 0]}, "class_type": "PreviewImage"},
+    }
+
+def wf_flux_img2img(unet, clip, vae, image_ref, pos, neg, scale, steps, denoise, seed,
+                     upscale_model=None, lora=None, lora_str=0.85):
+    n = {
+        "1": {"inputs": {"unet_name": unet}, "class_type": "UnetLoaderGGUF"},
+        "2": {"inputs": {"clip_name": clip, "type": "flux2"}, "class_type": "CLIPLoaderGGUF"},
+        "3": {"inputs": {"vae_name": vae}, "class_type": "VAELoader"},
+    }
+    if lora:
+        n["30"] = {"inputs": {"model": ["1", 0], "clip": ["2", 0],
+                              "lora_name": lora,
+                              "strength_model": lora_str, "strength_clip": lora_str},
+                   "class_type": "LoraLoader"}
+        model_src = ["30", 0]
+        clip_src = ["30", 1]
+    else:
+        model_src = ["1", 0]
+        clip_src = ["2", 0]
+
+    n["4"] = {"inputs": {"text": pos, "clip": clip_src}, "class_type": "CLIPTextEncode"}
+    n["5"] = {"inputs": {"text": neg, "clip": clip_src}, "class_type": "CLIPTextEncode"}
+    n["10"] = {"inputs": {"image": image_ref}, "class_type": "LoadImage"}
+
+    if upscale_model:
+        n["20"] = {"inputs": {"model_name": upscale_model}, "class_type": "UpscaleModelLoader"}
+        n["11"] = {"inputs": {"upscale_model": ["20", 0], "image": ["10", 0]},
+                   "class_type": "ImageUpscaleWithModel"}
+        src = ["11", 0]
+    elif scale != 1.0:
+        n["11"] = {"inputs": {"image": ["10", 0], "upscale_method": "lanczos",
+                              "scale_by": scale}, "class_type": "ImageScaleBy"}
+        src = ["11", 0]
+    else:
+        src = ["10", 0]
+
+    n["12"] = {"inputs": {"pixels": src, "vae": ["3", 0]}, "class_type": "VAEEncode"}
+    n["7"] = {"inputs": {"seed": seed, "steps": steps, "cfg": 1.0,
+                         "sampler_name": "euler", "scheduler": "simple",
+                         "denoise": denoise, "model": model_src,
+                         "positive": ["4", 0], "negative": ["5", 0],
+                         "latent_image": ["12", 0]}, "class_type": "KSampler"}
+    n["8"] = {"inputs": {"samples": ["7", 0], "vae": ["3", 0]}, "class_type": "VAEDecode"}
+    n["9"] = {"inputs": {"images": ["8", 0]}, "class_type": "PreviewImage"}
+    return n
+
+def wf_sdxl_img2img(ckpt, image_ref, pos, neg, scale, steps, denoise, seed,
+                     lora=None, lora_str=0.8, cfg=7.0, upscale_model=None):
+    n = {
+        "1": {"inputs": {"ckpt_name": ckpt}, "class_type": "CheckpointLoaderSimple"},
+        "10": {"inputs": {"image": image_ref}, "class_type": "LoadImage"},
+    }
+    if lora:
+        n["2"] = {"inputs": {"model": ["1", 0], "clip": ["1", 1], "lora_name": lora,
+                             "strength_model": lora_str, "strength_clip": lora_str},
+                  "class_type": "LoraLoader"}
+        ms, cs = ["2", 0], ["2", 1]
+    else:
+        ms, cs = ["1", 0], ["1", 1]
+    n["4"] = {"inputs": {"text": pos, "clip": cs}, "class_type": "CLIPTextEncode"}
+    n["5"] = {"inputs": {"text": neg, "clip": cs}, "class_type": "CLIPTextEncode"}
+    if upscale_model:
+        n["20"] = {"inputs": {"model_name": upscale_model}, "class_type": "UpscaleModelLoader"}
+        n["11"] = {"inputs": {"upscale_model": ["20", 0], "image": ["10", 0]},
+                   "class_type": "ImageUpscaleWithModel"}
+        src = ["11", 0]
+    elif scale != 1.0:
+        n["11"] = {"inputs": {"image": ["10", 0], "upscale_method": "lanczos",
+                              "scale_by": scale}, "class_type": "ImageScaleBy"}
+        src = ["11", 0]
+    else:
+        src = ["10", 0]
+    n["12"] = {"inputs": {"pixels": src, "vae": ["1", 2]}, "class_type": "VAEEncode"}
+    n["7"] = {"inputs": {"seed": seed, "steps": steps, "cfg": cfg,
+                         "sampler_name": "dpmpp_2m", "scheduler": "karras",
+                         "denoise": denoise, "model": ms, "positive": ["4", 0],
+                         "negative": ["5", 0], "latent_image": ["12", 0]},
+              "class_type": "KSampler"}
+    n["8"] = {"inputs": {"samples": ["7", 0], "vae": ["1", 2]}, "class_type": "VAEDecode"}
+    n["9"] = {"inputs": {"images": ["8", 0]}, "class_type": "PreviewImage"}
+    return n
+
+def wf_remove_bg_rmbg(model_name, image_ref):
+    return {
+        "1": {"inputs": {"image": image_ref}, "class_type": "LoadImage"},
+        "2": {"inputs": {
+                "image": ["1", 0], "model": model_name, "sensitivity": 1.0,
+                "process_res": 1024, "mask_blur": 0, "mask_offset": 0,
+                "invert_output": False, "refine_foreground": False,
+                "background": "Alpha", "background_color": "#222222",
+              }, "class_type": "RMBG"},
+        "3": {"inputs": {"images": ["2", 0]}, "class_type": "PreviewImage"},
+    }
+
+def wf_img2txt(image_ref, method, node_name):
+    if method == "florence2":
+        return {
+            "1": {"inputs": {"image": image_ref}, "class_type": "LoadImage"},
+            "2": {"inputs": {"model": "microsoft/Florence-2-large",
+                              "precision": "fp16", "attention": "sdpa"},
+                  "class_type": "DownloadAndLoadFlorence2Model"},
+            "3": {"inputs": {"florence2_model": ["2", 0], "image": ["1", 0],
+                              "text_input": "", "task": "more_detailed_caption",
+                              "max_new_tokens": 1024, "num_beams": 3,
+                              "do_sample": False, "output_mask_select": "",
+                              "seed": 1}, "class_type": "Florence2Run"},
+        }
+    elif method == "miaoshouai":
+        return {
+            "1": {"inputs": {"image": image_ref}, "class_type": "LoadImage"},
+            "2": {"inputs": {"image": ["1", 0]}, "class_type": "Miaoshouai_Tagger"},
+        }
+    elif method == "blip":
+        return {
+            "1": {"inputs": {"image": image_ref}, "class_type": "LoadImage"},
+            "2": {"inputs": {"image": ["1", 0]}, "class_type": "BLIPCaption"},
+        }
+    else:
+        return {
+            "1": {"inputs": {"image": image_ref}, "class_type": "LoadImage"},
+            "2": {"inputs": {
+                    "image": ["1", 0], "model": "wd-v1-4-moat-tagger-v2",
+                    "threshold": 0.35, "character_threshold": 0.85,
+                    "replace_underscore": False, "trailing_comma": False,
+                    "exclude_tags": "",
+                  }, "class_type": "WD14Tagger|pysssss"},
+        }
+
+
+# ====================================================================
+#  PREVIEW WINDOW
+# ====================================================================
+class PreviewWindow(tk.Toplevel):
+    def __init__(self, parent, title, data, actions):
+        super().__init__(parent)
+        self.title(title)
+        self.geometry("640x700")
+        self.minsize(520, 560)
+
+        img = Image.open(io.BytesIO(data))
+        w, h = img.size
+        disp = img.copy()
+        disp.thumbnail((600, 560), Image.LANCZOS)
+        self.photo = ImageTk.PhotoImage(disp)
+
+        container = ttk.Frame(self, padding=8)
+        container.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(container, image=self.photo).pack()
+        ttk.Label(container, text=f"{w}×{h}px", foreground="#666",
+                  font=("Segoe UI", 9)).pack(pady=(4, 8))
+
+        btn_bar = ttk.Frame(container)
+        btn_bar.pack(pady=4)
+        for label, cb in actions:
+            ttk.Button(btn_bar, text=label,
+                       command=lambda c=cb: (c(), self.destroy())
+                       ).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_bar, text="Fechar", command=self.destroy).pack(side=tk.LEFT, padx=4)
+
+
+# ====================================================================
+#  DOWNLOAD DIALOG
+# ====================================================================
+class DownloadDialog(tk.Toplevel):
+    def __init__(self, parent, app):
+        super().__init__(parent)
+        self.app = app
+        self.title("Baixar modelos")
+        self.geometry("820x680")
+        self.minsize(720, 560)
+        self.resizable(True, True)
+
+        self._build_ui()
+        self._check_existing()
+
+    def _build_ui(self):
+        root = ttk.Frame(self, padding=10)
+        root.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(root, text="Modelos disponíveis",
+                  font=("Segoe UI", 13, "bold")).pack(anchor="w")
+        ttk.Label(root,
+                  text="Modelos grandes (~5 GB) requerem espaço em disco. "
+                       "Reinicie o ComfyUI após o download.",
+                  foreground="#666", wraplength=740, justify="left"
+                  ).pack(anchor="w", pady=(0, 10))
+
+        dest_frame = ttk.LabelFrame(root, text="Pasta raiz do ComfyUI", padding=6)
+        dest_frame.pack(fill=tk.X, pady=(0, 10))
+        self.var_dest = tk.StringVar()
+        ttk.Entry(dest_frame, textvariable=self.var_dest, state="readonly"
+                  ).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(dest_frame, text="Alterar...",
+                   command=self._pick_folder).pack(side=tk.LEFT, padx=4)
+
+        nb = ttk.Notebook(root)
+        nb.pack(fill=tk.BOTH, expand=True)
+
+        self.var_checks = {}
+        for category, models in DOWNLOADS.items():
+            tab = ttk.Frame(nb, padding=6)
+            nb.add(tab, text=category)
+            for key, info in models.items():
+                row = ttk.Frame(tab)
+                row.pack(fill=tk.X, pady=3)
+                v = tk.BooleanVar(value=False)
+                self.var_checks[key] = v
+                ttk.Checkbutton(row, variable=v).pack(side=tk.LEFT)
+                ttk.Label(row, text=info["display"], width=58, anchor="w"
+                          ).pack(side=tk.LEFT, padx=4)
+                ttk.Label(row, text=f"~{info['size_mb']} MB",
+                          foreground="#666").pack(side=tk.LEFT)
+                ttk.Label(row, text=f"→ {info['target']}/",
+                          foreground="#888", font=("Segoe UI", 8, "italic")
+                          ).pack(side=tk.LEFT, padx=8)
+
+        prog_frame = ttk.Frame(root); prog_frame.pack(fill=tk.X, pady=(10, 4))
+        self.prog = ttk.Progressbar(prog_frame, mode="determinate", maximum=100)
+        self.prog.pack(fill=tk.X)
+        self.status = ttk.Label(prog_frame, text="Pronto.", foreground="#666")
+        self.status.pack(anchor="w", pady=(2, 0))
+
+        btn_bar = ttk.Frame(root); btn_bar.pack(fill=tk.X, pady=(6, 0))
+        self.btn_download = ttk.Button(btn_bar, text="Baixar selecionados",
+                                        command=self._on_download)
+        self.btn_download.pack(side=tk.LEFT)
+        ttk.Button(btn_bar, text="Fechar", command=self.destroy).pack(side=tk.RIGHT)
+
+    def _check_existing(self):
+        comfy_dir = find_comfyui_dir()
+        if comfy_dir:
+            self.var_dest.set(comfy_dir)
+            self.status.config(text=f"ComfyUI detectado: {comfy_dir}",
+                                foreground="green")
+        else:
+            self.var_dest.set("(selecione manualmente)")
+            self.status.config(text="Não foi possível detectar o ComfyUI.",
+                                foreground="orange")
+
+    def _pick_folder(self):
+        folder = filedialog.askdirectory(
+            title="Selecione a pasta raiz do ComfyUI (contém 'models/')")
+        if folder:
+            if os.path.isdir(os.path.join(folder, "models")):
+                self.var_dest.set(folder)
+                self.status.config(text=f"Pasta: {folder}", foreground="green")
+            else:
+                if messagebox.askyesno("Confirmar",
+                        "A pasta não parece ser a raiz do ComfyUI. Usar mesmo assim?"):
+                    self.var_dest.set(folder)
+
+    def _on_download(self):
+        dest = self.var_dest.get()
+        if not dest or dest == "(selecione manualmente)":
+            messagebox.showwarning("Pasta não definida", "Selecione a pasta."); return
+        if not os.path.isdir(dest):
+            messagebox.showerror("Pasta inválida", f"Não existe:\n{dest}"); return
+
+        selected = [k for k, v in self.var_checks.items() if v.get()]
+        if not selected:
+            messagebox.showinfo("Nada selecionado", "Marque algum modelo."); return
+
+        self.btn_download.config(state=tk.DISABLED)
+        threading.Thread(target=self._do_download,
+                          args=(selected, dest), daemon=True).start()
+
+    def _find_download_info(self, key):
+        for cat in DOWNLOADS.values():
+            if key in cat:
+                return cat[key]
+        return None
+
+    def _do_download(self, keys, comfy_root):
+        total = len(keys)
+        for i, key in enumerate(keys):
+            info = self._find_download_info(key)
+            if not info: continue
+            target_dir = os.path.join(comfy_root, "models", info["target"])
+            os.makedirs(target_dir, exist_ok=True)
+
+            self.after(0, lambda k=key: self.status.config(
+                text=f"Baixando {k} ({info['size_mb']} MB)...",
+                foreground="orange"))
+            self.after(0, lambda p=int(100*i/total): self.prog.config(value=p))
+
+            try:
+                path = hf_hub_download(
+                    repo_id=info["repo_id"],
+                    filename=info["filename"],
+                    local_dir=target_dir,
+                    local_dir_use_symlinks=False,
+                )
+                self.after(0, lambda p=int(100*(i+1)/total): self.prog.config(value=p))
+                print(f"[+] {key} → {path}")
+            except Exception as e:
+                self.after(0, lambda k=key, e=e: messagebox.showerror(
+                    "Erro no download", f"Falha em {k}:\n{e}"))
+                self.after(0, lambda: self.btn_download.config(state=tk.NORMAL))
+                return
+
+        self.after(0, lambda: self.prog.config(value=100))
+        self.after(0, lambda: self.status.config(
+            text=f"{total} modelo(s) baixado(s)!", foreground="green"))
+        self.after(0, lambda: messagebox.showinfo(
+            "Download concluído",
+            f"{total} modelo(s) baixado(s).\n\nReinicie o ComfyUI."))
+        self.after(0, lambda: self.btn_download.config(state=tk.NORMAL))
+        self.after(0, self.app.reload_models)
+
+
+# ====================================================================
+#  SETTINGS DIALOG
+# ====================================================================
+class SettingsDialog(tk.Toplevel):
+    def __init__(self, parent, app):
+        super().__init__(parent)
+        self.app = app
+        self.title("Settings — Presets de Prompt")
+        self.geometry("960x640")
+        self.minsize(840, 540)
+
+        self._current_cat = list(CATEGORIES.keys())[0]
+        self._current_name = None
+
+        self._build_ui()
+        self._refresh_category_list()
+
+    def _build_ui(self):
+        root = ttk.Frame(self, padding=8)
+        root.pack(fill=tk.BOTH, expand=True)
+
+        top = ttk.Frame(root); top.pack(fill=tk.X, pady=(0, 6))
+        ttk.Label(top, text="Categoria:").pack(side=tk.LEFT)
+        self.var_cat = tk.StringVar(value=self._current_cat)
+        cmb = ttk.Combobox(top, textvariable=self.var_cat,
+                           values=[f"{k} — {v['title']}" for k, v in CATEGORIES.items()],
+                           width=40, state="readonly")
+        cmb.pack(side=tk.LEFT, padx=6)
+        cmb.bind("<<ComboboxSelected>>", lambda e: self._on_cat_change())
+
+        body = ttk.Frame(root); body.pack(fill=tk.BOTH, expand=True)
+
+        left = ttk.LabelFrame(body, text="Presets", padding=6)
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.listbox = tk.Listbox(left, exportselection=False)
+        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        sb = ttk.Scrollbar(left, command=self.listbox.yview)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        self.listbox.config(yscrollcommand=sb.set)
+        self.listbox.bind("<<ListboxSelect>>", lambda e: self._on_select())
+
+        right = ttk.LabelFrame(body, text="Editor", padding=6)
+        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 0))
+
+        r1 = ttk.Frame(right); r1.pack(fill=tk.X)
+        ttk.Label(r1, text="Nome:", width=10).pack(side=tk.LEFT)
+        self.var_name = tk.StringVar()
+        ttk.Entry(r1, textvariable=self.var_name).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        ttk.Label(right, text="Sufixo:").pack(anchor="w", pady=(8, 0))
+        self.txt_value = tk.Text(right, height=8, wrap="word")
+        self.txt_value.pack(fill=tk.BOTH, expand=True)
+
+        btns = ttk.Frame(right); btns.pack(fill=tk.X, pady=(8, 0))
+        ttk.Button(btns, text="Novo", command=self._on_new).pack(side=tk.LEFT)
+        ttk.Button(btns, text="Salvar preset", command=self._on_save).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btns, text="Deletar", command=self._on_delete).pack(side=tk.LEFT)
+        ttk.Button(btns, text="Restaurar padrão", command=self._on_reset_all).pack(side=tk.LEFT, padx=8)
+
+        foot = ttk.Frame(root); foot.pack(fill=tk.X, pady=(8, 0))
+        self.status = ttk.Label(foot, text="", foreground="#666")
+        self.status.pack(side=tk.LEFT)
+        ttk.Button(foot, text="Fechar", command=self.destroy).pack(side=tk.RIGHT)
+        ttk.Button(foot, text="Salvar tudo em disco",
+                   command=self._on_save_all).pack(side=tk.RIGHT, padx=6)
+
+    def _on_cat_change(self):
+        sel = self.var_cat.get()
+        cat_key = sel.split(" — ")[0].strip()
+        if cat_key in CATEGORIES:
+            self._current_cat = cat_key
+            self._refresh_category_list()
+
+    def _refresh_category_list(self):
+        self.listbox.delete(0, tk.END)
+        presets = self.app.presets.get(self._current_cat, {})
+        for name in presets.keys():
+            self.listbox.insert(tk.END, name)
+        self.var_name.set("")
+        self.txt_value.delete("1.0", tk.END)
+        self._current_name = None
+
+    def _on_select(self):
+        sel = self.listbox.curselection()
+        if not sel: return
+        name = self.listbox.get(sel[0])
+        presets = self.app.presets.get(self._current_cat, {})
+        self._current_name = name
+        self.var_name.set(name)
+        self.txt_value.delete("1.0", tk.END)
+        self.txt_value.insert("1.0", presets.get(name, ""))
+
+    def _on_new(self):
+        self._current_name = None
+        self.var_name.set("Novo preset")
+        self.txt_value.delete("1.0", tk.END)
+        self.txt_value.insert("1.0", ", ")
+
+    def _on_save(self):
+        name = self.var_name.get().strip()
+        value = self.txt_value.get("1.0", tk.END).strip()
+        if not name or not value:
+            messagebox.showwarning("Vazio", "Preencha nome e sufixo."); return
+        cat = self.app.presets.setdefault(self._current_cat, {})
+        if self._current_name and self._current_name != name:
+            if self._current_name in cat:
+                del cat[self._current_name]
+        cat[name] = value
+        self._current_name = name
+        self._refresh_category_list()
+        try:
+            idx = list(cat.keys()).index(name)
+            self.listbox.selection_set(idx)
+        except Exception:
+            pass
+        self.status.config(text=f"Preset '{name}' salvo (em memória).",
+                            foreground="green")
+        self._notify_tabs()
+
+    def _on_delete(self):
+        if not self._current_name: return
+        if not messagebox.askyesno("Deletar", f"Deletar '{self._current_name}'?"):
+            return
+        cat = self.app.presets.get(self._current_cat, {})
+        if self._current_name in cat:
+            del cat[self._current_name]
+        self._current_name = None
+        self._refresh_category_list()
+        self._notify_tabs()
+
+    def _on_reset_all(self):
+        if not messagebox.askyesno("Restaurar", "Restaurar TODOS os presets padrão?"):
+            return
+        self.app.presets = {k: dict(v["presets"]) for k, v in CATEGORIES.items()}
+        self._refresh_category_list()
+        self._notify_tabs()
+
+    def _on_save_all(self):
+        if save_presets(self.app.presets):
+            self.status.config(text=f"Salvo em {PRESETS_FILE}", foreground="green")
+            self._notify_tabs()
+        else:
+            self.status.config(text="Erro ao salvar.", foreground="red")
+
+    def _notify_tabs(self):
+        for tab in self.app.tabs.values():
+            tab.reload_presets()
+
+
+# ====================================================================
+#  CHARACTER SHEET GENERATOR (v2)
+# ====================================================================
+class CharacterSheetGenerator(tk.Toplevel):
+    def __init__(self, parent, app):
+        super().__init__(parent)
+        self.app = app
+        self.client = app.client
+        self.models = app.models
+
+        self.title("Character Sheet Generator")
+        self.geometry("1300x900")
+        self.minsize(1100, 760)
+
+        self.concept_data = None
+        self.result_data = None
+        self.result_photo = None
+
+        self._build_ui()
+
+    def _build_ui(self):
+        root = ttk.Frame(self, padding=8)
+        root.pack(fill=tk.BOTH, expand=True)
+
+        h = ttk.Frame(root); h.pack(fill=tk.X, pady=(0, 6))
+        ttk.Label(h, text="Character Sheet Generator",
+                  font=("Segoe UI", 14, "bold")).pack(side=tk.LEFT)
+        self.engine_label = ttk.Label(h, text="", foreground="#666")
+        self.engine_label.pack(side=tk.LEFT, padx=12)
+        ttk.Button(h, text="← Voltar", command=self.destroy).pack(side=tk.RIGHT)
+
+        body = ttk.Frame(root); body.pack(fill=tk.BOTH, expand=True)
+
+        # Esquerda: concept + parâmetros
+        left = ttk.Frame(body); left.pack(side=tk.LEFT, fill=tk.Y)
+
+        conc = ttk.LabelFrame(left, text="Concept (imagem base)", padding=6)
+        conc.pack(fill=tk.X)
+        self.concept_label = tk.Label(conc, text="(carregue uma imagem)",
+                                       width=28, height=14, bg="#222", fg="#888",
+                                       cursor="hand2")
+        self.concept_label.pack()
+        self.concept_label.bind("<Button-1>", lambda e: self._load_concept())
+        ttk.Button(conc, text="📂 Carregar concept",
+                   command=self._load_concept).pack(pady=(6, 0))
+        ttk.Button(conc, text="📝 Analisar (i2t)",
+                   command=self._analyze_concept,
+                   state=tk.NORMAL if self.models.i2t_method else tk.DISABLED
+                   ).pack(pady=(2, 0))
+
+        # Parâmetros
+        pars = ttk.LabelFrame(left, text="Parâmetros", padding=8)
+        pars.pack(fill=tk.X, pady=(8, 0))
+
+        r0 = ttk.Frame(pars); r0.pack(fill=tk.X, pady=2)
+        ttk.Label(r0, text="Nome:", width=10).pack(side=tk.LEFT)
+        self.var_name = tk.StringVar(value="character")
+        ttk.Entry(r0, textvariable=self.var_name).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Modo (detectado automaticamente)
+        r_mode = ttk.Frame(pars); r_mode.pack(fill=tk.X, pady=2)
+        ttk.Label(r_mode, text="Modo:", width=10).pack(side=tk.LEFT)
+        self.var_mode = tk.StringVar(value="")
+        self.cmb_mode = ttk.Combobox(r_mode, textvariable=self.var_mode,
+                                       values=[], width=30, state="readonly")
+        self.cmb_mode.pack(side=tk.LEFT, padx=4, fill=tk.X, expand=True)
+        self.cmb_mode.bind("<<ComboboxSelected>>", lambda e: self._on_mode_change())
+
+        r1 = ttk.Frame(pars); r1.pack(fill=tk.X, pady=2)
+        ttk.Label(r1, text="Prompt:", width=10).pack(side=tk.LEFT)
+        self.prompt_entry = tk.Entry(r1)
+        self.prompt_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        r2 = ttk.Frame(pars); r2.pack(fill=tk.X, pady=2)
+        ttk.Label(r2, text="Steps:", width=10).pack(side=tk.LEFT)
+        self.var_steps = tk.IntVar(value=8)
+        ttk.Spinbox(r2, from_=4, to=40, width=5,
+                    textvariable=self.var_steps).pack(side=tk.LEFT, padx=4)
+        ttk.Label(r2, text="Resolução:").pack(side=tk.LEFT, padx=(12, 0))
+        self.var_res = tk.StringVar(value="1536x1024")
+        ttk.Combobox(r2, textvariable=self.var_res,
+                     values=["1024x1024", "1536x1024", "2048x1365"], width=10,
+                     state="readonly").pack(side=tk.LEFT, padx=4)
+
+        r3 = ttk.Frame(pars); r3.pack(fill=tk.X, pady=2)
+        ttk.Label(r3, text="Denoise:", width=10).pack(side=tk.LEFT)
+        self.var_denoise = tk.DoubleVar(value=0.90)
+        ttk.Scale(r3, from_=0.5, to=1.0, variable=self.var_denoise,
+                  orient=tk.HORIZONTAL, length=140).pack(side=tk.LEFT, padx=4)
+        self.lbl_dn = ttk.Label(r3, text="0.90")
+        self.lbl_dn.pack(side=tk.LEFT)
+        self.var_denoise.trace_add("write",
+            lambda *_: self.lbl_dn.config(text=f"{self.var_denoise.get():.2f}"))
+
+        r4 = ttk.Frame(pars); r4.pack(fill=tk.X, pady=2)
+        ttk.Label(r4, text="Força LoRA:", width=10).pack(side=tk.LEFT)
+        self.var_lora_str = tk.DoubleVar(value=1.0)
+        ttk.Scale(r4, from_=0.3, to=1.5, variable=self.var_lora_str,
+                  orient=tk.HORIZONTAL, length=140).pack(side=tk.LEFT, padx=4)
+        self.lbl_lora = ttk.Label(r4, text="1.0")
+        self.lbl_lora.pack(side=tk.LEFT)
+        self.var_lora_str.trace_add("write",
+            lambda *_: self.lbl_lora.config(text=f"{self.var_lora_str.get():.2f}"))
+
+        r5 = ttk.Frame(pars); r5.pack(fill=tk.X, pady=(8, 0))
+        self.btn_generate = ttk.Button(r5, text="🎬 Gerar Reference Sheet",
+                                        command=self._generate)
+        self.btn_generate.pack(side=tk.LEFT)
+        self.btn_install = ttk.Button(
+            r5, text="⬇ Instalar modelos",
+            command=self.app.open_download_dialog)
+        self.btn_install.pack(side=tk.LEFT, padx=6)
+
+        self.prog = ttk.Progressbar(pars, mode="determinate", maximum=100)
+        self.prog.pack(fill=tk.X, pady=(8, 0))
+
+        # Direita: resultado
+        right = ttk.LabelFrame(body, text="Reference Sheet gerado", padding=6)
+        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 0))
+
+        self.result_label = tk.Label(right, text="(vazio — clique em Gerar)",
+                                      width=60, height=25,
+                                      bg="#222", fg="#666", cursor="hand2")
+        self.result_label.pack(fill=tk.BOTH, expand=True)
+        self.result_label.bind("<Button-1>", lambda e: self._preview_result())
+
+        btn_result = ttk.Frame(right); btn_result.pack(fill=tk.X, pady=(6, 0))
+        ttk.Button(btn_result, text="Salvar em pasta",
+                   command=self._save_result).pack(side=tk.LEFT)
+        ttk.Button(btn_result, text="Dividir em views",
+                   command=self._split_views).pack(side=tk.LEFT, padx=6)
+        ttk.Button(btn_result, text="Recarregar sheet",
+                   command=self._load_existing).pack(side=tk.LEFT, padx=6)
+
+        self.status = ttk.Label(root, text="", foreground="#333")
+        self.status.pack(fill=tk.X, pady=(6, 0))
+        self._refresh_modes()
+
+    # ---------------------------------------------------------- modes
+    def _refresh_modes(self):
+        m = self.models
+        modes = []
+        if m.klein9b_unet and m.tripleview_lora:
+            modes.append("TripleView (9B) — front/side/back")
+        if m.klein9b_unet and m.quadview_lora:
+            modes.append("QuadView (9B) — face + front/side/back")
+        if m.klein4b_unet and m.spritesheet_lora:
+            modes.append("Spritesheet 2x2 (4B) — objetos")
+
+        self.cmb_mode["values"] = modes
+        if modes:
+            self.var_mode.set(modes[0])
+            self.btn_generate.config(state=tk.NORMAL)
+            self._on_mode_change()
+            self.engine_label.config(text=f"✓ {len(modes)} modo(s) disponível(is)",
+                                      foreground="green")
+        else:
+            self.var_mode.set("")
+            self.btn_generate.config(state=tk.DISABLED)
+            self.engine_label.config(
+                text="✗ Nenhum combo instalado — clique em 'Instalar modelos'",
+                foreground="red")
+            self.prompt_entry.delete(0, tk.END)
+
+    def _on_mode_change(self):
+        mode = self.var_mode.get()
+        if "TripleView" in mode:
+            self.prompt_entry.delete(0, tk.END)
+            self.prompt_entry.insert(0, TRIPLEVIEW_PROMPT)
+            self.var_res.set("1536x1024")
+            self.var_steps.set(8)
+            self.var_denoise.set(0.90)
+        elif "QuadView" in mode:
+            self.prompt_entry.delete(0, tk.END)
+            self.prompt_entry.insert(0, QUADVIEW_PROMPT)
+            self.var_res.set("1536x1024")
+            self.var_steps.set(8)
+            self.var_denoise.set(0.90)
+        elif "Spritesheet" in mode:
+            self.prompt_entry.delete(0, tk.END)
+            self.prompt_entry.insert(0, SPRITESHEET_PROMPT)
+            self.var_res.set("1024x1024")
+            self.var_steps.set(8)
+            self.var_denoise.set(0.85)
+
+    # ---------------------------------------------------------- concept
+    def _load_concept(self):
+        path = filedialog.askopenfilename(
+            title="Selecione a imagem de concept",
+            filetypes=[("Imagens", "*.png *.jpg *.jpeg *.webp"),
+                       ("Todos", "*.*")])
+        if not path: return
+        try:
+            with open(path, "rb") as f:
+                data = f.read()
+            self.concept_data = data
+            img = Image.open(io.BytesIO(data))
+            img.thumbnail((280, 280), Image.LANCZOS)
+            self.concept_photo = ImageTk.PhotoImage(img)
+            self.concept_label.config(image=self.concept_photo, text="",
+                                       width=0, height=0)
+            self.status.config(text=f"Concept: {os.path.basename(path)}",
+                                foreground="green")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao carregar:\n{e}")
+
+    def _analyze_concept(self):
+        if not self.concept_data or not self.models.i2t_method:
+            return
+        self.status.config(text="Analisando...", foreground="orange")
+        threading.Thread(target=self._do_analyze, daemon=True).start()
+
+    def _do_analyze(self):
+        work = save_temp(self.concept_data, "concept")
+        uploaded = self.client.upload_image(work)
+        try: os.unlink(work)
+        except: pass
+        if not uploaded:
+            self.after(0, lambda: self.status.config(
+                text="Falha no upload.", foreground="red")); return
+
+        wf = wf_img2txt(uploaded, self.models.i2t_method, self.models.i2t_node)
+        res = self.client.queue(wf)
+        if not res or "error" in res:
+            self.after(0, lambda: self.status.config(
+                text=f"Erro: {res}", foreground="red")); return
+        pid = res["prompt_id"]
+        ok, msg = self.client.wait_for(pid)
+        if not ok:
+            self.after(0, lambda: self.status.config(
+                text=f"Erro: {msg}", foreground="red")); return
+
+        hist = self.client.history(pid)
+        text = self._extract_text(hist.get(pid, {}).get("outputs", {}))
+        self.after(0, lambda t=text: self._apply_analysis(t))
+
+    def _extract_text(self, outputs):
+        candidates = []
+        for node_out in outputs.values():
+            for key, val in node_out.items():
+                if isinstance(val, str) and val.strip():
+                    candidates.append(val.strip())
+                elif isinstance(val, list):
+                    for item in val:
+                        if isinstance(item, str) and item.strip():
+                            candidates.append(item.strip())
+        return max(candidates, key=len) if candidates else None
+
+    def _apply_analysis(self, text):
+        if not text:
+            self.status.config(text="Nada retornado.", foreground="red"); return
+        mode = self.var_mode.get()
+        if "TripleView" in mode:
+            base = TRIPLEVIEW_PROMPT
+        elif "QuadView" in mode:
+            base = QUADVIEW_PROMPT
+        else:
+            base = SPRITESHEET_PROMPT
+        final = base + ". Character details: " + text
+        self.prompt_entry.delete(0, tk.END)
+        self.prompt_entry.insert(0, final)
+        self.status.config(text="Prompt atualizado.", foreground="green")
+
+    # ---------------------------------------------------------- geração
+    def _generate(self):
+        if not self.concept_data:
+            messagebox.showwarning("Sem concept", "Carregue uma imagem."); return
+        mode = self.var_mode.get()
+        if not mode:
+            messagebox.showerror("Sem modo",
+                "Nenhum combo instalado. Clique em 'Instalar modelos'."); return
+        self.btn_generate.config(state=tk.DISABLED)
+        self.prog.config(value=0)
+        self.status.config(text="Gerando reference sheet...", foreground="orange")
+        threading.Thread(target=self._do_generate, daemon=True).start()
+
+    def _do_generate(self):
+        work = save_temp(self.concept_data, "concept")
+        uploaded = self.client.upload_image(work)
+        try: os.unlink(work)
+        except: pass
+        if not uploaded:
+            self.after(0, lambda: self._done(None, "Falha no upload.")); return
+
+        mode = self.var_mode.get()
+        pos = self.prompt_entry.get().strip()
+        neg = build_negative("")
+        try:
+            w, h = [int(x) for x in self.var_res.get().split("x")]
+        except Exception:
+            w, h = 1536, 1024
+        steps = int(self.var_steps.get())
+        denoise = float(self.var_denoise.get())
+        lora_str = float(self.var_lora_str.get())
+        seed = random.randint(1, 9_999_999_999)
+
+        if "TripleView" in mode:
+            lora = self.models.tripleview_lora
+            unet, clip, vae = self.models.pick_flux(prefer_9b=True)
+        elif "QuadView" in mode:
+            lora = self.models.quadview_lora
+            unet, clip, vae = self.models.pick_flux(prefer_9b=True)
+        else:
+            lora = self.models.spritesheet_lora
+            unet, clip, vae = self.models.pick_flux(prefer_9b=False)
+
+        wf = wf_flux_img2img(unet, clip, vae, uploaded, pos, neg,
+                              1.0, steps, denoise, seed,
+                              lora=lora, lora_str=lora_str)
+
+        res = self.client.queue(wf)
+        if not res or "prompt_id" not in res or "error" in res:
+            self.after(0, lambda e=res: self._done(None, f"Erro: {e}")); return
+        pid = res["prompt_id"]
+
+        def cb(v, m):
+            pct = int(100 * v/max(1, m))
+            self.after(0, lambda p=pct: self.prog.config(value=p))
+
+        ok, msg = self.client.wait_for(pid, on_progress=cb)
+        if not ok:
+            self.after(0, lambda m=msg: self._done(None, f"Erro: {m}")); return
+
+        hist = self.client.history(pid)
+        data = None
+        for node in hist.get(pid, {}).get("outputs", {}).values():
+            if "images" in node:
+                for info in node["images"]:
+                    data = self.client.fetch_image(
+                        info["filename"], info.get("subfolder", ""),
+                        info.get("type", "temp"))
+                    break
+            if data: break
+
+        self.after(0, lambda d=data: self._done(d, None))
+
+    def _done(self, data, error):
+        self.btn_generate.config(state=tk.NORMAL)
+        self.prog.config(value=100)
+        if error:
+            self.status.config(text=error, foreground="red")
+            messagebox.showerror("Erro", error); return
+
+        self.result_data = data
+        img = Image.open(io.BytesIO(data))
+        w, h = img.size
+        disp = img.copy()
+        disp.thumbnail((720, 620), Image.LANCZOS)
+        photo = ImageTk.PhotoImage(disp)
+        self.result_photo = photo
+        self.result_label.config(image=photo, text="", width=0, height=0)
+        self.status.config(text=f"Reference Sheet gerado ({w}×{h}px).",
+                            foreground="green")
+
+    def _preview_result(self):
+        if not self.result_data: return
+        actions = [("Salvar em pasta", self._save_result)]
+        PreviewWindow(self, "Reference Sheet", self.result_data, actions)
+
+    def _save_result(self):
+        if not self.result_data:
+            messagebox.showinfo("Vazio", "Nada para salvar."); return
+        char_name = self.var_name.get().strip() or "character"
+        safe = "".join(c if c.isalnum() or c in "-_" else "_"
+                       for c in char_name)[:40] or "character"
+        char_dir = os.path.join(CHARS_DIR, safe)
+        os.makedirs(char_dir, exist_ok=True)
+        sheet_path = os.path.join(char_dir, "reference_sheet.png")
+        with open(sheet_path, "wb") as f:
+            f.write(self.result_data)
+        messagebox.showinfo("Salvo", f"Salvo em:\n{sheet_path}")
+
+    def _split_views(self):
+        if not self.result_data:
+            messagebox.showinfo("Vazio", "Gere o sheet primeiro."); return
+
+        mode = self.var_mode.get()
+        img = Image.open(io.BytesIO(self.result_data))
+        w, h = img.size
+
+        char_name = self.var_name.get().strip() or "character"
+        safe = "".join(c if c.isalnum() or c in "-_" else "_"
+                       for c in char_name)[:40] or "character"
+        char_dir = os.path.join(CHARS_DIR, safe)
+        os.makedirs(char_dir, exist_ok=True)
+
+        if "Spritesheet" in mode:
+            # 2x2 grid
+            names = [("top_left", 0, 0), ("top_right", 0, 1),
+                     ("bottom_left", 1, 0), ("bottom_right", 1, 1)]
+            cw, ch = w // 2, h // 2
+            for name, r, c in names:
+                crop = img.crop((c*cw, r*ch, (c+1)*cw, (r+1)*ch))
+                crop.save(os.path.join(char_dir, f"{name}.png"))
+        elif "QuadView" in mode:
+            # 2x2
+            names = [("face", 0, 0), ("front", 0, 1),
+                     ("side", 1, 0), ("back", 1, 1)]
+            cw, ch = w // 2, h // 2
+            for name, r, c in names:
+                crop = img.crop((c*cw, r*ch, (c+1)*cw, (r+1)*ch))
+                crop.save(os.path.join(char_dir, f"{name}.png"))
+        else:
+            # TripleView: 3 colunas
+            names = ["front", "side", "back"]
+            cw = w // 3
+            for i, name in enumerate(names):
+                x0 = i * cw
+                x1 = (i+1) * cw if i < 2 else w
+                crop = img.crop((x0, 0, x1, h))
+                crop.save(os.path.join(char_dir, f"{name}.png"))
+
+        messagebox.showinfo("Views separadas",
+            f"Views salvas em:\n{char_dir}")
+
+    def _load_existing(self):
+        char_name = self.var_name.get().strip() or "character"
+        safe = "".join(c if c.isalnum() or c in "-_" else "_"
+                       for c in char_name)[:40] or "character"
+        char_dir = os.path.join(CHARS_DIR, safe)
+        sheet_path = os.path.join(char_dir, "reference_sheet.png")
+        if not os.path.isfile(sheet_path):
+            messagebox.showinfo("Não existe",
+                f"Não há reference_sheet.png em {char_dir}"); return
+        try:
+            with open(sheet_path, "rb") as f:
+                data = f.read()
+            self.result_data = data
+            img = Image.open(io.BytesIO(data))
+            disp = img.copy(); disp.thumbnail((720, 620), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(disp)
+            self.result_photo = photo
+            self.result_label.config(image=photo, text="", width=0, height=0)
+            self.status.config(text="Sheet carregado do disco.", foreground="green")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha: {e}")
+
+
+# ====================================================================
+#  CATEGORY TAB
+# ====================================================================
+class CategoryTab(ttk.Frame):
+    def __init__(self, parent, app, category_key):
+        super().__init__(parent)
+        self.app = app
+        self.cat_key = category_key
+        self.cfg = CATEGORIES[category_key]
+
+        self.generated = []
+        self.var_preset = tk.StringVar()
+        self.var_engine = tk.StringVar(value="flux")
+
+        self.var_flux_unet = tk.StringVar()
+        self.var_flux_clip = tk.StringVar()
+        self.var_flux_vae  = tk.StringVar()
+        self.var_sdxl_ckpt = tk.StringVar()
+        self.var_sdxl_lora = tk.StringVar(value="<nenhum>")
+        self.var_sdxl_lora_str = tk.DoubleVar(value=0.8)
+
+        self._build_ui()
+        self.reload_presets()
+
+    def _build_ui(self):
+        s1 = ttk.LabelFrame(self, text="Etapa 1 — Gerar variações", padding=8)
+        s1.pack(fill=tk.X, padx=8, pady=8)
+
+        row0 = ttk.Frame(s1); row0.pack(fill=tk.X)
+        ttk.Label(row0, text="Preset:", width=10, anchor="w").pack(side=tk.LEFT)
+        self.cmb_preset = ttk.Combobox(row0, textvariable=self.var_preset,
+                                        width=25, state="readonly")
+        self.cmb_preset.pack(side=tk.LEFT, padx=4)
+        self.cmb_preset.bind("<<ComboboxSelected>>",
+                              lambda e: self._update_preset_hint())
+        ttk.Button(row0, text="⚙ Editar presets",
+                   command=self.app.open_settings).pack(side=tk.LEFT, padx=4)
+
+        ttk.Label(row0, text="Motor:").pack(side=tk.LEFT, padx=(16, 0))
+        self.rb_flux = ttk.Radiobutton(row0, text="Flux Klein",
+                                       variable=self.var_engine, value="flux",
+                                       command=self._on_engine_changed,
+                                       state=tk.DISABLED)
+        self.rb_flux.pack(side=tk.LEFT, padx=4)
+        self.rb_sdxl = ttk.Radiobutton(row0, text="SDXL",
+                                       variable=self.var_engine, value="sdxl",
+                                       command=self._on_engine_changed,
+                                       state=tk.DISABLED)
+        self.rb_sdxl.pack(side=tk.LEFT, padx=4)
+
+        self.preset_hint = ttk.Label(s1, text="", foreground="#888",
+                                      font=("Segoe UI", 8, "italic"),
+                                      wraplength=1000, justify="left")
+        self.preset_hint.pack(anchor="w", padx=(80, 0))
+
+        self.engine_frame = ttk.Frame(s1)
+        self.engine_frame.pack(fill=tk.X, pady=(4, 4))
+
+        rp = ttk.Frame(s1); rp.pack(fill=tk.X, pady=(4, 0))
+        ttk.Label(rp, text="Objeto:", width=10, anchor="w").pack(side=tk.LEFT)
+        self.prompt_entry = tk.Entry(rp, font=("Segoe UI", 11))
+        self.prompt_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        rn = ttk.Frame(s1); rn.pack(fill=tk.X, pady=(4, 0))
+        ttk.Label(rn, text="Negativo extra:", width=10, anchor="w").pack(side=tk.LEFT)
+        self.neg_entry = tk.Entry(rn)
+        self.neg_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        rpar = ttk.Frame(s1); rpar.pack(fill=tk.X, pady=(8, 0))
+        ttk.Label(rpar, text="Variações:").pack(side=tk.LEFT)
+        self.var_count = tk.IntVar(value=4)
+        ttk.Spinbox(rpar, from_=1, to=MAX_BATCH, width=4,
+                    textvariable=self.var_count).pack(side=tk.LEFT, padx=(4, 12))
+        ttk.Label(rpar, text="Resolução:").pack(side=tk.LEFT)
+        self.var_res = tk.IntVar(value=512)
+        ttk.Combobox(rpar, textvariable=self.var_res,
+                     values=[384, 512, 640, 768], width=6,
+                     state="readonly").pack(side=tk.LEFT, padx=(4, 12))
+        ttk.Label(rpar, text="Steps:").pack(side=tk.LEFT)
+        self.var_steps = tk.IntVar(value=4)
+        ttk.Spinbox(rpar, from_=1, to=30, width=4,
+                    textvariable=self.var_steps).pack(side=tk.LEFT, padx=(4, 12))
+
+        self.btn_generate = ttk.Button(rpar, text="Gerar variações",
+                                       command=self._on_generate, state=tk.DISABLED)
+        self.btn_generate.pack(side=tk.LEFT, padx=(12, 0))
+
+        prog_row = ttk.Frame(s1); prog_row.pack(fill=tk.X, pady=(8, 0))
+        self.prog = ttk.Progressbar(prog_row, mode="determinate", maximum=100)
+        self.prog.pack(fill=tk.X)
+
+        sg = ttk.LabelFrame(self, text="Variações (clique para ampliar)",
+                            padding=6)
+        sg.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
+        self.gal_canvas = tk.Canvas(sg, highlightthickness=0)
+        sb = ttk.Scrollbar(sg, orient="vertical", command=self.gal_canvas.yview)
+        self.gal_inner = ttk.Frame(self.gal_canvas)
+        self.gal_inner.bind("<Configure>",
+            lambda e: self.gal_canvas.configure(scrollregion=self.gal_canvas.bbox("all")))
+        self.gal_canvas.create_window((0, 0), window=self.gal_inner, anchor="nw")
+        self.gal_canvas.configure(yscrollcommand=sb.set)
+        self.gal_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def reload_presets(self):
+        presets = self.app.presets.get(self.cat_key, {})
+        values = list(presets.keys())
+        self.cmb_preset["values"] = values
+        current = self.var_preset.get()
+        if current not in values:
+            default = self.cfg.get("default_preset", "")
+            if default in values:
+                self.var_preset.set(default)
+            elif values:
+                self.var_preset.set(values[0])
+            else:
+                self.var_preset.set("")
+        self._update_preset_hint()
+
+    def _update_preset_hint(self):
+        presets = self.app.presets.get(self.cat_key, {})
+        suffix = presets.get(self.var_preset.get(), "")
+        self.preset_hint.config(text=f"→ será anexado: {suffix.lstrip(', ')}")
+
+    def on_models_refreshed(self):
+        m = self.app.models
+        if m.flux_ok:
+            self.rb_flux.config(state=tk.NORMAL)
+            if not self.var_flux_unet.get():
+                u, c, v = m.pick_flux()
+                self.var_flux_unet.set(u); self.var_flux_clip.set(c); self.var_flux_vae.set(v)
+        if m.sdxl_ok:
+            self.rb_sdxl.config(state=tk.NORMAL)
+            if not self.var_sdxl_ckpt.get():
+                self.var_sdxl_ckpt.set(m.ckpts[0])
+        if m.flux_ok: self.var_engine.set("flux")
+        elif m.sdxl_ok: self.var_engine.set("sdxl")
+        self._on_engine_changed()
+        if m.flux_ok or m.sdxl_ok:
+            self.btn_generate.config(state=tk.NORMAL)
+
+    def _on_engine_changed(self):
+        for w in self.engine_frame.winfo_children(): w.destroy()
+        m = self.app.models
+
+        if self.var_engine.get() == "flux" and m.flux_ok:
+            r = ttk.Frame(self.engine_frame); r.pack(fill=tk.X)
+            ttk.Label(r, text="UNET:", width=8).pack(side=tk.LEFT)
+            ttk.Combobox(r, textvariable=self.var_flux_unet,
+                         values=m.flux_unets, width=40).pack(side=tk.LEFT, padx=4)
+            ttk.Label(r, text="CLIP:", width=6).pack(side=tk.LEFT, padx=(8, 0))
+            ttk.Combobox(r, textvariable=self.var_flux_clip,
+                         values=m.flux_clips, width=30).pack(side=tk.LEFT, padx=4)
+            ttk.Label(r, text="VAE:", width=5).pack(side=tk.LEFT, padx=(8, 0))
+            ttk.Combobox(r, textvariable=self.var_flux_vae,
+                         values=m.flux_vaes, width=25).pack(side=tk.LEFT, padx=4)
+        elif self.var_engine.get() == "sdxl" and m.sdxl_ok:
+            r = ttk.Frame(self.engine_frame); r.pack(fill=tk.X)
+            ttk.Label(r, text="Checkpoint:", width=11).pack(side=tk.LEFT)
+            ttk.Combobox(r, textvariable=self.var_sdxl_ckpt,
+                         values=m.ckpts, width=55,
+                         state="readonly").pack(side=tk.LEFT, padx=4,
+                                                 fill=tk.X, expand=True)
+            r2 = ttk.Frame(self.engine_frame); r2.pack(fill=tk.X, pady=(4, 0))
+            ttk.Label(r2, text="LoRA (opcional):", width=15).pack(side=tk.LEFT)
+            ttk.Combobox(r2, textvariable=self.var_sdxl_lora,
+                         values=["<nenhum>"] + m.loras,
+                         width=45, state="readonly").pack(side=tk.LEFT, padx=4)
+            ttk.Label(r2, text="Força:").pack(side=tk.LEFT, padx=(8, 0))
+            ttk.Spinbox(r2, from_=0.0, to=2.0, increment=0.05, width=5,
+                        textvariable=self.var_sdxl_lora_str).pack(side=tk.LEFT, padx=4)
+
+    def _on_generate(self):
+        if not self.prompt_entry.get().strip():
+            messagebox.showwarning("Prompt vazio", "Digite o nome do objeto."); return
+        clear_temp_dir()
+        self.generated.clear()
+        self._display_gallery()
+        self.btn_generate.config(state=tk.DISABLED)
+        self.prog.config(value=0)
+        self.app.set_status("Gerando variações...", "orange")
+        threading.Thread(target=self._do_generate, daemon=True).start()
+
+    def _do_generate(self):
+        presets = self.app.presets.get(self.cat_key, {})
+        pos = build_positive(self.prompt_entry.get(),
+                              presets.get(self.var_preset.get(), ""))
+        neg = build_negative(self.neg_entry.get())
+        w = h = int(self.var_res.get())
+        batch = int(self.var_count.get())
+        steps = int(self.var_steps.get())
+
+        results = []
+        for i in range(batch):
+            self.after(0, lambda i=i, b=batch: self.app.set_status(
+                f"Gerando item {i+1}/{b}...", "orange"))
+            seed = random.randint(1, 9_999_999_999)
+            if self.var_engine.get() == "flux":
+                wf = wf_flux_txt2img(self.var_flux_unet.get(),
+                                      self.var_flux_clip.get(),
+                                      self.var_flux_vae.get(),
+                                      pos, neg, w, h, 1, steps, seed)
+            else:
+                lora = self.var_sdxl_lora.get()
+                if lora == "<nenhum>": lora = None
+                wf = wf_sdxl_txt2img(self.var_sdxl_ckpt.get(), pos, neg,
+                                      w, h, 1, steps, seed, lora,
+                                      float(self.var_sdxl_lora_str.get()))
+            res = self.app.client.queue(wf)
+            if not res or "prompt_id" not in res or "error" in res:
+                self.after(0, lambda e=res: self.app.err(f"Erro: {e}")); return
+            pid = res["prompt_id"]
+
+            def cb(v, mm, base=i, tot=batch):
+                pct = int(100 * (base + v/max(1, mm)) / tot)
+                self.after(0, lambda p=pct: self.prog.config(value=p))
+
+            ok, msg = self.app.client.wait_for(pid, on_progress=cb)
+            if not ok:
+                self.after(0, lambda m=msg: self.app.err(f"Erro: {m}")); return
+
+            hist = self.app.client.history(pid)
+            for node in hist.get(pid, {}).get("outputs", {}).values():
+                if "images" in node:
+                    for info in node["images"]:
+                        data = self.app.client.fetch_image(info["filename"],
+                            info.get("subfolder", ""), info.get("type", "temp"))
+                        local = save_temp(data, "gen")
+                        results.append({"data": data, "local_path": local})
+
+        self.after(0, lambda: self.prog.config(value=100))
+        base_name = self.prompt_entry.get().strip()
+        self.generated = []
+        for r in results:
+            thumb = Image.open(io.BytesIO(r["data"]))
+            thumb.thumbnail((THUMB_SIZE, THUMB_SIZE), Image.LANCZOS)
+            self.generated.append({"photo": ImageTk.PhotoImage(thumb),
+                                    "data": r["data"],
+                                    "local_path": r["local_path"],
+                                    "base_name": base_name})
+        self.after(0, self._display_gallery)
+        self.after(0, lambda: self.app.set_status(
+            f"{len(self.generated)} variações.", "green"))
+        self.after(0, self.app.refresh_folders)
+        self.after(0, lambda: self.btn_generate.config(state=tk.NORMAL))
+
+    def _display_gallery(self):
+        for w in self.gal_inner.winfo_children(): w.destroy()
+        if not self.generated:
+            ttk.Label(self.gal_inner, text="Nenhuma imagem ainda.",
+                      foreground="#777").pack(pady=20); return
+        cols = 4
+        for i, item in enumerate(self.generated):
+            cell = ttk.Frame(self.gal_inner, padding=4)
+            cell.grid(row=i//cols, column=i%cols, padx=4, pady=4)
+            lbl = tk.Label(cell, image=item["photo"], cursor="hand2",
+                           borderwidth=2, relief="flat")
+            lbl.pack()
+            lbl.bind("<Button-1>", lambda e, idx=i: self._preview_gal(idx))
+            ttk.Label(cell, text=f"#{i+1}", foreground="#666").pack()
+
+    def _preview_gal(self, idx):
+        item = self.generated[idx]
+        actions = [
+            ("Editar esta", lambda: self._open_edit(idx)),
+            ("Salvar em assets/", lambda: self._save_gal(idx)),
+        ]
+        PreviewWindow(self, f"Variação #{idx+1}", item["data"], actions)
+
+    def _save_gal(self, idx):
+        path = unique_asset_path(self.generated[idx]["base_name"], "original")
+        with open(path, "wb") as f: f.write(self.generated[idx]["data"])
+        messagebox.showinfo("Salvo", f"Salvo em:\n{path}")
+        self.app.refresh_folders()
+
+    def _open_edit(self, idx):
+        try:
+            EditWindow(self, self.generated[idx])
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            messagebox.showerror("Erro ao abrir editor", f"{e}")
+
+
+# ====================================================================
+#  EDIT WINDOW
+# ====================================================================
+class EditWindow(tk.Toplevel):
+    def __init__(self, tab, item):
+        super().__init__(tab)
+        self.tab = tab
+        self.app = tab.app
+        self.client = tab.app.client
+        self.models = tab.app.models
+
+        self.title(f"Editar — {item['base_name']}")
+        self.geometry("1240x960")
+        self.minsize(1060, 800)
+
+        self.original_data = item["data"]
+        self.current_data  = item["data"]
+        self.results       = []
+        self.item = item
+
+        presets = tab.app.presets.get(tab.cat_key, {})
+        self.preset_suffix = presets.get(tab.var_preset.get(), "")
+
+        self.snap_engine = tab.var_engine.get()
+        if self.snap_engine == "flux" and not self.models.flux_ok:
+            self.snap_engine = "sdxl"
+        if self.snap_engine == "sdxl" and not self.models.sdxl_ok:
+            self.snap_engine = "flux"
+        self.snap_flux_unet = tab.var_flux_unet.get()
+        self.snap_flux_clip = tab.var_flux_clip.get()
+        self.snap_flux_vae  = tab.var_flux_vae.get()
+        self.snap_sdxl_ckpt = tab.var_sdxl_ckpt.get()
+        self.snap_sdxl_lora = tab.var_sdxl_lora.get()
+        self.snap_sdxl_lora_str = float(tab.var_sdxl_lora_str.get())
+
+        self._build_ui()
+
+    def _build_ui(self):
+        root = ttk.Frame(self, padding=8)
+        root.pack(fill=tk.BOTH, expand=True)
+
+        h = ttk.Frame(root); h.pack(fill=tk.X, pady=(0, 6))
+        ttk.Label(h, text=f"Editando: {self.item['base_name']}",
+                  font=("Segoe UI", 13, "bold")).pack(side=tk.LEFT)
+        ttk.Button(h, text="← Voltar", command=self.destroy).pack(side=tk.RIGHT)
+
+        body = ttk.Frame(root); body.pack(fill=tk.X)
+
+        left = ttk.LabelFrame(body, text="Imagem principal", padding=6)
+        left.pack(side=tk.LEFT, fill=tk.Y)
+
+        self.main_label = ttk.Label(left, cursor="hand2")
+        self.main_label.pack()
+        self.main_label.bind("<Button-1>", lambda e: self._preview_main())
+
+        self.size_label = ttk.Label(left, text="—", foreground="#666",
+                                     font=("Segoe UI", 8))
+        self.size_label.pack(pady=(2, 0))
+
+        ttk.Button(left, text="↺ Resetar para original",
+                   command=self._on_reset_main).pack(pady=(4, 0))
+
+        right = ttk.LabelFrame(body, text="Controles", padding=8)
+        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 0))
+
+        ttk.Label(right, text="Prompt (editável):").pack(anchor="w")
+        self.prompt_entry = tk.Entry(right)
+        self.prompt_entry.pack(fill=tk.X)
+        self.prompt_entry.insert(0, self.item["base_name"])
+
+        i2t_row = ttk.Frame(right); i2t_row.pack(fill=tk.X, pady=(4, 0))
+        self.btn_i2t = ttk.Button(
+            i2t_row, text="📝 Image → Texto",
+            command=self._on_img2txt,
+            state=tk.NORMAL if self.models.i2t_method else tk.DISABLED)
+        self.btn_i2t.pack(side=tk.LEFT)
+
+        er = ttk.Frame(right); er.pack(fill=tk.X, pady=(6, 0))
+        ttk.Label(er, text="Motor:").pack(side=tk.LEFT)
+        self.var_engine = tk.StringVar(value=self.snap_engine)
+        ttk.Radiobutton(er, text="Flux Klein", variable=self.var_engine,
+                        value="flux",
+                        state=tk.NORMAL if self.models.flux_ok else tk.DISABLED
+                        ).pack(side=tk.LEFT, padx=6)
+        ttk.Radiobutton(er, text="SDXL", variable=self.var_engine,
+                        value="sdxl",
+                        state=tk.NORMAL if self.models.sdxl_ok else tk.DISABLED
+                        ).pack(side=tk.LEFT, padx=6)
+
+        op = ttk.LabelFrame(right, text="Operações (combináveis)", padding=6)
+        op.pack(fill=tk.X, pady=(8, 0))
+        self.var_do_scale  = tk.BooleanVar(value=False)
+        self.var_do_edit   = tk.BooleanVar(value=True)
+        self.var_do_detail = tk.BooleanVar(value=False)
+        ttk.Checkbutton(op, text="Upscale", variable=self.var_do_scale,
+                        command=self._on_op_change).pack(side=tk.LEFT, padx=4)
+        ttk.Checkbutton(op, text="Edição (img2img)", variable=self.var_do_edit,
+                        command=self._on_op_change).pack(side=tk.LEFT, padx=4)
+        ttk.Checkbutton(op, text="Detailer (add detalhes)",
+                        variable=self.var_do_detail,
+                        command=self._on_op_change).pack(side=tk.LEFT, padx=4)
+
+        ur = ttk.Frame(right); ur.pack(fill=tk.X, pady=(6, 0))
+        ttk.Label(ur, text="Modelo de Upscale:").pack(side=tk.LEFT)
+        self.var_upscale_model = tk.StringVar(value="<lanczos>")
+        values = ["<lanczos>"]
+        if self.models.upscale_models:
+            values += list(self.models.upscale_models)
+        self.cmb_upscale = ttk.Combobox(ur, textvariable=self.var_upscale_model,
+                                          values=values, width=35, state="readonly")
+        self.cmb_upscale.pack(side=tk.LEFT, padx=6)
+        ttk.Button(ur, text="⬇ Baixar modelos",
+                   command=self.app.open_download_dialog).pack(side=tk.LEFT, padx=4)
+
+        pr = ttk.Frame(right); pr.pack(fill=tk.X, pady=(8, 0))
+        ttk.Label(pr, text="Fator Lanczos:").pack(side=tk.LEFT)
+        self.var_scale = tk.DoubleVar(value=2.0)
+        self.cmb_scale = ttk.Combobox(pr, textvariable=self.var_scale,
+                     values=[1.0, 1.5, 2.0, 2.5, 3.0], width=5, state="readonly")
+        self.cmb_scale.pack(side=tk.LEFT, padx=4)
+
+        ttk.Label(pr, text="Força (denoise):").pack(side=tk.LEFT, padx=(12, 0))
+        self.var_denoise = tk.DoubleVar(value=0.45)
+        self.scl_denoise = ttk.Scale(pr, from_=0.15, to=0.85,
+                                      variable=self.var_denoise, orient=tk.HORIZONTAL,
+                                      length=120)
+        self.scl_denoise.pack(side=tk.LEFT, padx=4)
+        self.lbl_dn = ttk.Label(pr, text="0.45")
+        self.lbl_dn.pack(side=tk.LEFT)
+        self.var_denoise.trace_add("write",
+            lambda *_: self.lbl_dn.config(text=f"{self.var_denoise.get():.2f}"))
+
+        br = ttk.Frame(right); br.pack(fill=tk.X, pady=(6, 0))
+        ttk.Label(br, text="Steps:").pack(side=tk.LEFT)
+        self.var_steps = tk.IntVar(value=12)
+        ttk.Spinbox(br, from_=4, to=30, width=4,
+                    textvariable=self.var_steps).pack(side=tk.LEFT, padx=4)
+        ttk.Label(br, text="Objetos:").pack(side=tk.LEFT, padx=(12, 0))
+        self.var_batch = tk.IntVar(value=1)
+        ttk.Spinbox(br, from_=1, to=4, width=4,
+                    textvariable=self.var_batch).pack(side=tk.LEFT, padx=4)
+
+        gr = ttk.Frame(right); gr.pack(fill=tk.X, pady=(10, 0))
+        self.btn_gen = ttk.Button(gr, text="Gerar", command=self._on_generate)
+        self.btn_gen.pack(side=tk.LEFT)
+        self.btn_rmbg = ttk.Button(
+            gr, text="✂ Remover fundo",
+            command=self._on_remove_bg,
+            state=tk.NORMAL if self.models.has_rmbg else tk.DISABLED)
+        self.btn_rmbg.pack(side=tk.LEFT, padx=6)
+        ttk.Button(gr, text="Limpar temp/",
+                   command=self._clear_and_reset).pack(side=tk.LEFT, padx=6)
+
+        self.prog = ttk.Progressbar(right, mode="determinate", maximum=100)
+        self.prog.pack(fill=tk.X, pady=(8, 0))
+
+        rg = ttk.LabelFrame(root, text="Resultados (clique para ampliar)",
+                            padding=6)
+        rg.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
+        self.res_canvas = tk.Canvas(rg, highlightthickness=0)
+        rs = ttk.Scrollbar(rg, orient="vertical", command=self.res_canvas.yview)
+        self.res_inner = ttk.Frame(self.res_canvas)
+        self.res_inner.bind("<Configure>",
+            lambda e: self.res_canvas.configure(scrollregion=self.res_canvas.bbox("all")))
+        self.res_canvas.create_window((0, 0), window=self.res_inner, anchor="nw")
+        self.res_canvas.configure(yscrollcommand=rs.set)
+        self.res_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        rs.pack(side=tk.RIGHT, fill=tk.Y)
+
+        act = ttk.Frame(root); act.pack(fill=tk.X, pady=(6, 0))
+        ttk.Button(act, text="Salvar principal em assets/",
+                   command=self._on_save_main).pack(side=tk.LEFT)
+        ttk.Button(act, text="Pular e salvar original",
+                   command=self._on_save_original).pack(side=tk.RIGHT)
+
+        self.status = ttk.Label(root, text="Pronto.", foreground="#333")
+        self.status.pack(fill=tk.X, pady=(6, 0))
+
+        self._refresh_main()
+        self._on_op_change()
+
+    def _on_op_change(self):
+        do_scale = self.var_do_scale.get()
+        do_edit = self.var_do_edit.get()
+        do_detail = self.var_do_detail.get()
+        self.cmb_scale.config(state="readonly" if do_scale else tk.DISABLED)
+        editable = do_edit and not do_detail
+        self.scl_denoise.config(state="normal" if editable else tk.DISABLED)
+
+    def _refresh_main(self):
+        img = Image.open(io.BytesIO(self.current_data))
+        w, h = img.size
+        disp = img.copy(); disp.thumbnail((320, 320), Image.LANCZOS)
+        self.main_photo = ImageTk.PhotoImage(disp)
+        self.main_label.config(image=self.main_photo)
+        self.size_label.config(text=f"{w}×{h}px")
+
+    def _preview_main(self):
+        actions = [("Salvar em assets/",
+                    lambda: self._save_data(self.current_data, "main"))]
+        PreviewWindow(self, "Imagem principal", self.current_data, actions)
+
+    def _on_reset_main(self):
+        self.current_data = self.original_data
+        self._refresh_main()
+        self.status.config(text="Resetado para o original.", foreground="#333")
+
+    def _save_data(self, data, suffix):
+        path = unique_asset_path(self.item["base_name"], suffix)
+        with open(path, "wb") as f: f.write(data)
+        messagebox.showinfo("Salvo", f"Salvo em:\n{path}")
+        self.app.refresh_folders()
+
+    def _on_save_main(self):
+        self._save_data(self.current_data, "main")
+
+    def _on_img2txt(self):
+        if not self.models.i2t_method:
+            messagebox.showerror("Indisponível",
+                "Nenhum modelo de Image-to-Text detectado."); return
+        self.btn_i2t.config(state=tk.DISABLED)
+        self.prog.config(value=0)
+        self.status.config(text="Analisando imagem...", foreground="orange")
+        threading.Thread(target=self._do_img2txt, daemon=True).start()
+
+    def _do_img2txt(self):
+        work = save_temp(self.current_data, "i2t_src")
+        uploaded = self.client.upload_image(work)
+        try: os.unlink(work)
+        except: pass
+        if not uploaded:
+            self.after(0, lambda: self._i2t_done(None, "Falha no upload.")); return
+
+        wf = wf_img2txt(uploaded, self.models.i2t_method, self.models.i2t_node)
+        res = self.client.queue(wf)
+        if not res or "prompt_id" not in res or "error" in res:
+            self.after(0, lambda e=res: self._i2t_done(None, f"Erro: {e}")); return
+        pid = res["prompt_id"]
+
+        ok, msg = self.client.wait_for(pid)
+        if not ok:
+            self.after(0, lambda m=msg: self._i2t_done(None, f"Erro: {m}")); return
+
+        hist = self.client.history(pid)
+        text = self._extract_text(hist.get(pid, {}).get("outputs", {}))
+        self.after(0, lambda t=text: self._i2t_done(t, None))
+
+    def _extract_text(self, outputs):
+        candidates = []
+        for node_out in outputs.values():
+            for key, val in node_out.items():
+                if isinstance(val, str) and val.strip():
+                    candidates.append(val.strip())
+                elif isinstance(val, list):
+                    for item in val:
+                        if isinstance(item, str) and item.strip():
+                            candidates.append(item.strip())
+        return max(candidates, key=len) if candidates else None
+
+    def _i2t_done(self, text, error):
+        self.btn_i2t.config(state=tk.NORMAL)
+        self.prog.config(value=100)
+        if error:
+            self.status.config(text=error, foreground="red")
+            messagebox.showerror("Erro", error); return
+        if not text:
+            self.status.config(text="Nada retornado.", foreground="red")
+            messagebox.showerror("Erro", "O modelo não retornou texto."); return
+        self._show_text_dialog(text)
+
+    def _show_text_dialog(self, text):
+        win = tk.Toplevel(self); win.title("Texto extraído")
+        win.geometry("640x400")
+        win.minsize(520, 320)
+
+        ttk.Label(win, text="Descrição da imagem:",
+                  font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=10, pady=(10, 4))
+        txt = tk.Text(win, wrap="word", height=12)
+        txt.pack(fill=tk.BOTH, expand=True, padx=10)
+        txt.insert("1.0", text)
+
+        def _substituir():
+            self.prompt_entry.delete(0, tk.END)
+            self.prompt_entry.insert(0, text)
+            win.destroy()
+
+        def _adicionar():
+            cur = self.prompt_entry.get().strip()
+            self.prompt_entry.delete(0, tk.END)
+            self.prompt_entry.insert(0, (cur + ", " + text) if cur else text)
+            win.destroy()
+
+        btn_bar = ttk.Frame(win); btn_bar.pack(pady=10)
+        ttk.Button(btn_bar, text="Substituir prompt",
+                   command=_substituir).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_bar, text="Adicionar ao prompt",
+                   command=_adicionar).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_bar, text="Fechar", command=win.destroy).pack(side=tk.LEFT, padx=4)
+
+    def _on_generate(self):
+        do_scale = self.var_do_scale.get()
+        do_edit = self.var_do_edit.get()
+        do_detail = self.var_do_detail.get()
+        if not (do_scale or do_edit or do_detail):
+            messagebox.showwarning("Nada selecionado",
+                "Marque ao menos uma operação."); return
+        if self.var_engine.get() == "sdxl" and not self.models.sdxl_ok and (do_edit or do_detail):
+            messagebox.showerror("SDXL indisponível", "Nenhum checkpoint."); return
+        if self.var_engine.get() == "flux" and not self.models.flux_ok and (do_edit or do_detail):
+            messagebox.showerror("Flux indisponível", "GGUFs não encontrados."); return
+        self.btn_gen.config(state=tk.DISABLED)
+        self.prog.config(value=0)
+        self.status.config(text="Preparando...", foreground="orange")
+        threading.Thread(target=self._do_generate, daemon=True).start()
+
+    def _do_generate(self):
+        do_scale = self.var_do_scale.get()
+        do_edit = self.var_do_edit.get()
+        do_detail = self.var_do_detail.get()
+
+        work_file = save_temp(self.current_data, "work")
+        uploaded = self.client.upload_image(work_file)
+        try: os.unlink(work_file)
+        except: pass
+        if not uploaded:
+            self.after(0, lambda: self._err("Falha no upload.")); return
+
+        batch = int(self.var_batch.get())
+        steps = int(self.var_steps.get())
+        pos = build_positive(self.prompt_entry.get(), self.preset_suffix)
+        neg = build_negative("")
+
+        if do_detail:
+            pos += DETAIL_BOOST
+
+        if do_edit and not do_detail:
+            denoise = float(self.var_denoise.get())
+        elif do_detail and not do_edit:
+            denoise = 0.30
+        elif do_edit and do_detail:
+            denoise = max(0.30, float(self.var_denoise.get()) * 0.75)
+        else:
+            denoise = 1.0
+
+        if do_scale:
+            scale = float(self.var_scale.get())
+        else:
+            scale = 1.0
+
+        up_model = self.var_upscale_model.get()
+        if up_model == "<lanczos>":
+            up_model = None
+
+        only_scale = do_scale and not (do_edit or do_detail)
+
+        results = []
+        for i in range(batch):
+            self.after(0, lambda i=i, b=batch: self.status.config(
+                text=f"Item {i+1}/{b}...", foreground="orange"))
+            seed = random.randint(1, 9_999_999_999)
+
+            if only_scale:
+                if up_model:
+                    wf = wf_upscale_with_model(uploaded, up_model)
+                else:
+                    wf = wf_scale_only(uploaded, scale)
+            else:
+                if self.var_engine.get() == "flux":
+                    wf = wf_flux_img2img(self.snap_flux_unet, self.snap_flux_clip,
+                                          self.snap_flux_vae, uploaded,
+                                          pos, neg, scale, steps, denoise, seed,
+                                          upscale_model=up_model if do_scale else None)
+                else:
+                    lora = self.snap_sdxl_lora
+                    if lora == "<nenhum>": lora = None
+                    wf = wf_sdxl_img2img(self.snap_sdxl_ckpt, uploaded, pos, neg,
+                                          scale, steps, denoise, seed,
+                                          lora, self.snap_sdxl_lora_str,
+                                          upscale_model=up_model if do_scale else None)
+
+            res = self.client.queue(wf)
+            if not res or "prompt_id" not in res or "error" in res:
+                self.after(0, lambda e=res: self._err(f"Erro: {e}")); return
+            pid = res["prompt_id"]
+
+            def cb(v, m, base=i, tot=batch):
+                pct = int(100 * (base + v/max(1, m)) / tot)
+                self.after(0, lambda p=pct: self.prog.config(value=p))
+
+            ok, msg = self.client.wait_for(pid, on_progress=cb)
+            if not ok:
+                self.after(0, lambda m=msg: self._err(f"Erro: {m}")); return
+
+            hist = self.client.history(pid)
+            for node in hist.get(pid, {}).get("outputs", {}).values():
+                if "images" in node:
+                    for info in node["images"]:
+                        data = self.client.fetch_image(info["filename"],
+                            info.get("subfolder", ""), info.get("type", "temp"))
+                        local = save_temp(data, "op")
+                        results.append({"data": data, "local_path": local})
+
+        self.after(0, lambda: self.prog.config(value=100))
+
+        for r in results:
+            thumb = Image.open(io.BytesIO(r["data"]))
+            thumb.thumbnail((THUMB_SIZE, THUMB_SIZE), Image.LANCZOS)
+            self.results.append({"photo": ImageTk.PhotoImage(thumb),
+                                  "data": r["data"],
+                                  "local_path": r["local_path"]})
+
+        self.after(0, self._display_results)
+        self.after(0, lambda: self.status.config(
+            text=f"{len(results)} novos resultados.", foreground="green"))
+        self.after(0, lambda: self.btn_gen.config(state=tk.NORMAL))
+        self.after(0, self.app.refresh_folders)
+
+    def _on_remove_bg(self):
+        if not self.models.has_rmbg or not self.models.rmbg_models:
+            messagebox.showerror("Sem RMBG", "Node RMBG indisponível."); return
+        self.btn_rmbg.config(state=tk.DISABLED)
+        self.prog.config(value=0)
+        self.status.config(text="Removendo fundo...", foreground="orange")
+        threading.Thread(target=self._do_remove_bg, daemon=True).start()
+
+    def _do_remove_bg(self):
+        work_file = save_temp(self.current_data, "rmbg_src")
+        uploaded = self.client.upload_image(work_file)
+        try: os.unlink(work_file)
+        except: pass
+        if not uploaded:
+            self.after(0, lambda: self._rmbg_done(None, "Falha no upload.")); return
+
+        model_name = self.models.rmbg_models[0]
+        wf = wf_remove_bg_rmbg(model_name, uploaded)
+        res = self.client.queue(wf)
+        if not res or "prompt_id" not in res or "error" in res:
+            self.after(0, lambda e=res: self._rmbg_done(None, f"Erro: {e}")); return
+        pid = res["prompt_id"]
+
+        def cb(v, m):
+            pct = int(100 * v/max(1, m))
+            self.after(0, lambda p=pct: self.prog.config(value=p))
+
+        ok, msg = self.client.wait_for(pid, on_progress=cb)
+        if not ok:
+            self.after(0, lambda m=msg: self._rmbg_done(None, f"Erro: {m}")); return
+
+        hist = self.client.history(pid)
+        result_bytes = None
+        for node in hist.get(pid, {}).get("outputs", {}).values():
+            if "images" in node:
+                for info in node["images"]:
+                    result_bytes = self.client.fetch_image(
+                        info["filename"], info.get("subfolder", ""),
+                        info.get("type", "temp"))
+        if result_bytes is None:
+            self.after(0, lambda: self._rmbg_done(None, "Sem imagem.")); return
+        self.after(0, lambda d=result_bytes: self._rmbg_done(d, None))
+
+    def _rmbg_done(self, result_bytes, error):
+        self.btn_rmbg.config(state=tk.NORMAL)
+        self.prog.config(value=100)
+        if error:
+            self.status.config(text=error, foreground="red")
+            messagebox.showerror("Erro", error); return
+
+        thumb = Image.open(io.BytesIO(result_bytes)).convert("RGBA")
+        thumb.thumbnail((THUMB_SIZE, THUMB_SIZE), Image.LANCZOS)
+        bg = Image.new("RGBA", thumb.size, (40, 40, 40, 255))
+        bg.paste(thumb, (0, 0), thumb)
+        self.results.append({
+            "photo": ImageTk.PhotoImage(bg),
+            "data": result_bytes,
+            "local_path": save_temp(result_bytes, "rmbg"),
+        })
+        self._display_results()
+        self.status.config(text="Fundo removido.", foreground="green")
+        self.app.refresh_folders()
+
+    def _display_results(self):
+        for w in self.res_inner.winfo_children(): w.destroy()
+        if not self.results:
+            ttk.Label(self.res_inner, text="Sem resultados ainda.",
+                      foreground="#777").pack(pady=20); return
+        cols = 5
+        for i, r in enumerate(self.results):
+            cell = ttk.Frame(self.res_inner, padding=3)
+            cell.grid(row=i//cols, column=i%cols, padx=3, pady=3)
+            lbl = tk.Label(cell, image=r["photo"], cursor="hand2",
+                           borderwidth=2, relief="flat")
+            lbl.pack()
+            lbl.bind("<Button-1>", lambda e, idx=i: self._preview_result(idx))
+            ttk.Label(cell, text=f"#{i+1}", foreground="#666").pack()
+
+    def _preview_result(self, idx):
+        r = self.results[idx]
+        actions = [
+            ("Definir como principal", lambda: self._set_main_from_result(idx)),
+            ("Salvar em assets/", lambda: self._save_result(idx)),
+        ]
+        PreviewWindow(self, f"Resultado #{idx+1}", r["data"], actions)
+
+    def _save_result(self, idx):
+        r = self.results[idx]
+        parts = []
+        if self.var_do_scale.get(): parts.append("upscaled")
+        if self.var_do_edit.get():  parts.append("edited")
+        if self.var_do_detail.get(): parts.append("detailed")
+        suffix = "_".join(parts) if parts else "result"
+        path = unique_asset_path(self.item["base_name"], suffix)
+        with open(path, "wb") as f: f.write(r["data"])
+        messagebox.showinfo("Salvo", f"Salvo em:\n{path}")
+        self.app.refresh_folders()
+
+    def _set_main_from_result(self, idx):
+        self.current_data = self.results[idx]["data"]
+        self._refresh_main()
+
+    def _on_save_original(self):
+        path = unique_asset_path(self.item["base_name"], "original")
+        with open(path, "wb") as f: f.write(self.original_data)
+        messagebox.showinfo("Salvo", f"Original salva em:\n{path}")
+        self.app.refresh_folders()
+        self.destroy()
+
+    def _clear_and_reset(self):
+        self.results = []
+        self._display_results()
+        clear_temp_dir()
+        self.app.refresh_folders()
+        self.status.config(text="Resultados limpos.", foreground="#333")
+
+    def _err(self, msg):
+        self.status.config(text=msg, foreground="red")
+        self.btn_gen.config(state=tk.NORMAL)
+        messagebox.showerror("Erro", msg)
+
+
+# ====================================================================
+#  APP
+# ====================================================================
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Asset Creator — v1.1")
+        self.geometry("1180x920")
+        self.minsize(1000, 760)
+
+        self.client = ComfyClient(COMFY_SERVER)
+        self.models = Models()
+        self.presets = load_presets()
+        self.tabs = {}
+
+        self._build_ui()
+        atexit.register(clear_temp_dir)
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.after(200, self._boot)
+
+    def _build_ui(self):
+        root = ttk.Frame(self, padding=8)
+        root.pack(fill=tk.BOTH, expand=True)
+
+        h = ttk.Frame(root); h.pack(fill=tk.X, pady=(0, 6))
+        ttk.Label(h, text="Asset Creator",
+                  font=("Segoe UI", 15, "bold")).pack(side=tk.LEFT)
+        ttk.Button(h, text="🧙 Character Sheet",
+                   command=self.open_character_sheet).pack(side=tk.LEFT, padx=12)
+        ttk.Button(h, text="⚙ Settings",
+                   command=self.open_settings).pack(side=tk.LEFT, padx=4)
+        ttk.Button(h, text="⬇ Baixar modelos",
+                   command=self.open_download_dialog).pack(side=tk.LEFT, padx=4)
+        self.conn_label = ttk.Label(h, text="● Conectando...", foreground="orange")
+        self.conn_label.pack(side=tk.RIGHT)
+
+        req = ttk.LabelFrame(root, text="Requisitos detectados", padding=6)
+        req.pack(fill=tk.X, pady=(0, 6))
+        self.req_flux = ttk.Label(req, text="Flux Klein: verificando...", foreground="#666")
+        self.req_flux.pack(anchor="w")
+        self.req_sdxl = ttk.Label(req, text="SDXL: verificando...", foreground="#666")
+        self.req_sdxl.pack(anchor="w")
+        self.req_charsheet = ttk.Label(req, text="Character Sheet: verificando...", foreground="#666")
+        self.req_charsheet.pack(anchor="w")
+        self.req_rmbg = ttk.Label(req, text="RMBG: verificando...", foreground="#666")
+        self.req_rmbg.pack(anchor="w")
+        self.req_i2t = ttk.Label(req, text="Image-to-text: verificando...", foreground="#666")
+        self.req_i2t.pack(anchor="w")
+        self.req_upscale = ttk.Label(req, text="Upscale: verificando...", foreground="#666")
+        self.req_upscale.pack(anchor="w")
+
+        self.notebook = ttk.Notebook(root)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        for key, cfg in CATEGORIES.items():
+            tab = CategoryTab(self.notebook, self, key)
+            self.notebook.add(tab, text=cfg["title"])
+            self.tabs[key] = tab
+
+        st = ttk.Frame(root); st.pack(fill=tk.X, pady=(6, 0))
+        self.status = ttk.Label(st, text="Pronto.", foreground="#333")
+        self.status.pack(side=tk.LEFT)
+        self.folders_label = ttk.Label(st, text="", foreground="#666")
+        self.folders_label.pack(side=tk.RIGHT)
+        self.refresh_folders()
+
+    def set_status(self, text, color="black"):
+        self.status.config(text=text, foreground=color)
+
+    def err(self, msg):
+        self.set_status(msg, "red")
+        messagebox.showerror("Erro", msg)
+
+    def refresh_folders(self):
+        n_chars = 0
+        if os.path.isdir(CHARS_DIR):
+            n_chars = len([d for d in os.listdir(CHARS_DIR)
+                           if os.path.isdir(os.path.join(CHARS_DIR, d))])
+        self.folders_label.config(
+            text=f"temp/: {folder_count(TEMP_DIR)}   assets/: {folder_count(ASSETS_DIR)}   chars/: {n_chars}")
+
+    def open_settings(self):
+        SettingsDialog(self, self)
+
+    def open_download_dialog(self):
+        DownloadDialog(self, self)
+
+    def open_character_sheet(self):
+        CharacterSheetGenerator(self, self)
+
+    def reload_models(self):
+        self.models.refresh(self.client)
+        self._update_req_panel()
+        for tab in self.tabs.values():
+            tab.on_models_refreshed()
+
+    def _update_req_panel(self):
+        m = self.models
+        if m.flux_ok:
+            self.req_flux.config(
+                text=f"Flux Klein: OK ({len(m.flux_unets)} unet)", foreground="green")
+        else:
+            self.req_flux.config(text="Flux Klein: INDISPONÍVEL", foreground="red")
+
+        if m.sdxl_ok:
+            self.req_sdxl.config(
+                text=f"SDXL: OK ({len(m.ckpts)} checkpoints, "
+                     f"{len(m.loras)} LoRAs)", foreground="green")
+        else:
+            self.req_sdxl.config(text="SDXL: INDISPONÍVEL", foreground="red")
+
+        # Character Sheet status
+        mode = m.character_sheet_mode()
+        if mode == "tripleview":
+            self.req_charsheet.config(
+                text=f"Character Sheet: OK (Klein 9B + TripleView/QuadView)",
+                foreground="green")
+        elif mode == "spritesheet":
+            self.req_charsheet.config(
+                text=f"Character Sheet: OK (Klein 4B + Spritesheet)",
+                foreground="green")
+        else:
+            self.req_charsheet.config(
+                text="Character Sheet: INDISPONÍVEL — instale na aba 'Character Sheet'",
+                foreground="red")
+
+        if m.has_rmbg and m.rmbg_models:
+            self.req_rmbg.config(
+                text=f"RMBG: OK ({len(m.rmbg_models)} modelos)", foreground="green")
+        else:
+            self.req_rmbg.config(text="RMBG: INDISPONÍVEL", foreground="red")
+
+        if m.i2t_method:
+            self.req_i2t.config(
+                text=f"Image-to-text: OK ({m.i2t_method} via {m.i2t_node})",
+                foreground="green")
+        else:
+            self.req_i2t.config(
+                text="Image-to-text: INDISPONÍVEL — instale Florence2 ou WD14 Tagger",
+                foreground="red")
+
+        if m.upscale_models:
+            short = ", ".join(m.upscale_models[:3])
+            if len(m.upscale_models) > 3:
+                short += f" (+{len(m.upscale_models)-3})"
+            self.req_upscale.config(
+                text=f"Upscale: OK ({len(m.upscale_models)} modelos: {short})",
+                foreground="green")
+        else:
+            self.req_upscale.config(
+                text="Upscale: NENHUM — clique em '⬇ Baixar modelos'",
+                foreground="orange")
+
+    def _boot(self):
+        if not self.client.is_alive():
+            self.conn_label.config(text="● ComfyUI offline (127.0.0.1:8188)",
+                                    foreground="red")
+            self.after(3000, self._boot); return
+
+        self.conn_label.config(text="● ComfyUI conectado", foreground="green")
+        self.client.connect_ws()
+        self.models.refresh(self.client)
+        self._update_req_panel()
+
+        for tab in self.tabs.values():
+            tab.on_models_refreshed()
+
+        self.refresh_folders()
+
+    def _on_close(self):
+        clear_temp_dir()
+        try:
+            save_presets(self.presets)
+        except Exception:
+            pass
+        self.destroy()
+
+
+# ====================================================================
+#  MAIN
+# ====================================================================
+if __name__ == "__main__":
+    App().mainloop()

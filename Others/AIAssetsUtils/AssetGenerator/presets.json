@@ -1,0 +1,25 @@
+{
+  "personagens": {
+    "T-pose": ", character design, T-pose, full body, game asset, isolated on white background, high detail, concept art, front view",
+    "Portrait": ", character portrait, bust, detailed face, game asset, isolated on white background, studio lighting, concept art",
+    "Character Icon": ", character icon, avatar, headshot, game UI, centered, isolated on dark background, high contrast, stylized",
+    "Sprite Sheet": ", character sprite sheet, multiple poses, game asset, isolated on white background, high detail"
+  },
+  "objetos": {
+    "Item / Prop": ", game asset, isolated on white background, high detail, concept art, single object",
+    "Textura": ", seamless texture, tileable, high detail, PBR, material study, top down view",
+    "Mobília": ", furniture design, game asset, isolated on white background, high detail, studio lighting",
+    "Árvore / Vegetação": ", stylized tree, game asset, isolated on white background, high detail, concept art",
+    "Arma": ", weapon design, game asset, isolated on white background, high detail, concept art",
+    "Veículo": ", vehicle design, game asset, isolated on white background, high detail, concept art",
+    "Comida": ", food item, game asset, isolated on white background, high detail, concept art, stylized"
+  },
+  "ui": {
+    "Ícone de Skill": ", game icon, skill icon, UI icon, centered, isolated on dark background, high contrast, vector art",
+    "Ícone de Item": ", inventory icon, item icon, game UI, centered, isolated on dark background, high contrast",
+    "Botão de UI": ", UI button, game interface, clean design, isolated on transparent background, flat design",
+    "Barra de Progresso": ", UI progress bar, game interface, horizontal, clean design, flat design",
+    "Frame / Painel": ", UI panel, game interface frame, clean design, flat design",
+    "Moeda / Recurso": ", game currency icon, resource icon, UI element, centered, high contrast"
+  }
+}

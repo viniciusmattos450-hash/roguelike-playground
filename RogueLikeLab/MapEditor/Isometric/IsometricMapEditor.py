@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-MapEditor v19 — auto-scan + save robusto + 4 layers + mirror + sprite bank
+MapEditor v19 — sem seams + preview correto + alturas configuráveis
 """
 import os, sys, json, math, subprocess
 from collections import deque
@@ -28,15 +28,19 @@ CANVAS_H  = HEIGHT - TOP_H - BOTTOM_H
 NUM_FLOORS = 6
 N_STEPS    = 4
 WALL_HEIGHT_UNITS = 1.0
-BLOCK_THICKNESS   = 0.20
 
 BASE_TILE_W  = 64.0
 BASE_TILE_H  = 32.0
-BASE_WALL_H  = 32.0
 CAM_SPEED    = 5.0
 
 MAX_LAYERS = 4
 MAX_SCAN_ADDITIONS = 200
+
+# ---- Globais de altura (px por nível) ----
+G_WALL_H    = 32.0
+G_TERRAIN_H = 32.0
+G_STAIR_H   = 32.0
+G_BLOCK_T   = 6.4
 
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 EXPORTS_DIR = os.path.join(BASE_DIR, "exports", "maps")
@@ -47,7 +51,7 @@ for d in (EXPORTS_DIR, TILES_DIR, SPRITES_DIR, SPRITES_DATA_DIR):
     os.makedirs(d, exist_ok=True)
 AUTOSAVE_PATH = os.path.join(EXPORTS_DIR, "_autosave.json")
 
-MAP_FILE_VERSION = 2
+MAP_FILE_VERSION = 3
 
 TILE_SLOTS = ("top", "side_left", "side_right")
 IMG_EXTS = ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
@@ -110,6 +114,21 @@ FONT_S  = pygame.font.SysFont("georgia,dejavuserif,serif", 11)
 FONT_XS = pygame.font.SysFont("georgia,dejavuserif,serif", 10)
 
 # ============================================================
+# FUNÇÕES DE ALTURA (px por nível, com zoom)
+# ============================================================
+def wall_px(cam):    return G_WALL_H    * cam.zoom
+def terrain_px(cam): return G_TERRAIN_H * cam.zoom
+def stair_px(cam):   return G_STAIR_H   * cam.zoom
+def block_thick_px(cam): return G_BLOCK_T * cam.zoom
+
+def unit_px(cam):    return wall_px(cam)
+
+def tile_h_px(form, cam):
+    if form and (form.startswith('stair_') or form.startswith('ramp_')):
+        return stair_px(cam)
+    return terrain_px(cam)
+
+# ============================================================
 # HELPERS DE ARQUIVO
 # ============================================================
 def make_missing_texture(size=32):
@@ -141,12 +160,10 @@ def prettify_name(s):
     return s[0].upper() + s[1:]
 
 def sprite_data_path_for(png_path):
-    """Retorna o caminho do JSON de dados para o PNG."""
     base = os.path.splitext(os.path.basename(png_path))[0]
     return os.path.join(SPRITES_DATA_DIR, f"{base}.json")
 
 def object_unpack(val):
-    """Aceita tupla antiga (4) ou nova (6) e retorna (sid, dx, dy, dz, dmx, dmy)."""
     try:
         if len(val) >= 6:
             return (int(val[0]), float(val[1]), float(val[2]), float(val[3]),
@@ -159,16 +176,19 @@ def object_unpack(val):
     return None
 
 # ============================================================
-# TEXTURAS BASE
+# TEXTURAS BASE (SEM BORDA — evita linhas escuras em emendas)
 # ============================================================
-def _make_checker(size, c1, c2, border, path):
-    if os.path.isfile(path): return
+def _make_checker(size, c1, c2, path):
+    """Textura base SEM borda — evita linhas escuras nas conexões."""
+    try:
+        if os.path.isfile(path):
+            os.remove(path)
+    except Exception: pass
     surf = pygame.Surface((size, size), pygame.SRCALPHA)
     for y in range(size):
         for x in range(size):
             c = c1 if ((x//8 + y//8) % 2 == 0) else c2
             surf.set_at((x, y), (c, c, c, 255))
-    pygame.draw.rect(surf, (border, border, border, 255), (0,0,size,size), 1)
     try: pygame.image.save(surf, path)
     except Exception: pass
 
@@ -177,9 +197,9 @@ SIDE_LEFT_TEXTURE  = os.path.join(TILES_DIR, "side_left_texture.png")
 SIDE_RIGHT_TEXTURE = os.path.join(TILES_DIR, "side_right_texture.png")
 
 def ensure_base_textures():
-    _make_checker(64, 200, 160, 90, BASE_TEXTURE)
-    _make_checker(64, 110, 80,  60, SIDE_LEFT_TEXTURE)
-    _make_checker(64, 150, 120, 70, SIDE_RIGHT_TEXTURE)
+    _make_checker(64, 200, 160, BASE_TEXTURE)
+    _make_checker(64, 110, 80,  SIDE_LEFT_TEXTURE)
+    _make_checker(64, 150, 120, SIDE_RIGHT_TEXTURE)
 ensure_base_textures()
 
 # ============================================================
@@ -588,7 +608,6 @@ class TileMap:
         def wall_row(x, y, z, v):
             k, tid = wall_val(v)
             return [x, y, z, k, tid]
-        # objects: normaliza para 6-tupla (sid, dx, dy, dz, dmx, dmy)
         obj_rows = []
         for (x, y, z, layer), val in self.objects.items():
             up = object_unpack(val)
@@ -670,7 +689,6 @@ class TileMap:
                     m.walls_v[(int(e[0]), int(e[1]), int(e[2]))] = (e[3], None)
             except Exception: continue
 
-        # Aceita 4, 8 ou 10 campos
         m.objects = {}
         for e in (d.get("objects", []) or []):
             try:
@@ -719,6 +737,11 @@ class Project:
         m = TileMap("mapa_inicial", 24, 20)
         self.maps[m.name] = m
         self.active_map_name = m.name
+        self.wall_height    = 32.0
+        self.terrain_height = 32.0
+        self.stair_height   = 32.0
+        self.block_thickness = 6.4
+
     def active_map(self): return self.maps.get(self.active_map_name)
     def add_map(self, m):
         self.maps[m.name] = m; self.active_map_name = m.name
@@ -755,6 +778,10 @@ class Project:
     def to_dict(self):
         return {
             "version": MAP_FILE_VERSION,
+            "wall_height": float(self.wall_height),
+            "terrain_height": float(self.terrain_height),
+            "stair_height": float(self.stair_height),
+            "block_thickness": float(self.block_thickness),
             "tileset": self.tileset.to_dict(),
             "sprites": [{"name": s.name, "path": s.path, "scale": s.scale,
                          "offset_x": s.offset_x, "offset_y": s.offset_y,
@@ -772,6 +799,17 @@ class Project:
             raise ValueError("Project.from_dict: JSON raiz não é objeto")
 
         p = cls.__new__(cls)
+
+        try:
+            p.wall_height    = max(1.0, float(d.get("wall_height", 32.0)))
+            p.terrain_height = max(1.0, float(d.get("terrain_height", 32.0)))
+            p.stair_height   = max(1.0, float(d.get("stair_height", 32.0)))
+            p.block_thickness = max(1.0, float(d.get("block_thickness", 6.4)))
+        except Exception:
+            p.wall_height = 32.0
+            p.terrain_height = 32.0
+            p.stair_height = 32.0
+            p.block_thickness = 6.4
 
         try:
             tileset_d = d.get("tileset", {}) or {}
@@ -1193,7 +1231,6 @@ class Camera:
         self.x = 0.0; self.y = 0.0; self.zoom = 1.0
 
 def tile_size(cam): return BASE_TILE_W * cam.zoom, BASE_TILE_H * cam.zoom
-def unit_px(cam): return BASE_WALL_H * cam.zoom
 
 def world_to_screen(px, py, cam, ox, oy):
     tw, th = tile_size(cam)
@@ -1248,7 +1285,12 @@ def mask_diamond(img, w, h):
 def draw_terrain_iso(screen, terrain_t, tile, x, y, z_base, cam, ox, oy):
     form = terrain_t['form']; h = terrain_t['h']
     n_h, e_h, s_h, w_h = corner_heights(form, h)
-    z = unit_px(cam); tw, th = tile_size(cam)
+    z = tile_h_px(form, cam)
+    tw, th = tile_size(cam)
+
+    # Sobrepõe 2px por lado p/ esconder emendas entre tiles (topo plano)
+    tw_i = max(2, int(tw) + 2)
+    th_i = max(2, int(th) + 2)
 
     N = world_to_screen(x,   y,   cam, ox, oy)
     E = world_to_screen(x+1, y,   cam, ox, oy)
@@ -1258,15 +1300,15 @@ def draw_terrain_iso(screen, terrain_t, tile, x, y, z_base, cam, ox, oy):
     St = (S[0], S[1] - s_h * z); Wt = (W[0], W[1] - w_h * z)
 
     if form == FORM_FLAT and h == 0:
-        top_spr = tile.get_sprite("top", (int(tw), int(th)))
+        top_spr = tile.get_sprite("top", (tw_i, th_i))
         if top_spr:
-            screen.blit(mask_diamond(top_spr, tw, th),
-                        (int(N[0] - tw/2), int(N[1])))
+            d = mask_diamond(top_spr, tw_i, th_i)
+            screen.blit(d, (int(N[0] - tw_i / 2), int(N[1])))
         else:
             pygame.draw.polygon(screen, tile.color, [N, E, S, W])
-            pygame.draw.polygon(screen, darken(tile.color, 0.8), [N, E, S, W], 1)
         return
 
+    # Laterais (quads opacos, não mostram emenda)
     if s_h > 0 or w_h > 0:
         pts = [W, S, St, Wt]
         left = tile.get_sprite("side_left", (64, 64))
@@ -1285,19 +1327,30 @@ def draw_terrain_iso(screen, terrain_t, tile, x, y, z_base, cam, ox, oy):
         else:
             pygame.draw.polygon(screen, darken(tile.color, 0.75), pts)
 
-    top_pts = [Nt, Et, St, Wt]
-    top = tile.get_sprite("top", (int(tw), int(th)))
-    if top:
-        draw_masked_face(screen, top_pts, top, 1.0)
+    # Topo
+    if n_h == e_h == s_h == w_h:
+        top_spr = tile.get_sprite("top", (tw_i, th_i))
+        if top_spr:
+            d = mask_diamond(top_spr, tw_i, th_i)
+            screen.blit(d, (int(Nt[0] - tw_i / 2), int(Nt[1])))
+        else:
+            pygame.draw.polygon(screen, tile.color, [Nt, Et, St, Wt])
     else:
-        pygame.draw.polygon(screen, tile.color, top_pts)
-        pygame.draw.polygon(screen, darken(tile.color, 0.8), top_pts, 1)
+        top_spr = tile.get_sprite("top", (int(tw), int(th)))
+        if top_spr:
+            draw_masked_face(screen, [Nt, Et, St, Wt], top_spr, 1.0)
+        else:
+            pygame.draw.polygon(screen, tile.color, [Nt, Et, St, Wt])
 
 def draw_block_iso(screen, tile, x, y, z, cam, ox, oy, dim=1.0):
-    z_unit = unit_px(cam)
+    z_unit = wall_px(cam)
+    thick = block_thick_px(cam)
     tw, th = tile_size(cam)
     z_bot = z * z_unit
-    z_top = (z + BLOCK_THICKNESS) * z_unit
+    z_top = z_bot + thick
+
+    tw_i = max(2, int(tw) + 2)
+    th_i = max(2, int(th) + 2)
 
     Nb = world_to_screen(x,     y,     cam, ox, oy)
     Eb = world_to_screen(x + 1, y,     cam, ox, oy)
@@ -1320,9 +1373,10 @@ def draw_block_iso(screen, tile, x, y, z, cam, ox, oy, dim=1.0):
     _draw_face([W0, S0, S1, W1], "side_left",  0.55)
     _draw_face([S0, E0, E1, S1], "side_right", 0.75)
 
-    top_spr = tile.get_sprite("top", (int(tw), int(th)))
+    top_spr = tile.get_sprite("top", (tw_i, th_i))
     if top_spr:
-        draw_masked_face(screen, [N1, E1, S1, W1], top_spr, dim)
+        d = mask_diamond(top_spr, tw_i, th_i)
+        screen.blit(d, (int(N1[0] - tw_i / 2), int(N1[1])))
     else:
         top_pts = [N1, E1, S1, W1]
         c = darken(tile.color, dim)
@@ -1332,7 +1386,7 @@ def draw_block_iso(screen, tile, x, y, z, cam, ox, oy, dim=1.0):
 def draw_stairs_iso(screen, terrain_t, tile, x, y, cam, ox, oy):
     h = terrain_t['h']; form = terrain_t['form']
     direction = form.split('_')[1]
-    z_unit = unit_px(cam)
+    z_unit = stair_px(cam)
     base_col = tile.color
 
     top_src = tile.get_sprite("top", (64, 64))
@@ -1397,11 +1451,13 @@ def _wall_overlay(screen, p1, p2, wh, kind, dim):
     pygame.draw.polygon(screen, darken((20,20,20), dim), [r1, r2, r3, r4], 1)
 
 def draw_wall_h_iso(screen, cam, ox, oy, x, y, z, kind, tile=None, dim=1.0):
-    z_off = z * unit_px(cam); wh = unit_px(cam) * WALL_HEIGHT_UNITS
+    z_off = z * wall_px(cam); wh = wall_px(cam) * WALL_HEIGHT_UNITS
     p1 = world_to_screen(x,     y, cam, ox, oy); p2 = world_to_screen(x + 1, y, cam, ox, oy)
     p1 = (p1[0], p1[1] - z_off); p2 = (p2[0], p2[1] - z_off)
     p1u = (p1[0], p1[1] - wh);   p2u = (p2[0], p2[1] - wh)
-    quad = [p1, p2, p2u, p1u]
+    # Expande 0.5px em cada lado — esconde seam entre paredes adjacentes
+    quad = [(p1[0]-0.5, p1[1]), (p2[0]+0.5, p2[1]),
+            (p2u[0]+0.5, p2u[1]), (p1u[0]-0.5, p1u[1])]
 
     textured = False
     if tile is not None:
@@ -1417,11 +1473,12 @@ def draw_wall_h_iso(screen, cam, ox, oy, x, y, z, kind, tile=None, dim=1.0):
         _wall_overlay(screen, p1, p2, wh, kind, dim)
 
 def draw_wall_v_iso(screen, cam, ox, oy, x, y, z, kind, tile=None, dim=1.0):
-    z_off = z * unit_px(cam); wh = unit_px(cam) * WALL_HEIGHT_UNITS
+    z_off = z * wall_px(cam); wh = wall_px(cam) * WALL_HEIGHT_UNITS
     p1 = world_to_screen(x, y,     cam, ox, oy); p2 = world_to_screen(x, y + 1, cam, ox, oy)
     p1 = (p1[0], p1[1] - z_off); p2 = (p2[0], p2[1] - z_off)
     p1u = (p1[0], p1[1] - wh);   p2u = (p2[0], p2[1] - wh)
-    quad = [p1, p2, p2u, p1u]
+    quad = [(p1[0], p1[1]-0.5), (p2[0], p2[1]+0.5),
+            (p2u[0], p2u[1]+0.5), (p1u[0], p1u[1]-0.5)]
 
     textured = False
     if tile is not None:
@@ -1474,6 +1531,7 @@ class MapEditorApp:
     def __init__(self):
         self.running = True
         self.project = Project()
+        self._sync_height_globals()
         self.tab = self.TAB_LAYOUT
         self.layout_mode = self.LMODE_TERRAIN
         self.details_mode = self.DMODE_SPRITE
@@ -1536,10 +1594,26 @@ class MapEditorApp:
         self.rescan_tiles(quiet=True)
         self.rescan_sprites(quiet=True)
 
+    def _sync_height_globals(self):
+        global G_WALL_H, G_TERRAIN_H, G_STAIR_H, G_BLOCK_T
+        try: G_WALL_H = max(1.0, float(self.project.wall_height))
+        except Exception: G_WALL_H = 32.0
+        try: G_TERRAIN_H = max(1.0, float(self.project.terrain_height))
+        except Exception: G_TERRAIN_H = 32.0
+        try: G_STAIR_H = max(1.0, float(self.project.stair_height))
+        except Exception: G_STAIR_H = 32.0
+        try: G_BLOCK_T = max(1.0, float(self.project.block_thickness))
+        except Exception: G_BLOCK_T = 6.4
+
     def _init_widgets(self):
         for k, lbl in [("map_name","Nome do mapa"),("map_w","Largura"),
                        ("map_h","Altura"),("num_floors","Andares")]:
             self.fields[k] = TextField(k, lbl, "", max_len=32)
+        for k, lbl in [("h_wall","Alt. andar/parede"),
+                       ("h_terrain","Alt. terreno"),
+                       ("h_stair","Alt. escada"),
+                       ("h_block_t","Espessura piso")]:
+            self.fields[k] = TextField(k, lbl, "", max_len=10)
         for k, lbl in [("tile_name","Nome"),("tile_category","Categoria"),
                        ("tile_height","Altura base")]:
             self.fields[k] = TextField(k, lbl, "", max_len=200)
@@ -1608,7 +1682,7 @@ class MapEditorApp:
             on_change=self._on_event_trigger_change)
 
     # ============================================================
-    # SPRITE DATA JSON (banco de sprites)
+    # SPRITE DATA JSON
     # ============================================================
     def _save_sprite_data(self, idx):
         if idx is None or idx < 0 or idx >= len(self.project.sprites): return False
@@ -1728,7 +1802,6 @@ class MapEditorApp:
             if ap in existing_paths: continue
             try:
                 sp = CustomSprite(f, full)
-                # Carrega dados salvos se existirem (banco de sprites)
                 data = self._load_sprite_data_for(full)
                 if data is not None:
                     self._apply_sprite_data(sp, data)
@@ -1755,7 +1828,7 @@ class MapEditorApp:
         return (t, s)
 
     # ============================================================
-    # SLIDERS / CHECKBOXES / UI CALLBACKS
+    # SLIDERS / CHECKBOXES
     # ============================================================
     def _on_slider(self, which, value):
         idx = self.selected_sprite_idx
@@ -1789,7 +1862,6 @@ class MapEditorApp:
             self.current_dyn_z = value
             self.fields["sprite_dyn_z"].value = f"{value:.2f}"
             self._update_selected_object_dyn(2, value)
-        # Auto-salva dados do sprite (para default, não dynamic)
         if which in ("scale","off_x","off_y","anc_x","anc_y"):
             self._save_sprite_data(idx)
         self._mark_dirty()
@@ -1814,7 +1886,6 @@ class MapEditorApp:
         self._mark_dirty()
 
     def _update_selected_object_dyn(self, idx, value):
-        """idx: 0=dx, 1=dy, 2=dz, 3=dmx, 4=dmy"""
         if self.selected_obj_key is None: return
         m = self.project.active_map()
         if not m: return
@@ -1865,7 +1936,6 @@ class MapEditorApp:
         m = self.project.active_map()
         if not m: return None
         ox, oy = self._iso_origin()
-        z = unit_px(self.cam)
         wx, wy = screen_to_world(mx, my, self.cam, ox, oy)
         R = 12
         tx_c = int(math.floor(wx)); ty_c = int(math.floor(wy))
@@ -1878,6 +1948,7 @@ class MapEditorApp:
                 if form.startswith('stair_'):
                     pick_form = 'ramp_' + form.split('_')[1]
                 n_h, e_h, s_h, w_h = corner_heights(pick_form, t['h'])
+                z = tile_h_px(form, self.cam)
                 N = world_to_screen(tx,   ty,   self.cam, ox, oy)
                 E = world_to_screen(tx+1, ty,   self.cam, ox, oy)
                 S = world_to_screen(tx+1, ty+1, self.cam, ox, oy)
@@ -1893,7 +1964,7 @@ class MapEditorApp:
         m = self.project.active_map()
         if not m: return None
         ox, oy = self._iso_origin()
-        z_unit = unit_px(self.cam)
+        z_unit = wall_px(self.cam)
         wx, wy = screen_to_world(mx, my + target_z * z_unit, self.cam, ox, oy)
         gx = int(math.floor(wx)); gy = int(math.floor(wy))
         if m.in_bounds(gx, gy): return (gx, gy)
@@ -1903,7 +1974,7 @@ class MapEditorApp:
         m = self.project.active_map()
         if not m: return None
         ox, oy = self._iso_origin()
-        z = self.active_floor; z_off = z * unit_px(self.cam)
+        z = self.active_floor; z_off = z * wall_px(self.cam)
         wx, wy = screen_to_world(mx, my + z_off, self.cam, ox, oy)
         tx = int(math.floor(wx)); ty = int(math.floor(wy))
         candidates = [('h', tx, ty), ('v', tx, ty),
@@ -1925,7 +1996,7 @@ class MapEditorApp:
         m = self.project.active_map()
         if not m: return None
         tw, th = tile_size(self.cam)
-        ox, oy = self._iso_origin(); z_unit = unit_px(self.cam)
+        ox, oy = self._iso_origin()
         evs = []
         for ev in m.events:
             wx = (ev.x - ev.y) * tw * 0.5
@@ -1933,7 +2004,7 @@ class MapEditorApp:
             cx = ox + wx
             cy = oy + wy + th * 0.5
             t = m.get_terrain(ev.x, ev.y)
-            cy -= t['h'] * z_unit
+            cy -= t['h'] * tile_h_px(t['form'], self.cam)
             evs.append((ev.x + ev.y, ev, cx, cy))
         evs.sort(key=lambda e: -e[0])
         for _, ev, cx, cy in evs:
@@ -1967,7 +2038,8 @@ class MapEditorApp:
         m = self.project.active_map()
         if not m: return None
         tw, th = tile_size(self.cam)
-        ox, oy = self._iso_origin(); z_unit = unit_px(self.cam)
+        ox, oy = self._iso_origin()
+        u_wall = wall_px(self.cam)
         entries = []
         for (tx, ty, tz, layer), val in m.objects.items():
             if tz > self.active_floor: continue
@@ -1975,19 +2047,23 @@ class MapEditorApp:
             if up is None: continue
             sid, dx, dy, dz, dmx, dmy = up
             if sid < 0 or sid >= len(self.project.sprites): continue
-            entries.append((tx + ty, layer, tz, tx, ty, layer, sid, dx, dy, dz, dmx, dmy))
+            terr = m.get_terrain(tx, ty)
+            u_terr = tile_h_px(terr['form'], self.cam)
+            eff_px = tz * u_wall + terr['h'] * u_terr
+            entries.append((tx + ty, layer, tz, tx, ty, layer, sid,
+                            dx, dy, dz, dmx, dmy, eff_px))
         entries.sort(key=lambda e: (-e[0], -e[1]))
-        for _, _, tz, tx, ty, layer, sid, dx, dy, dz, dmx, dmy in entries:
+        for entry in entries:
+            (_, _, tz, tx, ty, layer, sid, dx, dy, dz, dmx, dmy, eff_px) = entry
             sp = self.project.sprites[sid]
             eff_mx = sp.mirror_x ^ bool(dmx)
             eff_my = sp.mirror_y ^ bool(dmy)
             s = sp.surface(self.cam.zoom, eff_mx, eff_my)
             w, h = s.get_size()
             wx = (tx - ty) * tw * 0.5; wy = (tx + ty) * th * 0.5
-            terr = m.get_terrain(tx, ty)
             cx = ox + wx
-            cy = oy + wy + th * 0.5 - (tz + terr['h']) * z_unit
-            ddzpx = dz * z_unit
+            cy = oy + wy + th * 0.5 - eff_px
+            ddzpx = dz * u_wall
             oxx = (sp.offset_x + dx) * self.cam.zoom
             oyy = (sp.offset_y + dy) * self.cam.zoom
             rx = int(cx - sp.anchor_x * w + oxx)
@@ -2078,6 +2154,7 @@ class MapEditorApp:
             except Exception: pass
             return
         self.project = new_project
+        self._sync_height_globals()
         ts = self.project.tileset
         self.selected_tile_id = ts.order[0] if ts.order else None
         self.selected_sprite_idx = 0 if self.project.sprites else None
@@ -2097,6 +2174,10 @@ class MapEditorApp:
         self.fields["map_w"].value = str(m.w)
         self.fields["map_h"].value = str(m.h)
         self.fields["num_floors"].value = str(m.num_floors)
+        self.fields["h_wall"].value = f"{self.project.wall_height:.0f}"
+        self.fields["h_terrain"].value = f"{self.project.terrain_height:.0f}"
+        self.fields["h_stair"].value = f"{self.project.stair_height:.0f}"
+        self.fields["h_block_t"].value = f"{self.project.block_thickness:.0f}"
         self.dropdowns["floor"].set_options(
             [(i, f"Andar {i}") for i in range(m.num_floors)])
         self.dropdowns["floor"].value = min(self.active_floor, m.num_floors-1)
@@ -2189,6 +2270,15 @@ class MapEditorApp:
             self.project.active_map_name = m.name
         try: m.num_floors = clamp(int(self.fields["num_floors"].value), 1, 20)
         except Exception: pass
+        try: self.project.wall_height = max(1.0, float(self.fields["h_wall"].value))
+        except Exception: pass
+        try: self.project.terrain_height = max(1.0, float(self.fields["h_terrain"].value))
+        except Exception: pass
+        try: self.project.stair_height = max(1.0, float(self.fields["h_stair"].value))
+        except Exception: pass
+        try: self.project.block_thickness = max(1.0, float(self.fields["h_block_t"].value))
+        except Exception: pass
+        self._sync_height_globals()
         self._mark_dirty(); self._sync_fields_from_map()
 
     def _apply_tile_fields(self):
@@ -2226,7 +2316,6 @@ class MapEditorApp:
         self.current_dyn_x = ndx
         self.current_dyn_y = ndy
         self.current_dyn_z = ndz
-        # Aplica no objeto selecionado (se houver)
         if self.selected_obj_key is not None:
             m = self.project.active_map()
             if m and self.selected_obj_key in m.objects:
@@ -2235,7 +2324,6 @@ class MapEditorApp:
                     sid, ndx, ndy, ndz,
                     bool(self.current_dyn_mirror_x),
                     bool(self.current_dyn_mirror_y))
-        # Resync sliders
         self.sliders["sl_scale"].set_value(sp.scale)
         self.sliders["sl_off_x"].set_value(sp.offset_x)
         self.sliders["sl_off_y"].set_value(sp.offset_y)
@@ -2244,7 +2332,6 @@ class MapEditorApp:
         self.sliders["sl_dyn_x"].set_value(ndx)
         self.sliders["sl_dyn_y"].set_value(ndy)
         self.sliders["sl_dyn_z"].set_value(ndz)
-        # Salva dados do sprite (banco)
         self._save_sprite_data(idx)
         self._mark_dirty(); self._msg("Sprite atualizado.", SUCCESS)
 
@@ -2272,7 +2359,9 @@ class MapEditorApp:
         if f.key.startswith("tile_"): self._apply_tile_fields()
         elif f.key.startswith("sprite_"): self._apply_sprite_fields()
         elif f.key.startswith("ev_"): self._apply_event_fields()
-        elif f.key.startswith("map_") or f.key == "num_floors": self._apply_map_fields()
+        elif (f.key.startswith("map_") or f.key == "num_floors"
+              or f.key.startswith("h_")):
+            self._apply_map_fields()
 
     # --------- save/load ---------
     def _save_project_to_path(self, path):
@@ -2346,6 +2435,7 @@ class MapEditorApp:
             self._msg(f"Erro carregando: {e}", DANGER); return
 
         self.project = new_project
+        self._sync_height_globals()
         self.current_file_path = fp
         ts = self.project.tileset
         self.selected_tile_id = ts.order[0] if ts.order else None
@@ -2402,7 +2492,6 @@ class MapEditorApp:
         for m in self.project.maps.values():
             if m.parent == name: m.parent = None
         del self.project.maps[name]
-        # Deleta o JSON do mapa (se existir em EXPORTS_DIR)
         safe = safe_filename(name, "mapa")
         fp = os.path.join(EXPORTS_DIR, f"{safe}.json")
         deleted_json = False
@@ -2412,7 +2501,6 @@ class MapEditorApp:
                 deleted_json = True
         except Exception as e:
             print(f"[DelMap] {e}")
-        # Limpa arquivo atual se era esse
         try:
             if (self.current_file_path
                 and os.path.abspath(self.current_file_path) == os.path.abspath(fp)):
@@ -2517,13 +2605,11 @@ class MapEditorApp:
             pygame.image.save(img, dst)
             name = os.path.basename(dst)
             sp = CustomSprite(name, dst)
-            # Se havia data JSON prévio (banco), aplica
             data = self._load_sprite_data_for(dst)
             if data is not None:
                 self._apply_sprite_data(sp, data)
             idx = self.project.add_sprite(sp)
             self.selected_sprite_idx = idx; self.active_sprite_idx = idx
-            # Salva data JSON imediatamente (banco)
             self._save_sprite_data(idx)
             self._sync_fields_from_sprite(); self._mark_dirty()
             self._msg(f"Sprite importado: {name}", SUCCESS)
@@ -2531,12 +2617,10 @@ class MapEditorApp:
             self._msg(f"Erro: {e}", DANGER)
 
     def _remove_sprite(self):
-        """Remove sprite do projeto E apaga os arquivos (png + data json)."""
         idx = self.selected_sprite_idx
         if idx is None: return
         sp = self.project.sprites[idx]
         png_path = sp.path
-        # Apaga arquivos do disco
         if png_path:
             try:
                 ap = os.path.abspath(png_path)
@@ -2548,7 +2632,6 @@ class MapEditorApp:
                         os.remove(dp)
             except Exception as e:
                 print(f"[RemoveSprite] {e}")
-        # Remove do projeto
         self.project.remove_sprite(idx)
         self.selected_sprite_idx = (0 if self.project.sprites else None)
         self.active_sprite_idx = self.selected_sprite_idx
@@ -2613,7 +2696,10 @@ class MapEditorApp:
             return
         m = self.project.active_map()
         if not m: return
-        cell = self._pick_tile_at(pos[0], pos[1]) or self._cell_from_pos(pos)
+        # Pick compensando a altura do andar — bate com o preview
+        cell = (self._pick_tile_at_height(pos[0], pos[1], self.active_floor)
+                or self._pick_tile_at(pos[0], pos[1])
+                or self._cell_from_pos(pos))
         if not cell:
             self.selected_obj_key = None
             return
@@ -2630,7 +2716,9 @@ class MapEditorApp:
     def _erase_object_at(self, pos):
         m = self.project.active_map()
         if not m: return False
-        cell = self._pick_tile_at(pos[0], pos[1]) or self._cell_from_pos(pos)
+        cell = (self._pick_tile_at_height(pos[0], pos[1], self.active_floor)
+                or self._pick_tile_at(pos[0], pos[1])
+                or self._cell_from_pos(pos))
         if not cell: return False
         key = (cell[0], cell[1], self.active_floor, self.current_layer)
         if key in m.objects:
@@ -2642,7 +2730,9 @@ class MapEditorApp:
     def _paint_object_brush(self, pos):
         m = self.project.active_map()
         if not m: return
-        cell = self._pick_tile_at(pos[0], pos[1]) or self._cell_from_pos(pos)
+        cell = (self._pick_tile_at_height(pos[0], pos[1], self.active_floor)
+                or self._pick_tile_at(pos[0], pos[1])
+                or self._cell_from_pos(pos))
         if not cell: return
         if self.selected_sprite_idx is None: return
         m.objects[(cell[0], cell[1], self.active_floor, self.current_layer)] = (
@@ -2995,6 +3085,16 @@ class MapEditorApp:
             if (self.tab == self.TAB_LAYOUT and
                 self.layout_mode == self.LMODE_BLOCK):
                 self.hover_cell = self._pick_tile_at_height(mx, my, self.active_floor)
+            elif (self.tab == self.TAB_DETAILS and
+                  self.details_mode == self.DMODE_SPRITE):
+                # Modo sprite: pick compensa a altura do andar ativo
+                # → preview fica SEMPRE sob o mouse
+                cell = self._pick_tile_at_height(mx, my, self.active_floor)
+                if cell is None:
+                    cell = self._pick_tile_at(mx, my)
+                if cell is None:
+                    cell = self._cell_from_pos(pos)
+                self.hover_cell = cell
             else:
                 cell = self._pick_tile_at(mx, my)
                 if cell is None:
@@ -3031,7 +3131,6 @@ class MapEditorApp:
                     return
             return
         if self._in_right(pos):
-            # checkboxes primeiro
             for key, cb in self.checkboxes.items():
                 if not cb.active_this_frame: continue
                 if cb.handle_click(pos):
@@ -3045,7 +3144,7 @@ class MapEditorApp:
                 if not dd.active_this_frame: continue
                 if dd.rect.collidepoint(pos):
                     dd.expanded = True; self.expanded_dropdown = key; return
-            prefixes = ["map_", "num_floors", "tile_", "sprite_", "ev_"]
+            prefixes = ["map_", "num_floors", "tile_", "sprite_", "ev_", "h_"]
             for key, f in self.fields.items():
                 if not f.active_this_frame: continue
                 if not any(key.startswith(p) for p in prefixes): continue
@@ -3081,7 +3180,9 @@ class MapEditorApp:
                 self.dragging_paint = True
                 return
             if tool == TOOL_RECT:
-                cell = self._pick_tile_at(pos[0], pos[1]) or self._cell_from_pos(pos)
+                cell = (self._pick_tile_at_height(pos[0], pos[1], self.active_floor)
+                        or self._pick_tile_at(pos[0], pos[1])
+                        or self._cell_from_pos(pos))
                 if cell: self.drag_start = cell
                 return
             self._handle_sprite_click(pos)
@@ -3162,6 +3263,11 @@ class MapEditorApp:
             if (self.tab == self.TAB_LAYOUT and
                 self.layout_mode == self.LMODE_BLOCK):
                 cell = self._pick_tile_at_height(pos[0], pos[1], self.active_floor)
+            elif (self.tab == self.TAB_DETAILS and
+                  self.details_mode == self.DMODE_SPRITE):
+                cell = (self._pick_tile_at_height(pos[0], pos[1], self.active_floor)
+                        or self._pick_tile_at(pos[0], pos[1])
+                        or self._cell_from_pos(pos))
             else:
                 cell = self._pick_tile_at(pos[0], pos[1]) or self._cell_from_pos(pos)
             x0, y0 = self.drag_start
@@ -3288,7 +3394,7 @@ class MapEditorApp:
                 return (f"wall {x},{y}  z={self.active_floor}  "
                         f"[{self.current_wall_kind}]")
             ox, oy = self._iso_origin()
-            z_off = self.active_floor * unit_px(self.cam)
+            z_off = self.active_floor * wall_px(self.cam)
             wx, wy = screen_to_world(mx, my + z_off, self.cam, ox, oy)
             return f"x={wx:.2f}  y={wy:.2f}  z={self.active_floor}"
 
@@ -3765,6 +3871,13 @@ class MapEditorApp:
         self.fields["map_w"].set_position(x, y, half)
         self.fields["map_h"].set_position(x + half + 6, y, half); y += 36
         self.fields["num_floors"].set_position(x, y, half); y += 36
+
+        draw_text(screen, "ALTURAS (px/nivel)", x, y, FONT_XS, ACCENT); y += 12
+        self.fields["h_wall"].set_position(x, y, half)
+        self.fields["h_terrain"].set_position(x + half + 6, y, half); y += 36
+        self.fields["h_stair"].set_position(x, y, half)
+        self.fields["h_block_t"].set_position(x + half + 6, y, half); y += 36
+
         r = pygame.Rect(x, y, w, 22)
         draw_button(screen, r, "Aplicar mapa", FONT_XS, primary=True)
         self._right_hits.append((r, self._apply_map_fields)); y += 26
@@ -3984,23 +4097,24 @@ class MapEditorApp:
     def _render_iso(self, m):
         tw, th = tile_size(self.cam)
         ox, oy = self._iso_origin()
-        z = unit_px(self.cam)
+        u_wall = wall_px(self.cam)
 
         items = []
         for (tx, ty), t in m.terrain.items():
-            key = (tx + ty, t['h'] + (0.5 if t['form'] != FORM_FLAT else 0.0), 0)
-            items.append((key, 'terrain', (tx, ty, t)))
+            u_terr = tile_h_px(t['form'], self.cam)
+            h_px = t['h'] * u_terr + (0.5 * u_terr if t['form'] != FORM_FLAT else 0.0)
+            items.append(((tx + ty, h_px, 0), 'terrain', (tx, ty, t)))
         for (tx, ty, tz), blk in m.blocks.items():
             if tz > self.active_floor: continue
-            items.append(((tx + ty, tz, 1), 'block', (tx, ty, tz, blk)))
+            items.append(((tx + ty, tz * u_wall, 1), 'block', (tx, ty, tz, blk)))
         for (tx, ty, tz), val in m.walls_h.items():
             if tz > self.active_floor: continue
             kind, tid = wall_val(val)
-            items.append(((tx + ty, tz, 2), 'wall_h', (tx, ty, tz, kind, tid)))
+            items.append(((tx + ty, tz * u_wall, 2), 'wall_h', (tx, ty, tz, kind, tid)))
         for (tx, ty, tz), val in m.walls_v.items():
             if tz > self.active_floor: continue
             kind, tid = wall_val(val)
-            items.append(((tx + ty, tz, 2), 'wall_v', (tx, ty, tz, kind, tid)))
+            items.append(((tx + ty, tz * u_wall, 2), 'wall_v', (tx, ty, tz, kind, tid)))
         for (tx, ty, tz, layer), val in m.objects.items():
             up = object_unpack(val)
             if up is None: continue
@@ -4008,10 +4122,9 @@ class MapEditorApp:
             if sid < 0 or sid >= len(self.project.sprites): continue
             if tz > self.active_floor: continue
             terr = m.get_terrain(tx, ty)
-            terr_visual_h = terr['h'] + (0.5 if terr['form'] != FORM_FLAT else 0.0)
-            effective_h = tz + terr_visual_h
-            key = (tx + ty, effective_h + 0.01, 3, layer)
-            items.append((key, 'object',
+            u_terr = tile_h_px(terr['form'], self.cam)
+            h_px = tz * u_wall + terr['h'] * u_terr
+            items.append(((tx + ty, h_px + 0.01, 3, layer), 'object',
                           (tx, ty, tz, layer, sid, dx, dy, dz, dmx, dmy)))
 
         items.sort(key=lambda it: it[0])
@@ -4051,11 +4164,12 @@ class MapEditorApp:
                     data[6], data[7], data[8], data[9])
                 sp = self.project.sprites[sid]
                 terr = m.get_terrain(tx, ty)
+                u_terr = tile_h_px(terr['form'], self.cam)
                 wx = (tx - ty) * tw * 0.5; wy = (tx + ty) * th * 0.5
                 scr_x = ox + wx
-                scr_y = oy + wy + th * 0.5 - (tz + terr['h']) * z
+                scr_y = oy + wy + th * 0.5 - (tz * u_wall + terr['h'] * u_terr)
                 sp.draw_at(screen, scr_x, scr_y, self.cam.zoom,
-                           dyn_dx=dx, dyn_dy=dy, dyn_dz_px=dz * z,
+                           dyn_dx=dx, dyn_dy=dy, dyn_dz_px=dz * u_wall,
                            dyn_mirror_x=dmx, dyn_mirror_y=dmy)
 
         if self.show_grid: self._draw_grid_iso(m)
@@ -4066,7 +4180,7 @@ class MapEditorApp:
         ox, oy = self._iso_origin()
         z_shift = 0
         if self.tab == self.TAB_LAYOUT and self.layout_mode == self.LMODE_BLOCK:
-            z_shift = self.active_floor * unit_px(self.cam)
+            z_shift = self.active_floor * wall_px(self.cam)
         surf = pygame.Surface((CANVAS_W, CANVAS_H), pygame.SRCALPHA)
         for x in range(m.w + 1):
             p1 = world_to_screen(x, 0, self.cam, ox - CANVAS_X, oy - CANVAS_Y)
@@ -4090,8 +4204,8 @@ class MapEditorApp:
             kind, x, y = self.hover_wall
             ox, oy = self._iso_origin()
             z = self.active_floor
-            z_off = z * unit_px(self.cam)
-            wh = unit_px(self.cam) * WALL_HEIGHT_UNITS
+            z_off = z * wall_px(self.cam)
+            wh = wall_px(self.cam) * WALL_HEIGHT_UNITS
             if kind == 'h':
                 p1 = world_to_screen(x,     y, self.cam, ox, oy)
                 p2 = world_to_screen(x + 1, y, self.cam, ox, oy)
@@ -4115,8 +4229,8 @@ class MapEditorApp:
                 d = m.walls_h if kind == 'h' else m.walls_v
                 if (x, y, z) in d:
                     ox, oy = self._iso_origin()
-                    z_off = z * unit_px(self.cam)
-                    wh = unit_px(self.cam) * WALL_HEIGHT_UNITS
+                    z_off = z * wall_px(self.cam)
+                    wh = wall_px(self.cam) * WALL_HEIGHT_UNITS
                     if kind == 'h':
                         p1 = world_to_screen(x,     y, self.cam, ox, oy)
                         p2 = world_to_screen(x + 1, y, self.cam, ox, oy)
@@ -4138,6 +4252,11 @@ class MapEditorApp:
             if (self.tab == self.TAB_LAYOUT and
                 self.layout_mode == self.LMODE_BLOCK):
                 c2 = self._pick_tile_at_height(mpos[0], mpos[1], self.active_floor)
+            elif (self.tab == self.TAB_DETAILS and
+                  self.details_mode == self.DMODE_SPRITE):
+                c2 = (self._pick_tile_at_height(mpos[0], mpos[1], self.active_floor)
+                      or self._pick_tile_at(mpos[0], mpos[1])
+                      or self._cell_from_pos(mpos))
             else:
                 c2 = self._pick_tile_at(mpos[0], mpos[1]) or self._cell_from_pos(mpos)
             c2 = c2 or self.drag_start
@@ -4147,7 +4266,10 @@ class MapEditorApp:
             z_shift = 0
             if (self.tab == self.TAB_LAYOUT and
                 self.layout_mode == self.LMODE_BLOCK):
-                z_shift = self.active_floor * unit_px(self.cam)
+                z_shift = self.active_floor * wall_px(self.cam)
+            elif (self.tab == self.TAB_DETAILS and
+                  self.details_mode == self.DMODE_SPRITE):
+                z_shift = self.active_floor * wall_px(self.cam)
             s = pygame.Surface((CANVAS_W, CANVAS_H), pygame.SRCALPHA)
             for yy in range(ya, yb+1):
                 for xx in range(xa, xb+1):
@@ -4173,9 +4295,12 @@ class MapEditorApp:
                 ox, oy = self._iso_origin()
                 wx = (tx - ty) * tw * 0.5; wy = (tx + ty) * th * 0.5
                 terr = m.get_terrain(tx, ty)
-                z_unit = unit_px(self.cam)
+                u_wall = wall_px(self.cam)
+                u_terr = tile_h_px(terr['form'], self.cam)
                 cx = ox + wx
-                cy = oy + wy + th * 0.5 - (self.active_floor + terr['h']) * z_unit
+                cy = (oy + wy + th * 0.5
+                      - self.active_floor * u_wall
+                      - terr['h'] * u_terr)
                 sp = self.project.sprites[self.selected_sprite_idx]
                 g = sp.ghost(self.cam.zoom,
                              self.current_dyn_mirror_x,
@@ -4183,7 +4308,7 @@ class MapEditorApp:
                 w, h = g.get_size()
                 oxx = (sp.offset_x + self.current_dyn_x) * self.cam.zoom
                 oyy = (sp.offset_y + self.current_dyn_y) * self.cam.zoom
-                ddzpx = self.current_dyn_z * z_unit
+                ddzpx = self.current_dyn_z * u_wall
                 dx = cx - sp.anchor_x * w + oxx
                 dy = cy - sp.anchor_y * h + oyy - ddzpx
                 screen.blit(g, (int(dx), int(dy)))
@@ -4208,9 +4333,9 @@ class MapEditorApp:
         if self.tab == self.TAB_TEXTURE:
             col = (140, 200, 255)
         if self.tab == self.TAB_LAYOUT and self.layout_mode == self.LMODE_BLOCK:
-            cy -= self.active_floor * unit_px(self.cam)
+            cy -= self.active_floor * wall_px(self.cam)
         else:
-            cy -= t['h'] * unit_px(self.cam)
+            cy -= t['h'] * tile_h_px(t['form'], self.cam)
 
         hw = tw * 0.5; hh = th * 0.5
         pygame.draw.polygon(screen, col,
@@ -4219,14 +4344,14 @@ class MapEditorApp:
 
     def _draw_events_iso(self, m):
         tw, th = tile_size(self.cam)
-        ox, oy = self._iso_origin(); z = unit_px(self.cam)
+        ox, oy = self._iso_origin()
         for ev in m.events:
             wx = (ev.x - ev.y) * tw * 0.5
             wy = (ev.x + ev.y) * th * 0.5
             cx = ox + wx
             cy = oy + wy + th * 0.5
             t = m.get_terrain(ev.x, ev.y)
-            cy -= t['h'] * z
+            cy -= t['h'] * tile_h_px(t['form'], self.cam)
 
             sprite_drawn = False
             if (ev.sprite_idx is not None
@@ -4270,6 +4395,8 @@ class MapEditorApp:
         parts.append(f"Ferr: {self.active_tool}")
         parts.append(f"Andar {self.active_floor}/{nf}")
         parts.append(f"Zoom {self.cam.zoom:.2f}x")
+        parts.append(f"Hwall {G_WALL_H:.0f} Terr {G_TERRAIN_H:.0f} "
+                     f"Stair {G_STAIR_H:.0f} Blk {G_BLOCK_T:.0f}")
         hint = "  ·  ".join(parts)
         draw_text(screen, hint, 10, HEIGHT - BOTTOM_H + 5, FONT_XS, TEXT_DIM)
 
@@ -4311,6 +4438,6 @@ class MapEditorApp:
 # ============================================================
 if __name__ == "__main__":
     print("=" * 64)
-    print("MapEditor v19 — mirror + sprite bank + auto-scan")
+    print("MapEditor v19 — sem seams + preview correto + alturas")
     print("=" * 64)
     MapEditorApp().run()
